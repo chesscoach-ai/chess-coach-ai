@@ -1,0 +1,56 @@
+import Link from "next/link";
+
+import AuthForm from "@/app/auth/AuthForm";
+import { loginWithGoogle } from "@/app/auth/actions";
+
+export default function AuthPage() {
+  const googleIsConfigured = Boolean(
+    process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET,
+  );
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-gray-950 px-4 py-10 text-white">
+      <section className="w-full max-w-md rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-2xl sm:p-8">
+        <Link href="/" className="text-sm text-blue-300 hover:text-blue-200">
+          ← Retour à l’analyse
+        </Link>
+        <h1 className="mt-5 text-3xl font-bold">Ton espace Chess Coach</h1>
+        <p className="mt-2 text-sm leading-6 text-gray-400">
+          Crée ton compte pour préparer ton espace personnel et tes prochaines
+          sessions d’entraînement.
+        </p>
+
+        <div className="mt-6">
+          {googleIsConfigured ? (
+            <form action={loginWithGoogle}>
+              <button
+                type="submit"
+                className="w-full rounded-xl border border-gray-700 bg-white px-4 py-3 font-semibold text-gray-900 transition hover:bg-gray-100"
+              >
+                Continuer avec Google
+              </button>
+            </form>
+          ) : (
+            <div className="rounded-xl border border-gray-800 bg-gray-950/60 p-3">
+              <p className="text-sm font-semibold text-gray-300">
+                Connexion Google bientôt disponible
+              </p>
+              <p className="mt-1 text-xs leading-5 text-gray-500">
+                Configure AUTH_GOOGLE_ID et AUTH_GOOGLE_SECRET pour activer ce
+                raccourci.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="my-6 flex items-center gap-3 text-xs text-gray-600">
+          <span className="h-px flex-1 bg-gray-800" />
+          ou avec ton adresse e-mail
+          <span className="h-px flex-1 bg-gray-800" />
+        </div>
+
+        <AuthForm />
+      </section>
+    </main>
+  );
+}

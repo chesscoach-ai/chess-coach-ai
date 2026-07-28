@@ -1,0 +1,485 @@
+"use client";
+
+import Link from "next/link";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import ExerciseBoard from "@/components/Exercises/ExerciseBoard";
+
+import {
+  clearExerciseSession,
+  getExerciseSession,
+  saveExerciseSession,
+} from "@/lib/exercises/exerciseStorage";
+
+import type {
+  ExerciseMove,
+  ExerciseSession,
+} from "@/types/exercise";
+import {
+  markExerciseCompleted,
+  recordTrainingActivity,
+} from "@/lib/pgnExerciseProgress";
+
+function convertMoveToUci(
+  move: ExerciseMove,
+): string {
+  return `${move.from}${move.to}${move.promotion ?? ""}`
+    .trim()
+    .toLowerCase();
+}
+
+export default function ExerciseTrainer() {
+  const [session, setSession] =
+    useState<ExerciseSession | null>(null);
+
+  const [visibleHints, setVisibleHints] =
+    useState<string[]>([]);
+  const completionRecorded =
+    useRef(false);
+  const sessionId = session?.id;
+  const sessionStatus = session?.status;
+
+  useEffect(() => {
+    const loadId = window.setTimeout(() => {
+      setSession(getExerciseSession());
+    }, 0);
+
+    return () => window.clearTimeout(loadId);
+  }, []);
+
+  useEffect(() => {
+    if (session) {
+      saveExerciseSession(session);
+    }
+  }, [session]);
+
+  useEffect(() => {
+    if (
+      !sessionId ||
+      sessionStatus === "correct"
+    ) {
+      return;
+    }
+
+    const timerId = window.setInterval(() => {
+      setSession((current) =>
+        current &&
+        current.status !== "correct"
+          ? {
+              ...current,
+              elapsedTime:
+                current.elapsedTime + 1,
+            }
+          : current,
+      );
+    }, 1_000);
+
+    return () =>
+      window.clearInterval(timerId);
+  }, [sessionId, sessionStatus]);
+
+  useEffect(() => {
+    if (
+      !session ||
+      session.status !== "correct" ||
+      !session.sourceExampleId ||
+      completionRecorded.current
+    ) {
+      return;
+    }
+
+    completionRecorded.current = true;
+    markExerciseCompleted(
+      session.sourceExampleId,
+      {
+        elapsedTime:
+          session.elapsedTime,
+        mistakes: session.mistakes,
+        hintsUsed: session.hintsUsed,
+      },
+    );
+    recordTrainingActivity("completed");
+  }, [session]);
+
+  function handleMovePlayed(
+    move: ExerciseMove,
+  ): boolean {
+    if (!session || session.status === "correct") {
+      return false;
+    }
+
+    const playedMove = convertMoveToUci(move);
+    const expectedMove =
+      session.solutionMove.trim().toLowerCase();
+
+    /*
+     * Pour les coups classiques, la solution peut
+     * être enregistrée sous la forme e2e4.
+     *
+     * Pour une promotion, elle peut être enregistrée
+     * sous la forme e7e8q.
+     */
+    const moveWithoutPromotion =
+      `${move.from}${move.to}`.toLowerCase();
+
+    const moveIsCorrect =
+      playedMove === expectedMove ||
+      moveWithoutPromotion === expectedMove;
+
+    if (moveIsCorrect) {
+      setSession({
+        ...session,
+        status: "correct",
+      });
+
+      return true;
+    }
+
+    setSession({
+      ...session,
+      status: "incorrect",
+      mistakes: session.mistakes + 1,
+    });
+
+    return false;
+  }
+
+  function handleShowHint(): void {
+    if (!session) {
+      return;
+    }
+
+    const nextHint =
+      session.hints[visibleHints.length];
+
+    if (!nextHint) {
+      return;
+    }
+
+    setVisibleHints((currentHints) => [
+      ...currentHints,
+      nextHint,
+    ]);
+
+    setSession({
+      ...session,
+      hintsUsed: session.hintsUsed + 1,
+    });
+  }
+
+  function handleReset(): void {
+    setVisibleHints([]);
+    completionRecorded.current = false;
+
+    setSession((currentSession) => {
+      if (!currentSession) {
+        return null;
+      }
+
+      return {
+        ...currentSession,
+        status: "idle",
+        mistakes: 0,
+        hintsUsed: 0,
+        elapsedTime: 0,
+      };
+    });
+  }
+
+  function handleLeaveExercise(): void {
+    clearExerciseSession();
+  }
+
+  if (!session) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gray-950 px-4 text-white">
+        <div className="w-full max-w-xl rounded-3xl border border-gray-800 bg-gray-900 p-8 text-center shadow-2xl">
+          <h1 className="text-2xl font-bold">
+            Aucun exercice sélectionné
+          </h1>
+
+          <p className="mt-3 text-gray-400">
+            Sélectionne un exercice dans la
+            bibliothèque pour commencer une session
+            d’entraînement.
+          </p>
+
+          <Link
+            href="/exercises"
+            className="mt-6 inline-flex rounded-xl bg-blue-600 px-5 py-3 font-semibold transition hover:bg-blue-500"
+          >
+            Ouvrir la bibliothèque
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  const exerciseIsFinished =
+    session.status === "correct";
+  const hintMove =
+    visibleHints.length >= 3
+      ? {
+          from: session.solutionMove.slice(
+            0,
+            2,
+          ),
+          to: session.solutionMove.slice(
+            2,
+            4,
+          ),
+        }
+      : null;
+  const formattedTime = `${Math.floor(
+    session.elapsedTime / 60,
+  )}:${String(
+    session.elapsedTime % 60,
+  ).padStart(2, "0")}`;
+
+  return (
+    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <header className="mb-8 flex flex-wrap items-start justify-between gap-5">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-400">
+              {session.champion
+                ? `Dans la peau de ${session.champion}`
+                : "Mode entraînement"}
+            </p>
+
+            <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
+              {session.title}
+            </h1>
+
+            <p className="mt-3 max-w-2xl text-gray-400">
+              {session.description ??
+                "Trouve le meilleur coup dans cette position."}
+            </p>
+
+            {session.decisionNumber &&
+              session.decisionCount && (
+                <p className="mt-3 text-sm font-semibold text-violet-300">
+                  Décision{" "}
+                  {session.decisionNumber} sur{" "}
+                  {session.decisionCount}
+                </p>
+              )}
+          </div>
+
+          <Link
+            href="/exercises"
+            onClick={handleLeaveExercise}
+            className="rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-semibold text-gray-300 transition hover:bg-gray-900 hover:text-white"
+          >
+            Quitter l’exercice
+          </Link>
+        </header>
+
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <section className="rounded-3xl border border-gray-800 bg-gray-900/50 p-3 shadow-2xl sm:p-5">
+            <ExerciseBoard
+              key={`${session.id}-${session.status}`}
+              startFen={session.startFen}
+              playerColor={session.playerColor}
+              disabled={exerciseIsFinished}
+              hintMove={hintMove}
+              onMovePlayed={handleMovePlayed}
+            />
+          </section>
+
+          <aside className="space-y-5">
+            <section className="rounded-3xl border border-gray-800 bg-gray-900 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold">
+                    À toi de jouer
+                  </h2>
+
+                  <p className="mt-2 text-sm leading-6 text-gray-400">
+                    Les{" "}
+                    {session.playerColor === "white"
+                      ? "Blancs"
+                      : "Noirs"}{" "}
+                    doivent trouver le meilleur coup.
+                  </p>
+                </div>
+
+                <div
+                  className={[
+                    "h-3 w-3 rounded-full",
+                    exerciseIsFinished
+                      ? "bg-emerald-400"
+                      : "animate-pulse bg-blue-400",
+                  ].join(" ")}
+                />
+              </div>
+
+              {session.coachNote && (
+                <div className="mt-5 rounded-2xl border border-violet-800/60 bg-violet-950/25 p-4">
+                  <p className="text-xs font-bold uppercase tracking-wider text-violet-300">
+                    Ton coach
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-violet-100/80">
+                    {session.coachNote}
+                  </p>
+                </div>
+              )}
+
+              {!exerciseIsFinished &&
+                session.status !== "incorrect" && (
+                  <div className="mt-5 rounded-2xl border border-blue-900/70 bg-blue-950/30 p-4">
+                    <p className="text-sm font-semibold text-blue-200">
+                      Déplace directement une pièce
+                      sur l’échiquier.
+                    </p>
+
+                    <p className="mt-1 text-sm text-blue-200/70">
+                      Le coup sera vérifié
+                      automatiquement.
+                    </p>
+                  </div>
+                )}
+
+              {session.status === "correct" && (
+                <div className="mt-5 rounded-2xl border border-emerald-700 bg-emerald-950/40 p-4">
+                  <p className="font-bold text-emerald-300">
+                    Excellent coup !
+                  </p>
+
+                  <p className="mt-1 text-sm leading-6 text-emerald-200/80">
+                    {session.mistakes === 0 &&
+                    session.hintsUsed === 0
+                      ? "Trouvé sans aide : ta lecture de la position est très solide."
+                      : "Bien joué. Reviens sur cette position plus tard pour l’ancrer sans aide."}
+                  </p>
+
+                  <p className="mt-3 text-sm font-semibold text-emerald-200">
+                    Solution :{" "}
+                    {session.solutionSan ??
+                      session.solutionMove}
+                  </p>
+                </div>
+              )}
+
+              {session.status === "incorrect" && (
+                <div className="mt-5 rounded-2xl border border-red-800 bg-red-950/40 p-4">
+                  <p className="font-bold text-red-300">
+                    Ce n’est pas le meilleur coup.
+                  </p>
+
+                  <p className="mt-1 text-sm leading-6 text-red-200/80">
+                    Le coup a été annulé. Analyse
+                    encore la position ou demande un
+                    indice.
+                  </p>
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-3xl border border-gray-800 bg-gray-900 p-5">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="font-bold">
+                  Indices
+                </h2>
+
+                <span className="text-sm text-gray-500">
+                  {session.hintsUsed}/
+                  {session.hints.length}
+                </span>
+              </div>
+
+              {visibleHints.length === 0 && (
+                <p className="mt-3 text-sm leading-6 text-gray-500">
+                  Essaie d’abord de résoudre la
+                  position sans aide.
+                </p>
+              )}
+
+              {visibleHints.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  {visibleHints.map((hint, index) => (
+                    <div
+                      key={`${hint}-${index}`}
+                      className="rounded-xl border border-amber-800/60 bg-amber-950/30 p-3 text-sm leading-6 text-amber-100"
+                    >
+                      <span className="font-bold">
+                        Indice {index + 1} :
+                      </span>{" "}
+                      {hint}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="button"
+                disabled={
+                  exerciseIsFinished ||
+                  visibleHints.length >=
+                    session.hints.length
+                }
+                onClick={handleShowHint}
+                className="mt-4 w-full rounded-xl border border-gray-700 px-4 py-3 font-semibold transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Afficher un indice
+              </button>
+            </section>
+
+            <section className="grid grid-cols-3 gap-3">
+              <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+                <p className="text-sm text-gray-500">
+                  Erreurs
+                </p>
+
+                <p className="mt-1 text-2xl font-bold">
+                  {session.mistakes}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+                <p className="text-sm text-gray-500">
+                  Indices utilisés
+                </p>
+
+                <p className="mt-1 text-2xl font-bold">
+                  {session.hintsUsed}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+                <p className="text-sm text-gray-500">
+                  Temps
+                </p>
+
+                <p className="mt-1 text-2xl font-bold">
+                  {formattedTime}
+                </p>
+              </div>
+            </section>
+
+            <button
+              type="button"
+              onClick={handleReset}
+              className="w-full rounded-xl border border-gray-700 px-4 py-3 font-semibold text-gray-300 transition hover:bg-gray-900 hover:text-white"
+            >
+              Recommencer l’exercice
+            </button>
+
+            {exerciseIsFinished && (
+              <Link
+                href="/exercises"
+                className="flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 font-semibold transition hover:bg-blue-500"
+              >
+                Choisir un autre exercice
+              </Link>
+            )}
+          </aside>
+        </div>
+      </div>
+    </main>
+  );
+}

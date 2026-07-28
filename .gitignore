@@ -1,0 +1,15 @@
+.codex-run/
+.env
+.env.*
+!.env.example
+
+backend/__pycache__/
+backend/**/*.pyc
+backend/.venv/
+backend/engines/*.exe
+
+frontend/node_modules/
+frontend/.next/
+frontend/.data/
+frontend/.env.local
+frontend/*.tsbuildinfo

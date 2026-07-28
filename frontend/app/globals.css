@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.chess-board-live {
+  position: relative;
+  isolation: isolate;
+  transform: translateZ(0);
+}
+
+.chess-board-live > div:first-child {
+  transition:
+    filter 180ms ease,
+    transform 180ms ease;
+}
+
+.chess-move-origin,
+.chess-move-impact {
+  position: absolute;
+  display: grid;
+  place-items: center;
+}
+
+.chess-move-origin::after {
+  width: 42%;
+  height: 42%;
+  content: "";
+  border-radius: 999px;
+  background: rgba(250, 204, 21, 0.6);
+  box-shadow: 0 0 18px rgba(250, 204, 21, 0.65);
+  animation: chess-origin-fade 360ms ease-out forwards;
+}
+
+.chess-move-ripple,
+.chess-move-flash {
+  position: absolute;
+  border-radius: 999px;
+}
+
+.chess-move-ripple {
+  width: 48%;
+  height: 48%;
+  border: max(2px, 0.22vw) solid rgba(96, 165, 250, 0.95);
+  box-shadow:
+    0 0 16px rgba(59, 130, 246, 0.75),
+    inset 0 0 12px rgba(147, 197, 253, 0.55);
+  animation: chess-impact-ripple 460ms cubic-bezier(0.2, 0.8, 0.2, 1)
+    forwards;
+}
+
+.chess-move-flash {
+  width: 58%;
+  height: 58%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(96, 165, 250, 0.58) 30%,
+    transparent 72%
+  );
+  animation: chess-impact-flash 380ms ease-out forwards;
+}
+
+.chess-move-impact--capture .chess-move-ripple {
+  border-color: rgba(251, 146, 60, 0.98);
+  box-shadow:
+    0 0 22px rgba(249, 115, 22, 0.9),
+    inset 0 0 15px rgba(253, 186, 116, 0.65);
+}
+
+.chess-move-impact--capture .chess-move-flash {
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(251, 146, 60, 0.85) 28%,
+    rgba(239, 68, 68, 0.35) 52%,
+    transparent 75%
+  );
+}
+
+.chess-capture-particle {
+  --particle-angle: 0deg;
+  --particle-delay: 0ms;
+  position: absolute;
+  width: 10%;
+  height: 10%;
+  border-radius: 35% 65% 45% 55%;
+  background: linear-gradient(135deg, #fff7ed, #fb923c 55%, #ef4444);
+  box-shadow: 0 0 8px rgba(251, 146, 60, 0.9);
+  opacity: 0;
+  animation: chess-capture-particle 480ms
+    cubic-bezier(0.16, 0.84, 0.32, 1) var(--particle-delay) forwards;
+}
+
+@keyframes chess-origin-fade {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.75);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.75);
+  }
+}
+
+@keyframes chess-impact-ripple {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.25);
+  }
+  65% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.05);
+  }
+}
+
+@keyframes chess-impact-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.25) rotate(-12deg);
+  }
+  28% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.45) rotate(8deg);
+  }
+}
+
+@keyframes chess-capture-particle {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--particle-angle)) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--particle-angle)) translateY(-220%) scale(0.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chess-move-origin,
+  .chess-move-ripple,
+  .chess-move-flash,
+  .chess-capture-particle {
+    display: none;
+    animation: none;
+  }
+}
