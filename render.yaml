@@ -34,16 +34,6 @@ services:
           property: connectionString
       - key: AUTH_SECRET
         generateValue: true
-      - key: AUTH_GOOGLE_ID
-        sync: false
-      - key: AUTH_GOOGLE_SECRET
-        sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_PRICE_ID
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
 
 databases:
   - name: chess-coach-db
