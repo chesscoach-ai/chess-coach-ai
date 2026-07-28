@@ -51,6 +51,3 @@ databases:
     plan: free
     databaseName: chess_coach
     user: chess_coach
-
-previews:
-  generation: manual
