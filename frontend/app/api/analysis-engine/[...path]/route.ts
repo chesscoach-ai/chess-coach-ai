@@ -39,9 +39,13 @@ export async function POST(
       return Response.json({ detail: "Route d’analyse inconnue." }, { status: 404 });
     }
 
-    const backendHost =
-      process.env.BACKEND_HOSTPORT ?? "127.0.0.1:8000";
-    const response = await fetch(`http://${backendHost}/${endpoint}`, {
+    const backendUrl = (
+      process.env.BACKEND_URL ??
+      (process.env.BACKEND_HOSTPORT
+        ? `http://${process.env.BACKEND_HOSTPORT}`
+        : "http://127.0.0.1:8000")
+    ).replace(/\/$/, "");
+    const response = await fetch(`${backendUrl}/${endpoint}`, {
       method: "POST",
       headers: {
         Accept: "application/json",

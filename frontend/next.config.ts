@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
-const backendHost =
-  process.env.BACKEND_HOSTPORT ?? "127.0.0.1:8000";
+const backendUrl = (
+  process.env.BACKEND_URL ??
+  (process.env.BACKEND_HOSTPORT
+    ? `http://${process.env.BACKEND_HOSTPORT}`
+    : "http://127.0.0.1:8000")
+).replace(/\/$/, "");
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -9,7 +13,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/backend-api/:path*",
-        destination: `http://${backendHost}/:path*`,
+        destination: `${backendUrl}/:path*`,
       },
     ];
   },
