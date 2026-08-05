@@ -33,7 +33,7 @@ export default async function Home() {
             />
             <div className="min-w-0">
               <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-blue-400 sm:text-xs sm:tracking-[0.22em]">
-                Joue · Progresse · Conquiers
+                Deviens le roi des échecs !
               </p>
               <h1 className="truncate text-xl font-black text-white sm:mt-1 sm:text-3xl">
                 Chess Clan

@@ -15,10 +15,12 @@ import MoveEffects, {
 } from "@/components/ChessBoard/MoveEffects";
 import {
   BoardModeToggle,
+  getBoardPalette,
   getChessPieceRole,
   MEDIEVAL_PIECES,
   useBoardVisualMode,
 } from "@/components/ChessBoard/MedievalBoard";
+import { useTapToMove } from "@/components/ChessBoard/useTapToMove";
 import { useChessSounds } from "@/hooks/useChessSounds";
 import type { ChessGameController } from "@/hooks/useChessGame";
 import type { MoveClassification } from "@/services/api/ApiService";
@@ -113,6 +115,19 @@ export default function ChessBoard({
   } = useBoardVisualMode();
   const playChessSound =
     useChessSounds();
+  const sideToMove =
+    game.fen.split(" ")[1] === "b"
+      ? "black"
+      : "white";
+  const canInteract =
+    !interactionDisabled &&
+    (playerColor === null ||
+      sideToMove === playerColor);
+  const tapToMove = useTapToMove({
+    fen: game.fen,
+    enabled: canInteract,
+    onMove: handlePieceDrop,
+  });
   const lastAnimatedPosition =
     useRef(
       game.currentMove?.fenAfter ?? null,
@@ -196,10 +211,10 @@ export default function ChessBoard({
     if (!targetSquare) {
       return false;
     }
-    const turn = game.fen.split(" ")[1] === "b" ? "black" : "white";
     if (
       interactionDisabled ||
-      (playerColor !== null && turn !== playerColor)
+      (playerColor !== null &&
+        sideToMove !== playerColor)
     ) {
       return false;
     }
@@ -387,32 +402,29 @@ export default function ChessBoard({
       suggestedMoveSquareStyle;
   }
 
+  Object.assign(
+    squareStyles,
+    tapToMove.squareStyles,
+  );
+
+  const boardPalette =
+    getBoardPalette(boardVisualMode);
+
   const chessboardOptions = {
     position: game.fen,
     onPieceDrop: handlePieceDrop,
     boardOrientation: playerColor ?? ("white" as const),
     allowDragging:
-      !interactionDisabled &&
-      (playerColor === null ||
-        (game.fen.split(" ")[1] === "b" ? "black" : "white") ===
-          playerColor),
+      canInteract,
+    onSquareClick:
+      tapToMove.onSquareClick,
     animationDurationInMs: 260,
     showNotation: true,
     squareStyles,
     arrows,
     allowDrawingArrows: mode === "analysis",
-    darkSquareStyle: {
-      backgroundColor:
-        boardVisualMode === "medieval"
-          ? "#4f3926"
-          : "#4b5563",
-    },
-    lightSquareStyle: {
-      backgroundColor:
-        boardVisualMode === "medieval"
-          ? "#c9a86a"
-          : "#d1d5db",
-    },
+    darkSquareStyle: boardPalette.dark,
+    lightSquareStyle: boardPalette.light,
     pieces:
       boardVisualMode === "medieval"
         ? MEDIEVAL_PIECES
@@ -450,6 +462,11 @@ export default function ChessBoard({
           visualMode={boardVisualMode}
         />
       </div>
+
+      <p className="board-touch-hint">
+        <span aria-hidden="true">☝</span>
+        Touche une pièce pour afficher ses coups, puis touche sa destination.
+      </p>
 
       <div className="mt-5 rounded-xl bg-gray-900 p-4">
         <div className="flex flex-wrap items-start justify-between gap-4">

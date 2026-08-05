@@ -15,10 +15,12 @@ import MoveEffects, {
 } from "@/components/ChessBoard/MoveEffects";
 import {
   BoardModeToggle,
+  getBoardPalette,
   getChessPieceRole,
   MEDIEVAL_PIECES,
   useBoardVisualMode,
 } from "@/components/ChessBoard/MedievalBoard";
+import { useTapToMove } from "@/components/ChessBoard/useTapToMove";
 import { useChessSounds } from "@/hooks/useChessSounds";
 import { getCheckmateAside } from "@/lib/content/playfulVoice";
 import type {
@@ -86,6 +88,11 @@ export default function OnlineMatch({
     game.status === "active" &&
     game.youAre === game.turn &&
     !isMovePending;
+  const tapToMove = useTapToMove({
+    fen: displayedFen,
+    enabled: canMove,
+    onMove: handlePieceDrop,
+  });
   const lastMove = game.moves.at(-1);
 
   useEffect(() => {
@@ -133,7 +140,7 @@ export default function OnlineMatch({
     lastMove,
     playChessSound,
   ]);
-  const squareStyles = useMemo<Record<string, CSSProperties>>(() => {
+  const lastMoveSquareStyles = useMemo<Record<string, CSSProperties>>(() => {
     if (!lastMove) return {};
     const style: CSSProperties = {
       background:
@@ -141,6 +148,18 @@ export default function OnlineMatch({
     };
     return { [lastMove.from]: style, [lastMove.to]: style };
   }, [lastMove]);
+  const squareStyles = useMemo(
+    () => ({
+      ...lastMoveSquareStyles,
+      ...tapToMove.squareStyles,
+    }),
+    [
+      lastMoveSquareStyles,
+      tapToMove.squareStyles,
+    ],
+  );
+  const boardPalette =
+    getBoardPalette(boardVisualMode);
 
   function handlePieceDrop({
     sourceSquare,
@@ -201,52 +220,52 @@ export default function OnlineMatch({
       )}
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div
-          className={[
-            "chess-board-live w-full max-w-xl overflow-hidden rounded-2xl shadow-2xl",
-            boardVisualMode === "medieval"
-              ? "chess-board-live--medieval"
-              : "",
-          ].join(" ")}
-        >
-          <BoardModeToggle
-            mode={boardVisualMode}
-            onToggle={toggleBoardVisualMode}
-          />
-          <Chessboard
-            options={{
+        <div className="w-full max-w-xl space-y-3">
+          <div
+            className={[
+              "chess-board-live overflow-hidden rounded-2xl shadow-2xl",
+              boardVisualMode === "medieval"
+                ? "chess-board-live--medieval"
+                : "",
+            ].join(" ")}
+          >
+            <BoardModeToggle
+              mode={boardVisualMode}
+              onToggle={toggleBoardVisualMode}
+            />
+            <Chessboard
+              options={{
               position: displayedFen,
               onPieceDrop: handlePieceDrop,
+              onSquareClick:
+                tapToMove.onSquareClick,
               boardOrientation: game.youAre,
               allowDragging: canMove,
               allowDrawingArrows: false,
               animationDurationInMs: 260,
               showNotation: true,
               squareStyles,
-              darkSquareStyle: {
-                backgroundColor:
-                  boardVisualMode === "medieval"
-                    ? "#4f3926"
-                    : "#4b5563",
-              },
-              lightSquareStyle: {
-                backgroundColor:
-                  boardVisualMode === "medieval"
-                    ? "#c9a86a"
-                    : "#d1d5db",
-              },
+              darkSquareStyle:
+                boardPalette.dark,
+              lightSquareStyle:
+                boardPalette.light,
               pieces:
                 boardVisualMode ===
                 "medieval"
                   ? MEDIEVAL_PIECES
                   : undefined,
-            }}
-          />
-          <MoveEffects
-            move={moveEffect}
-            orientation={game.youAre}
-            visualMode={boardVisualMode}
-          />
+              }}
+            />
+            <MoveEffects
+              move={moveEffect}
+              orientation={game.youAre}
+              visualMode={boardVisualMode}
+            />
+          </div>
+          <p className="board-touch-hint">
+            <span aria-hidden="true">☝</span>
+            Touche une pièce, puis sa destination.
+          </p>
         </div>
 
         <aside className="space-y-4 xl:sticky xl:top-24">

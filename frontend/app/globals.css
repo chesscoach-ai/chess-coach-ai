@@ -92,15 +92,31 @@ summary {
 
 .chess-board-live--medieval {
   overflow: visible;
-  border: clamp(5px, 1.3vw, 10px) solid #352515;
+  border: clamp(7px, 1.55vw, 12px) solid #352515;
   border-radius: 1.15rem;
-  background: #21170f;
+  background:
+    linear-gradient(135deg, rgba(255, 227, 156, 0.14), transparent 24%),
+    repeating-linear-gradient(92deg, #3b2817 0 18px, #322112 18px 38px);
   box-shadow:
-    0 2px 0 #8b6a37 inset,
-    0 12px 0 #1a110a,
-    0 22px 38px rgba(0, 0, 0, 0.55),
-    0 0 44px rgba(245, 158, 11, 0.12);
-  perspective: 950px;
+    0 2px 0 #a8874e inset,
+    0 -2px 0 #1b1008 inset,
+    0 14px 0 #160e08,
+    0 25px 42px rgba(0, 0, 0, 0.62),
+    0 0 54px rgba(37, 99, 235, 0.14);
+  perspective: 1100px;
+}
+
+.chess-board-live--medieval::before {
+  position: absolute;
+  inset: -3.5%;
+  z-index: -2;
+  content: "";
+  border-radius: 1.75rem;
+  background:
+    radial-gradient(circle at 15% 85%, rgba(29, 78, 216, 0.34), transparent 34%),
+    radial-gradient(circle at 85% 18%, rgba(245, 158, 11, 0.2), transparent 30%);
+  filter: blur(16px);
+  pointer-events: none;
 }
 
 .chess-board-live--medieval > div:first-of-type {
@@ -108,8 +124,11 @@ summary {
   border-radius: 0.55rem;
   filter: saturate(0.92) sepia(0.08)
     contrast(1.04);
-  transform: rotateX(0.6deg)
-    translateZ(0);
+  box-shadow:
+    0 0 0 1px rgba(254, 243, 199, 0.2),
+    inset 0 0 34px rgba(35, 19, 7, 0.18);
+  transform: rotateX(3.4deg)
+    translateY(-0.3%) translateZ(0);
   transform-origin: center bottom;
 }
 
@@ -120,10 +139,41 @@ summary {
   height: 100%;
   place-items: center;
   border-radius: 46% 46% 38% 38%;
-  transform: translateY(-2%) scale(0.92);
+  transform: translateY(-5%) scale(0.92);
   transform-origin: center bottom;
-  filter: drop-shadow(0 8px 3px rgba(0, 0, 0, 0.46));
+  filter:
+    drop-shadow(0 8px 3px rgba(0, 0, 0, 0.48))
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.16));
   user-select: none;
+}
+
+.medieval-piece__base {
+  position: absolute;
+  right: 17%;
+  bottom: 5%;
+  left: 17%;
+  z-index: 1;
+  height: 20%;
+  border-radius: 48% 48% 38% 38%;
+  transform: perspective(80px) rotateX(58deg);
+}
+
+.medieval-piece--ivory
+  .medieval-piece__base {
+  border: 1px solid rgba(255, 248, 218, 0.72);
+  background: linear-gradient(180deg, #fff7d6, #b08b4a 54%, #4e351d);
+  box-shadow:
+    0 3px 0 #4a321c,
+    0 7px 8px rgba(0, 0, 0, 0.38);
+}
+
+.medieval-piece--obsidian
+  .medieval-piece__base {
+  border: 1px solid rgba(126, 147, 184, 0.6);
+  background: linear-gradient(180deg, #65738c, #273349 50%, #080d16);
+  box-shadow:
+    0 3px 0 #050810,
+    0 7px 8px rgba(0, 0, 0, 0.5);
 }
 
 .medieval-piece::after {
@@ -147,7 +197,24 @@ summary {
   font-size: clamp(2rem, 8.4vw, 4.6rem);
   font-weight: 900;
   line-height: 1;
-  transform: scaleX(0.9);
+  transform: translateY(-3%) scaleX(0.9);
+}
+
+.medieval-piece--pawn
+  .medieval-piece__glyph {
+  transform: translateY(1%) scale(0.84);
+}
+
+.medieval-piece--knight
+  .medieval-piece__glyph {
+  transform: translateY(-4%) rotate(-2deg) scaleX(0.94);
+}
+
+.medieval-piece--queen
+  .medieval-piece__glyph,
+.medieval-piece--king
+  .medieval-piece__glyph {
+  transform: translateY(-6%) scale(1.02);
 }
 
 .medieval-piece--ivory
@@ -188,6 +255,17 @@ summary {
   font-weight: 900;
   letter-spacing: -0.08em;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
+}
+
+.board-touch-hint {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  line-height: 1.2rem;
+  text-align: center;
 }
 
 .chess-move-impact--medieval
@@ -489,11 +567,21 @@ summary {
   }
 
   .chess-board-live--medieval {
-    border-width: 5px;
+    border-width: 6px;
     box-shadow:
       0 2px 0 #8b6a37 inset,
-      0 7px 0 #1a110a,
-      0 14px 24px rgba(0, 0, 0, 0.45);
+      0 8px 0 #1a110a,
+      0 15px 26px rgba(0, 0, 0, 0.5);
+  }
+
+  .chess-board-live--medieval
+    > div:first-of-type {
+    transform: rotateX(1.4deg)
+      translateZ(0);
+  }
+
+  .board-touch-hint {
+    display: flex;
   }
 }
 
