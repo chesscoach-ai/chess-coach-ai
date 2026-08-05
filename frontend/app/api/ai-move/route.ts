@@ -60,8 +60,10 @@ export async function POST(request: Request) {
       }),
       body: JSON.stringify({
         fen: parsed.data.fen,
-        depth: level.depth,
-        multipv: Math.max(3, level.candidateCount),
+        // Un adversaire doit répondre vite : les grandes profondeurs et
+        // les variantes inutiles sont réservées à l'analyse détaillée.
+        depth: Math.min(level.depth, 14),
+        multipv: level.candidateCount,
       }),
       cache: "no-store",
     });

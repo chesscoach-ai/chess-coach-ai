@@ -17,6 +17,7 @@ import {
 
 import type {
   ExerciseMove,
+  ExerciseMoveResult,
   ExerciseSession,
 } from "@/types/exercise";
 import {
@@ -43,6 +44,8 @@ export default function ExerciseTrainer() {
 
   const [visibleHints, setVisibleHints] =
     useState<string[]>([]);
+  const [boardResetKey, setBoardResetKey] =
+    useState(0);
   const completionRecorded =
     useRef(false);
   const sessionId = session?.id;
@@ -147,14 +150,29 @@ export default function ExerciseTrainer() {
 
   function handleMovePlayed(
     move: ExerciseMove,
-  ): boolean {
+  ): ExerciseMoveResult {
     if (!session || session.status === "correct") {
-      return false;
+      return { correct: false };
     }
 
     const playedMove = convertMoveToUci(move);
+    const solutionLine =
+      session.solutionLine?.length
+        ? session.solutionLine
+        : [
+            {
+              uci: session.solutionMove,
+              san:
+                session.solutionSan ??
+                session.solutionMove,
+            },
+          ];
+    const currentPly = session.currentPly ?? 0;
+    const expected =
+      solutionLine[currentPly] ??
+      solutionLine[0];
     const expectedMove =
-      session.solutionMove.trim().toLowerCase();
+      expected?.uci.trim().toLowerCase() ?? "";
 
     /*
      * Pour les coups classiques, la solution peut
@@ -171,12 +189,25 @@ export default function ExerciseTrainer() {
       moveWithoutPromotion === expectedMove;
 
     if (moveIsCorrect) {
+      const opponent =
+        solutionLine[currentPly + 1];
+      const nextPlayerPly =
+        currentPly +
+        (opponent ? 2 : 1);
+      const exerciseComplete =
+        nextPlayerPly >= solutionLine.length;
       setSession({
         ...session,
-        status: "correct",
+        currentPly: nextPlayerPly,
+        status: exerciseComplete
+          ? "correct"
+          : "idle",
       });
 
-      return true;
+      return {
+        correct: true,
+        opponentMove: opponent?.uci,
+      };
     }
 
     setSession({
@@ -185,7 +216,7 @@ export default function ExerciseTrainer() {
       mistakes: session.mistakes + 1,
     });
 
-    return false;
+    return { correct: false };
   }
 
   function handleShowHint(): void {
@@ -213,6 +244,7 @@ export default function ExerciseTrainer() {
 
   function handleReset(): void {
     setVisibleHints([]);
+    setBoardResetKey((value) => value + 1);
     completionRecorded.current = false;
 
     setSession((currentSession) => {
@@ -226,6 +258,7 @@ export default function ExerciseTrainer() {
         mistakes: 0,
         hintsUsed: 0,
         elapsedTime: 0,
+        currentPly: 0,
       };
     });
   }
@@ -261,14 +294,39 @@ export default function ExerciseTrainer() {
 
   const exerciseIsFinished =
     session.status === "correct";
+  const solutionLine =
+    session.solutionLine?.length
+      ? session.solutionLine
+      : [
+          {
+            uci: session.solutionMove,
+            san:
+              session.solutionSan ??
+              session.solutionMove,
+          },
+        ];
+  const playerMoveCount = Math.ceil(
+    solutionLine.length / 2,
+  );
+  const currentPlayerMove = Math.min(
+    playerMoveCount,
+    Math.floor((session.currentPly ?? 0) / 2) + 1,
+  );
+  const expectedHintMove =
+    solutionLine[
+      Math.min(
+        session.currentPly ?? 0,
+        solutionLine.length - 1,
+      )
+    ]?.uci ?? session.solutionMove;
   const hintMove =
     visibleHints.length >= 3
       ? {
-          from: session.solutionMove.slice(
+          from: expectedHintMove.slice(
             0,
             2,
           ),
-          to: session.solutionMove.slice(
+          to: expectedHintMove.slice(
             2,
             4,
           ),
@@ -322,7 +380,7 @@ export default function ExerciseTrainer() {
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
           <section className="rounded-3xl border border-gray-800 bg-gray-900/50 p-3 shadow-2xl sm:p-5">
             <ExerciseBoard
-              key={`${session.id}-${session.status}`}
+              key={`${session.id}-${boardResetKey}`}
               startFen={session.startFen}
               playerColor={session.playerColor}
               disabled={exerciseIsFinished}
@@ -346,6 +404,11 @@ export default function ExerciseTrainer() {
                       : "Noirs"}{" "}
                     doivent trouver le meilleur coup.
                   </p>
+                  {playerMoveCount > 1 && !exerciseIsFinished && (
+                    <p className="mt-2 text-xs font-bold uppercase tracking-[0.12em] text-blue-300">
+                      Coup {currentPlayerMove} sur {playerMoveCount}
+                    </p>
+                  )}
                 </div>
 
                 <div
@@ -399,8 +462,9 @@ export default function ExerciseTrainer() {
 
                   <p className="mt-3 text-sm font-semibold text-emerald-200">
                     Solution :{" "}
-                    {session.solutionSan ??
-                      session.solutionMove}
+                    {solutionLine
+                      .map((move) => move.san)
+                      .join(" → ")}
                   </p>
                 </div>
               )}

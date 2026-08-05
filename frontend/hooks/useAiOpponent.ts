@@ -84,7 +84,7 @@ export function useAiOpponent(
       } finally {
         if (!controller.signal.aborted) setIsThinking(false);
       }
-    }, 450);
+    }, 120);
 
     return () => {
       window.clearTimeout(timer);

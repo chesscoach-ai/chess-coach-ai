@@ -62,6 +62,34 @@ export async function buildStockfishExercise(
     );
   }
 
+  const bestLine = analysis.moves.find(
+    (move) =>
+      move.uci.toLowerCase() ===
+      analysis.best_move.toLowerCase(),
+  );
+  const variationUci =
+    bestLine?.principal_variation_uci.length
+      ? bestLine.principal_variation_uci
+      : [analysis.best_move];
+  const variationSan =
+    bestLine?.principal_variation ??
+    [analysis.best_move_san];
+  const lineLength = Math.max(
+    1,
+    Math.min(
+      5,
+      variationUci.length % 2 === 0
+        ? variationUci.length - 1
+        : variationUci.length,
+    ),
+  );
+  const solutionLine = variationUci
+    .slice(0, lineLength)
+    .map((uci, index) => ({
+      uci: uci.toLowerCase(),
+      san: variationSan[index] ?? uci,
+    }));
+
   /*
    * On remplace la solution issue du PGN
    * par la véritable solution Stockfish.
@@ -74,6 +102,8 @@ export async function buildStockfishExercise(
       analysis.best_move.toLowerCase(),
     solutionSan:
       analysis.best_move_san,
+    solutionLine,
+    currentPly: 0,
     coachNote: options.coachNote,
     champion: options.champion,
     decisionNumber:

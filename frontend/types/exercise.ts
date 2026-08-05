@@ -6,6 +6,11 @@ export type ExerciseStatus =
   | "incorrect"
   | "completed";
 
+export type ExerciseLineMove = {
+  uci: string;
+  san: string;
+};
+
 export interface ExerciseSession {
   id: string;
   sourceExampleId?: string;
@@ -23,6 +28,8 @@ export interface ExerciseSession {
    */
   solutionMove: string;
   solutionSan?: string;
+  solutionLine?: ExerciseLineMove[];
+  currentPly?: number;
   coachNote?: string;
   champion?: string;
   decisionNumber?: number;
@@ -45,3 +52,8 @@ export interface ExerciseMove {
   to: string;
   promotion?: string;
 }
+
+export type ExerciseMoveResult = {
+  correct: boolean;
+  opponentMove?: string;
+};

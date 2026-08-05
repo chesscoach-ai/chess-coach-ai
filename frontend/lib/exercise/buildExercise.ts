@@ -73,19 +73,17 @@ export function buildExercise(
     );
   }
 
-  /*
-   * chess.js 1.4.0 fournit directement :
-   *
-   * solution.before = FEN avant le coup
-   * solution.after  = FEN après le coup
-   * solution.from   = case de départ
-   * solution.to     = case d’arrivée
-   * solution.lan    = notation longue
-   *
-   * Nous n’avons donc aucun coup à rejouer.
-   */
+  // Le dernier coup du PGN est la décision pédagogique préparée par
+  // l'auteur de l'exercice. Les variantes Stockfish, elles, peuvent
+  // proposer une séquence plus longue.
   const startFen = solution.before;
   const solutionMove = moveToUci(solution);
+  const solutionLine = [
+    {
+      uci: solutionMove,
+      san: solution.san,
+    },
+  ];
 
   if (!startFen) {
     throw new Error(
@@ -112,6 +110,12 @@ export function buildExercise(
     startFen,
 
     solutionMove,
+
+    solutionSan: solution.san,
+
+    solutionLine,
+
+    currentPly: 0,
 
     playerColor:
       position.turn() === "w"

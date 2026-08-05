@@ -32,14 +32,8 @@ const MASTERY_KEY =
   "chess-coach:mastery-stars";
 
 export default function DailyCoachMission({
-  moveCount,
-  hasPositionAnalysis,
-  reviewedMoveCount,
   profile,
 }: {
-  moveCount: number;
-  hasPositionAnalysis: boolean;
-  reviewedMoveCount: number;
   profile: LearningProfile | null;
 }) {
   const router = useRouter();
@@ -76,10 +70,7 @@ export default function DailyCoachMission({
           readMasteryStars(),
         );
 
-        if (
-          moveCount === 0 &&
-          detailsRef.current
-        ) {
+        if (detailsRef.current) {
           detailsRef.current.open =
             true;
         }
@@ -106,7 +97,6 @@ export default function DailyCoachMission({
     return () =>
       window.clearTimeout(timer);
   }, [
-    moveCount,
     plan.date,
     plan.exercise.id,
     plan.id,
@@ -114,16 +104,9 @@ export default function DailyCoachMission({
 
   const quizCompleted =
     state.answer !== null;
-  const applicationCompleted =
-    moveCount >= 4;
-  const reviewCompleted =
-    hasPositionAnalysis &&
-    reviewedMoveCount > 0;
   const completed = [
     quizCompleted,
     exerciseCompleted,
-    applicationCompleted,
-    reviewCompleted,
   ];
   const completedCount =
     completed.filter(Boolean).length;
@@ -193,15 +176,6 @@ export default function DailyCoachMission({
     );
   }
 
-  function goTo(id: string): void {
-    document
-      .getElementById(id)
-      ?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-  }
-
   function claimReward(): void {
     if (
       !missionCompleted ||
@@ -241,7 +215,7 @@ export default function DailyCoachMission({
               Session du jour
             </p>
             <span className="rounded-full bg-blue-500/15 px-2 py-0.5 text-[10px] font-bold text-blue-200">
-              7 min
+              5 min
             </span>
             <span className="rounded-full border border-amber-700/50 bg-amber-950/30 px-2 py-0.5 text-[10px] font-bold text-amber-200">
               ★ {masteryStars}
@@ -252,7 +226,7 @@ export default function DailyCoachMission({
             {plan.focusLabel}
           </p>
           <p className="mt-0.5 hidden text-xs text-gray-400 sm:block">
-            Une idée, une position, quatre coups puis un débrief.
+            Une idée à comprendre, puis une position à résoudre.
           </p>
           <div className="mt-2 flex items-center gap-2">
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-800">
@@ -264,7 +238,7 @@ export default function DailyCoachMission({
               />
             </div>
             <span className="text-[11px] font-bold tabular-nums text-gray-400">
-              {completedCount}/4
+              {completedCount}/2
             </span>
           </div>
         </div>
@@ -274,7 +248,7 @@ export default function DailyCoachMission({
       </summary>
 
       <div className="border-t border-blue-900/50 p-3 sm:p-4">
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           <MissionStep
             number={1}
             title="Comprends l’idée"
@@ -367,63 +341,6 @@ export default function DailyCoachMission({
             </button>
           </MissionStep>
 
-          <MissionStep
-            number={3}
-            title="Applique sur l’échiquier"
-            subtitle="Joue au moins quatre coups"
-            complete={applicationCompleted}
-            active={
-              exerciseCompleted &&
-              !applicationCompleted
-            }
-            locked={!exerciseCompleted}
-          >
-            <p className="text-xs leading-5 text-gray-400">
-              {plan.concept.action}
-            </p>
-            <button
-              type="button"
-              disabled={!exerciseCompleted}
-              onClick={() =>
-                goTo("game-board")
-              }
-              className="mt-3 w-full rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-bold text-gray-200 transition hover:border-blue-600 hover:bg-blue-950/25 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {applicationCompleted
-                ? `${moveCount} coups joués ✓`
-                : "Revenir à l’échiquier"}
-            </button>
-          </MissionStep>
-
-          <MissionStep
-            number={4}
-            title="Fais parler le coach"
-            subtitle="Analyse au moins une décision"
-            complete={reviewCompleted}
-            active={
-              applicationCompleted &&
-              !reviewCompleted
-            }
-            locked={!applicationCompleted}
-          >
-            <p className="text-xs leading-5 text-gray-400">
-              Compare ton intention au meilleur plan. Une erreur comprise vaut mieux que dix coups joués en pilote automatique.
-            </p>
-            <button
-              type="button"
-              disabled={
-                !applicationCompleted
-              }
-              onClick={() =>
-                goTo("move-review")
-              }
-              className="mt-3 w-full rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-bold text-gray-200 transition hover:border-violet-600 hover:bg-violet-950/25 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {reviewCompleted
-                ? "Leçon retenue ✓"
-                : "Ouvrir le débrief"}
-            </button>
-          </MissionStep>
         </div>
 
         <div
@@ -443,7 +360,7 @@ export default function DailyCoachMission({
                 ? "Étoile de maîtrise récupérée"
                 : missionCompleted
                   ? "Le coffre est prêt à être ouvert"
-                  : `${4 - completedCount} étape${4 - completedCount > 1 ? "s" : ""} avant la récompense`}
+                  : `${2 - completedCount} étape${2 - completedCount > 1 ? "s" : ""} avant la récompense`}
             </p>
             <p className="mt-0.5 text-xs text-gray-500">
               Les étoiles représentent ton apprentissage et ne modifient jamais ton Elo.

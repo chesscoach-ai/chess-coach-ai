@@ -407,13 +407,6 @@ export default function GameWorkspace({
 
       <DailyCoachMission
         profile={learningProfile}
-        moveCount={game.moves.length}
-        hasPositionAnalysis={Boolean(
-          positionAnalysis.currentPositionAnalysis,
-        )}
-        reviewedMoveCount={
-          Object.keys(reviews.moveReviews).length
-        }
       />
 
       {reviewGameId && (
