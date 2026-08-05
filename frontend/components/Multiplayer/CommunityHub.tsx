@@ -122,26 +122,26 @@ export default function CommunityHub({
   const currentBanner = getBattleBanner(dashboard.profile.bannerId ?? "");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <section
         className={[
-          "overflow-hidden rounded-2xl border bg-gradient-to-br p-6",
+          "overflow-hidden rounded-2xl border bg-gradient-to-br p-4 sm:p-5",
           currentBanner.panelClass,
         ].join(" ")}
       >
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <Image
             src={currentAvatar.image}
             alt={currentAvatar.name}
-            width={128}
-            height={128}
-            className="h-28 w-28 rounded-2xl border border-violet-500/50 object-cover shadow-xl"
+            width={96}
+            height={96}
+            className="h-20 w-20 rounded-xl border border-violet-500/50 object-cover shadow-xl sm:h-24 sm:w-24"
           />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">
               Profil de chevalier
             </p>
-            <h2 className="mt-1 text-3xl font-black text-white">
+            <h2 className="mt-1 text-2xl font-black text-white">
               {dashboard.profile.name}
             </h2>
             <p className="mt-1 text-sm text-gray-400">
@@ -160,64 +160,41 @@ export default function CommunityHub({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-            Collection
-          </p>
-          <h2 className="mt-1 text-xl font-bold text-white">
-            Tes chevaliers
-          </h2>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-          {COMMUNITY_AVATARS.map((avatar) => {
-            const unlocked =
-              dashboard.profile.rating >= avatar.requiredRating;
-            const selected = dashboard.profile.avatarId === avatar.id;
-            return (
-              <button
-                key={avatar.id}
-                type="button"
-                disabled={!unlocked || isLoading}
-                onClick={() =>
-                  void mutate("/api/community/avatar", {
-                    method: "PATCH",
-                    body: JSON.stringify({ avatarId: avatar.id }),
-                  })
-                }
-                className={[
-                  "rounded-xl border p-3 text-left transition",
-                  selected
-                    ? "border-violet-500 bg-violet-950/35"
-                    : unlocked
-                      ? "border-gray-700 bg-gray-950/60 hover:border-violet-700"
-                      : "border-gray-800 bg-gray-950/30 opacity-55",
-                ].join(" ")}
-              >
-                <Image
-                  src={avatar.image}
-                  alt=""
-                  width={128}
-                  height={128}
-                  className="aspect-square w-full rounded-lg object-cover"
-                />
-                <p className="mt-2 text-sm font-bold text-white">
-                  {avatar.name}
-                </p>
-                <p className="mt-0.5 text-xs text-gray-500">
-                  {unlocked
-                    ? selected
-                      ? "Équipé"
-                      : avatar.rarity
-                    : `Débloqué à ${avatar.requiredRating} Elo`}
-                </p>
-              </button>
-            );
-          })}
+      <section className="rounded-2xl border border-blue-900/60 bg-gradient-to-r from-blue-950/35 via-gray-900 to-red-950/25 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">
+              Place du clan
+            </p>
+            <h2 className="mt-1 text-xl font-black text-white">
+              Retrouve ta troupe, puis pars au combat
+            </h2>
+            <p className="mt-1 text-sm text-gray-400">
+              Tes amis et ton clan restent à portée de clic. Le reste peut attendre la fin du duel.
+            </p>
+          </div>
+          <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:min-w-[28rem]">
+            <SocialShortcut
+              href="#community-friends"
+              icon="♞"
+              eyebrow="Cercle d’amis"
+              title={`${dashboard.friends.length} ami${dashboard.friends.length > 1 ? "s" : ""}`}
+              description="Ajouter, comparer, défier"
+              color="blue"
+            />
+            <SocialShortcut
+              href="#community-clan"
+              icon="⚔"
+              eyebrow="Mon clan"
+              title={dashboard.clan ? `[${dashboard.clan.tag}] ${dashboard.clan.name}` : "Trouver ma bannière"}
+              description={dashboard.clan ? `${dashboard.clan.monthlyPoints} points ce mois` : "Créer ou rejoindre un clan"}
+              color="red"
+            />
+          </div>
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid items-start gap-5 xl:grid-cols-[0.85fr_1.15fr]">
         <FriendsPanel
           friends={dashboard.friends}
           isLoading={isLoading}
@@ -228,18 +205,30 @@ export default function CommunityHub({
             })
           }
         />
-        <LeaguePanel dashboard={dashboard} />
+        <ClanPanel
+          clan={dashboard.clan}
+          expedition={dashboard.clanExpedition}
+          leaderboard={dashboard.clanLeaderboard}
+          isLoading={isLoading}
+          onAction={(body) =>
+            mutate("/api/community/clans", {
+              method: "POST",
+              body: JSON.stringify(body),
+            })
+          }
+        />
       </div>
 
-      <ClanPanel
-        clan={dashboard.clan}
-        expedition={dashboard.clanExpedition}
-        leaderboard={dashboard.clanLeaderboard}
+      <LeaguePanel dashboard={dashboard} />
+
+      <AvatarCollection
+        rating={dashboard.profile.rating}
+        selectedAvatarId={dashboard.profile.avatarId}
         isLoading={isLoading}
-        onAction={(body) =>
-          mutate("/api/community/clans", {
-            method: "POST",
-            body: JSON.stringify(body),
+        onSelect={(avatarId) =>
+          mutate("/api/community/avatar", {
+            method: "PATCH",
+            body: JSON.stringify({ avatarId }),
           })
         }
       />
@@ -253,6 +242,144 @@ export default function CommunityHub({
         </p>
       )}
     </div>
+  );
+}
+
+function SocialShortcut({
+  href,
+  icon,
+  eyebrow,
+  title,
+  description,
+  color,
+}: {
+  href: string;
+  icon: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  color: "blue" | "red";
+}) {
+  const styles =
+    color === "blue"
+      ? "border-blue-800/70 bg-blue-950/35 hover:border-blue-500"
+      : "border-red-800/70 bg-red-950/30 hover:border-red-500";
+
+  return (
+    <a
+      href={href}
+      className={`group flex items-center gap-3 rounded-xl border p-3 transition ${styles}`}
+    >
+      <span
+        aria-hidden="true"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gray-950/70 text-xl text-white"
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[10px] font-black uppercase tracking-[0.12em] text-gray-400">
+          {eyebrow}
+        </span>
+        <span className="block truncate text-sm font-black text-white">
+          {title}
+        </span>
+        <span className="block truncate text-[11px] text-gray-500">
+          {description}
+        </span>
+      </span>
+      <span
+        aria-hidden="true"
+        className="text-gray-600 transition group-hover:translate-x-0.5 group-hover:text-white"
+      >
+        →
+      </span>
+    </a>
+  );
+}
+
+function AvatarCollection({
+  rating,
+  selectedAvatarId,
+  isLoading,
+  onSelect,
+}: {
+  rating: number;
+  selectedAvatarId: string;
+  isLoading: boolean;
+  onSelect: (avatarId: string) => Promise<boolean>;
+}) {
+  const unlockedCount = COMMUNITY_AVATARS.filter(
+    (avatar) => rating >= avatar.requiredRating,
+  ).length;
+  const selectedAvatar =
+    COMMUNITY_AVATARS.find((avatar) => avatar.id === selectedAvatarId) ??
+    COMMUNITY_AVATARS[0];
+
+  return (
+    <details className="group overflow-hidden rounded-2xl border border-gray-800 bg-gray-900">
+      <summary className="flex cursor-pointer list-none items-center gap-3 p-4 marker:content-none">
+        <Image
+          src={selectedAvatar.image}
+          alt=""
+          width={48}
+          height={48}
+          className="h-11 w-11 rounded-lg border border-violet-800/60 object-cover"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-violet-300">
+            Collection de chevaliers
+          </p>
+          <p className="truncate text-sm font-bold text-white">
+            {selectedAvatar.name} · {unlockedCount}/{COMMUNITY_AVATARS.length} débloqués
+          </p>
+        </div>
+        <span className="rounded-lg border border-gray-700 px-2.5 py-1.5 text-xs font-bold text-gray-400 transition group-open:rotate-180">
+          ↓
+        </span>
+      </summary>
+      <div className="grid grid-cols-2 gap-2 border-t border-gray-800 p-3 sm:grid-cols-3 lg:grid-cols-5">
+        {COMMUNITY_AVATARS.map((avatar) => {
+          const unlocked = rating >= avatar.requiredRating;
+          const selected = selectedAvatarId === avatar.id;
+          return (
+            <button
+              key={avatar.id}
+              type="button"
+              disabled={!unlocked || isLoading}
+              onClick={() => void onSelect(avatar.id)}
+              className={[
+                "flex min-w-0 items-center gap-2 rounded-xl border p-2 text-left transition",
+                selected
+                  ? "border-violet-500 bg-violet-950/35"
+                  : unlocked
+                    ? "border-gray-700 bg-gray-950/60 hover:border-violet-700"
+                    : "border-gray-800 bg-gray-950/30 opacity-55",
+              ].join(" ")}
+            >
+              <Image
+                src={avatar.image}
+                alt=""
+                width={56}
+                height={56}
+                className="h-12 w-12 shrink-0 rounded-lg object-cover"
+              />
+              <span className="min-w-0">
+                <span className="block truncate text-xs font-bold text-white">
+                  {avatar.name}
+                </span>
+                <span className="mt-0.5 block text-[10px] leading-4 text-gray-500">
+                  {unlocked
+                    ? selected
+                      ? "Équipé"
+                      : avatar.rarity
+                    : `${avatar.requiredRating} Elo`}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </details>
   );
 }
 
@@ -284,13 +411,23 @@ function FriendsPanel({
   }
 
   return (
-    <section className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-400">
-        Cercle d’amis
-      </p>
-      <h2 className="mt-1 text-xl font-bold text-white">
-        Classement entre amis
-      </h2>
+    <section
+      id="community-friends"
+      className="scroll-mt-24 rounded-2xl border border-blue-900/60 bg-gradient-to-br from-blue-950/25 to-gray-900 p-5"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-400">
+            Cercle d’amis
+          </p>
+          <h2 className="mt-1 text-xl font-bold text-white">
+            Ta bande de joueurs
+          </h2>
+        </div>
+        <span className="rounded-full border border-blue-800/70 bg-blue-950/50 px-3 py-1 text-xs font-black text-blue-200">
+          {friends.length} ami{friends.length > 1 ? "s" : ""}
+        </span>
+      </div>
       <form onSubmit={(event) => void submit(event)} className="mt-4 flex gap-2">
         <input
           value={query}
@@ -396,8 +533,11 @@ function ClanPanel({
   const [tag, setTag] = useState("");
 
   return (
-    <section className="rounded-2xl border border-red-900/50 bg-gradient-to-br from-red-950/20 to-gray-900 p-5">
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+    <section
+      id="community-clan"
+      className="scroll-mt-24 rounded-2xl border border-red-900/60 bg-gradient-to-br from-red-950/25 to-gray-900 p-5"
+    >
+      <div className="space-y-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-red-400">
             Guerre des clans
@@ -465,13 +605,18 @@ function ClanPanel({
             </div>
           )}
         </div>
-        <div>
-          <p className="text-sm font-bold text-white">
-            Classement des clans · {new Date().toLocaleDateString("fr-FR", {
-              month: "long",
-            })}
-          </p>
-          <div className="mt-3 space-y-2">
+        <details className="group overflow-hidden rounded-xl border border-gray-800 bg-gray-950/40">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-3 marker:content-none">
+            <p className="text-sm font-bold text-white">
+              Classement des clans · {new Date().toLocaleDateString("fr-FR", {
+                month: "long",
+              })}
+            </p>
+            <span className="text-xs text-gray-500 transition group-open:rotate-180">
+              ↓
+            </span>
+          </summary>
+          <div className="space-y-2 border-t border-gray-800 p-3">
             {leaderboard.length === 0 ? (
               <p className="rounded-xl border border-dashed border-gray-700 p-4 text-sm text-gray-500">
                 Le premier clan de la saison peut encore être le tien.
@@ -500,7 +645,7 @@ function ClanPanel({
               ))
             )}
           </div>
-        </div>
+        </details>
       </div>
     </section>
   );
