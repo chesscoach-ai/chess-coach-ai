@@ -29,9 +29,17 @@ export async function GET() {
   ];
   const missingRequired = production
     ? Object.entries(required)
+        .filter(
+          ([name]) =>
+            name !== "engineProtection",
+        )
         .filter(([, configured]) => !configured)
         .map(([name]) => name)
     : [];
+  const warnings =
+    production && !required.engineProtection
+      ? ["engineProtection"]
+      : [];
   const commercial =
     getCommercialReadiness();
   if (
@@ -44,9 +52,18 @@ export async function GET() {
         (name) => `commercial:${name}`,
       ),
     );
+    if (!required.engineProtection) {
+      missingRequired.push(
+        "engineProtection",
+      );
+    }
   }
   const status =
-    missingRequired.length === 0 ? "ok" : "not_ready";
+    missingRequired.length > 0
+      ? "not_ready"
+      : warnings.length > 0
+        ? "degraded"
+        : "ok";
 
   return Response.json(
     {
@@ -81,6 +98,7 @@ export async function GET() {
         },
       },
       missingRequired,
+      warnings,
     },
     {
       status:
