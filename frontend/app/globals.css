@@ -59,24 +59,35 @@ summary {
     transform 180ms ease;
 }
 
+.board-presentation {
+  position: relative;
+}
+
 .board-mode-toggle {
   position: absolute;
-  top: 0.55rem;
-  right: 0.55rem;
+  top: 0.75rem;
+  left: calc(100% + 0.45rem);
   z-index: 40;
-  display: inline-flex;
+  display: flex;
+  width: 5rem;
+  flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
-  min-height: 2rem;
-  padding: 0.35rem 0.65rem;
-  border: 1px solid rgba(148, 163, 184, 0.55);
-  border-radius: 999px;
-  background: rgba(3, 7, 18, 0.82);
-  color: #f8fafc;
-  font-size: 0.7rem;
+  gap: 0.45rem;
+  min-height: 5.6rem;
+  padding: 0.7rem 0.35rem;
+  border: 1px solid rgba(180, 142, 76, 0.58);
+  border-radius: 1rem;
+  background:
+    linear-gradient(155deg, rgba(66, 44, 25, 0.96), rgba(20, 15, 12, 0.98)),
+    #18120e;
+  color: #f8ead0;
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.02em;
-  box-shadow: 0 8px 24px rgba(3, 7, 18, 0.34);
+  line-height: 1.15;
+  text-align: center;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 230, 172, 0.16),
+    0 12px 28px rgba(0, 0, 0, 0.38);
   backdrop-filter: blur(10px);
   transition:
     border-color 160ms ease,
@@ -85,25 +96,54 @@ summary {
 }
 
 .board-mode-toggle:hover {
-  border-color: #60a5fa;
-  background: rgba(30, 64, 175, 0.9);
+  border-color: #f0bd5b;
+  background: linear-gradient(155deg, #62411f, #21160f);
   transform: translateY(-1px);
+}
+
+.board-mode-toggle__icon {
+  display: grid;
+  width: 2.6rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgba(252, 211, 77, 0.56);
+  border-radius: 0.8rem;
+  background: radial-gradient(circle at 35% 25%, #48699f, #182640 65%, #0b1120);
+  color: #f8e7bb;
+  font-family: Georgia, serif;
+  font-size: 1.45rem;
+  box-shadow:
+    inset 0 1px 5px rgba(255, 255, 255, 0.2),
+    0 5px 10px rgba(0, 0, 0, 0.35);
+}
+
+.board-mode-toggle__copy {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.board-mode-toggle__eyebrow {
+  color: #b6a58b;
+  font-size: 0.52rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .chess-board-live--medieval {
   overflow: visible;
-  border: clamp(7px, 1.55vw, 12px) solid #352515;
+  border: clamp(9px, 1.8vw, 14px) solid #4b2b15;
   border-radius: 1.15rem;
   background:
-    linear-gradient(135deg, rgba(255, 227, 156, 0.14), transparent 24%),
-    repeating-linear-gradient(92deg, #3b2817 0 18px, #322112 18px 38px);
+    linear-gradient(90deg, rgba(255, 205, 112, 0.15), transparent 18%, rgba(0, 0, 0, 0.28)),
+    repeating-linear-gradient(92deg, #5b3418 0 20px, #422511 20px 42px);
   box-shadow:
-    0 2px 0 #a8874e inset,
-    0 -2px 0 #1b1008 inset,
-    0 14px 0 #160e08,
-    0 25px 42px rgba(0, 0, 0, 0.62),
-    0 0 54px rgba(37, 99, 235, 0.14);
-  perspective: 1100px;
+    0 2px 0 #c89546 inset,
+    0 -3px 0 #1b0d05 inset,
+    0 7px 0 #2c170a,
+    0 13px 0 #140a05,
+    0 28px 48px rgba(0, 0, 0, 0.68),
+    0 0 48px rgba(26, 83, 128, 0.16);
+  perspective: 900px;
 }
 
 .chess-board-live--medieval::before {
@@ -113,8 +153,8 @@ summary {
   content: "";
   border-radius: 1.75rem;
   background:
-    radial-gradient(circle at 15% 85%, rgba(29, 78, 216, 0.34), transparent 34%),
-    radial-gradient(circle at 85% 18%, rgba(245, 158, 11, 0.2), transparent 30%);
+    radial-gradient(circle at 15% 85%, rgba(10, 75, 94, 0.4), transparent 34%),
+    radial-gradient(circle at 85% 18%, rgba(245, 158, 11, 0.24), transparent 30%);
   filter: blur(16px);
   pointer-events: none;
 }
@@ -122,13 +162,13 @@ summary {
 .chess-board-live--medieval > div:first-of-type {
   overflow: hidden;
   border-radius: 0.55rem;
-  filter: saturate(0.92) sepia(0.08)
-    contrast(1.04);
+  filter: saturate(0.9) sepia(0.06)
+    contrast(1.08);
   box-shadow:
     0 0 0 1px rgba(254, 243, 199, 0.2),
     inset 0 0 34px rgba(35, 19, 7, 0.18);
-  transform: rotateX(3.4deg)
-    translateY(-0.3%) translateZ(0);
+  transform: rotateX(5.5deg)
+    translateY(-0.8%) scale(0.995) translateZ(0);
   transform-origin: center bottom;
 }
 
@@ -139,27 +179,51 @@ summary {
   height: 100%;
   place-items: center;
   border-radius: 46% 46% 38% 38%;
-  transform: translateY(-5%) scale(0.92);
+  transform: translateY(-7%) scale(0.89);
   transform-origin: center bottom;
   filter:
-    drop-shadow(0 8px 3px rgba(0, 0, 0, 0.48))
-    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.16));
+    drop-shadow(0 9px 3px rgba(0, 0, 0, 0.52))
+    drop-shadow(-1px -1px 0 rgba(255, 255, 255, 0.18));
   user-select: none;
 }
 
 .medieval-piece__base {
   position: absolute;
-  right: 17%;
-  bottom: 5%;
-  left: 17%;
+  right: 12%;
+  bottom: 3%;
+  left: 12%;
   z-index: 1;
-  height: 20%;
+  height: 24%;
   border-radius: 48% 48% 38% 38%;
   transform: perspective(80px) rotateX(58deg);
 }
 
+.medieval-piece__stem {
+  position: absolute;
+  right: 28%;
+  bottom: 13%;
+  left: 28%;
+  z-index: 1;
+  height: 42%;
+  border-radius: 48% 48% 30% 30%;
+  clip-path: polygon(24% 0, 76% 0, 100% 100%, 0 100%);
+}
+
+.medieval-piece__collar {
+  position: absolute;
+  right: 20%;
+  bottom: 34%;
+  left: 20%;
+  z-index: 1;
+  height: 12%;
+  border-radius: 50%;
+  transform: perspective(80px) rotateX(55deg);
+}
+
 .medieval-piece--ivory
-  .medieval-piece__base {
+  .medieval-piece__base,
+.medieval-piece--ivory
+  .medieval-piece__collar {
   border: 1px solid rgba(255, 248, 218, 0.72);
   background: linear-gradient(180deg, #fff7d6, #b08b4a 54%, #4e351d);
   box-shadow:
@@ -167,13 +231,29 @@ summary {
     0 7px 8px rgba(0, 0, 0, 0.38);
 }
 
+.medieval-piece--ivory
+  .medieval-piece__stem {
+  border-left: 1px solid rgba(255, 250, 226, 0.58);
+  background: linear-gradient(90deg, #8d6c3c, #f8e9bf 35%, #d5b77d 65%, #6d4c27);
+  box-shadow: inset -4px 0 5px rgba(66, 41, 20, 0.28);
+}
+
 .medieval-piece--obsidian
-  .medieval-piece__base {
+  .medieval-piece__base,
+.medieval-piece--obsidian
+  .medieval-piece__collar {
   border: 1px solid rgba(126, 147, 184, 0.6);
   background: linear-gradient(180deg, #65738c, #273349 50%, #080d16);
   box-shadow:
     0 3px 0 #050810,
     0 7px 8px rgba(0, 0, 0, 0.5);
+}
+
+.medieval-piece--obsidian
+  .medieval-piece__stem {
+  border-left: 1px solid rgba(126, 147, 184, 0.58);
+  background: linear-gradient(90deg, #080d17, #566681 36%, #263247 68%, #050810);
+  box-shadow: inset -4px 0 6px rgba(0, 0, 0, 0.5);
 }
 
 .medieval-piece::after {
@@ -194,53 +274,55 @@ summary {
   z-index: 2;
   font-family: Georgia, "Times New Roman",
     serif;
-  font-size: clamp(2rem, 8.4vw, 4.6rem);
+  font-size: clamp(2.05rem, 8.6vw, 4.75rem);
   font-weight: 900;
   line-height: 1;
-  transform: translateY(-3%) scaleX(0.9);
+  transform: translateY(-10%) scaleX(0.9);
 }
 
 .medieval-piece--pawn
   .medieval-piece__glyph {
-  transform: translateY(1%) scale(0.84);
+  transform: translateY(-3%) scale(0.77);
 }
 
 .medieval-piece--knight
   .medieval-piece__glyph {
-  transform: translateY(-4%) rotate(-2deg) scaleX(0.94);
+  transform: translateY(-10%) rotate(-2deg) scaleX(0.96);
 }
 
 .medieval-piece--queen
   .medieval-piece__glyph,
 .medieval-piece--king
   .medieval-piece__glyph {
-  transform: translateY(-6%) scale(1.02);
+  transform: translateY(-12%) scale(1.03);
 }
 
 .medieval-piece--ivory
   .medieval-piece__glyph {
-  color: #f4e6bd;
+  color: #f5e7c3;
   text-shadow:
-    -1px -1px 0 #fff8dd,
-    1px 1px 0 #806433,
-    2px 4px 0 #49371f,
-    0 0 8px rgba(255, 247, 214, 0.55);
+    -1px -2px 0 #fffced,
+    1px 1px 0 #a3834d,
+    2px 3px 0 #70512b,
+    3px 5px 2px #35210f,
+    0 0 8px rgba(255, 247, 214, 0.5);
 }
 
 .medieval-piece--obsidian
   .medieval-piece__glyph {
-  color: #263143;
+  color: #334158;
   text-shadow:
-    -1px -1px 0 #738099,
+    -1px -2px 0 #8995aa,
     1px 1px 0 #05080e,
-    2px 4px 0 #020409,
+    2px 3px 0 #111827,
+    3px 5px 2px #020409,
     0 0 7px rgba(59, 130, 246, 0.34);
 }
 
 .medieval-piece__crest {
   position: absolute;
-  top: 15%;
-  right: 9%;
+  top: 9%;
+  right: 5%;
   z-index: 3;
   display: grid;
   width: 20%;
@@ -553,13 +635,29 @@ summary {
   }
 }
 
+@media (max-width: 900px) {
+  .board-mode-toggle {
+    position: static;
+    width: fit-content;
+    min-height: 0;
+    margin-top: 0.75rem;
+    margin-left: auto;
+    padding: 0.45rem 0.65rem;
+    flex-direction: row;
+    border-radius: 0.85rem;
+    text-align: left;
+  }
+
+  .board-mode-toggle__icon {
+    width: 2.15rem;
+    border-radius: 0.65rem;
+    font-size: 1.15rem;
+  }
+}
+
 @media (max-width: 640px) {
   .board-mode-toggle {
-    top: 0.35rem;
-    right: 0.35rem;
-    min-height: 1.75rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.62rem;
+    font-size: 0.64rem;
   }
 
   .medieval-piece__crest {
@@ -576,8 +674,8 @@ summary {
 
   .chess-board-live--medieval
     > div:first-of-type {
-    transform: rotateX(1.4deg)
-      translateZ(0);
+    transform: rotateX(3deg)
+      translateY(-0.4%) scale(0.997) translateZ(0);
   }
 
   .board-touch-hint {

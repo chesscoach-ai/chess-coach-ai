@@ -84,10 +84,20 @@ export const MEDIEVAL_PIECES =
             />
             <span
               aria-hidden="true"
-              className="medieval-piece__crest"
-            >
-              CC
-            </span>
+              className="medieval-piece__stem"
+            />
+            <span
+              aria-hidden="true"
+              className="medieval-piece__collar"
+            />
+            {piece[1] === "N" && (
+              <span
+                aria-hidden="true"
+                className="medieval-piece__crest"
+              >
+                CC
+              </span>
+            )}
             <span
               aria-hidden="true"
               className="medieval-piece__glyph"
@@ -119,14 +129,14 @@ export function getBoardPalette(
 
   return {
     dark: {
-      backgroundColor: "#4a311f",
+      backgroundColor: "#20262c",
       backgroundImage:
-        "linear-gradient(145deg, rgba(255,255,255,0.06), transparent 34%, rgba(17,10,5,0.22)), repeating-linear-gradient(8deg, rgba(255,255,255,0.018) 0 2px, transparent 2px 9px)",
+        "linear-gradient(145deg, rgba(255,255,255,0.075), transparent 35%, rgba(0,0,0,0.26)), repeating-linear-gradient(7deg, rgba(255,255,255,0.018) 0 2px, transparent 2px 10px)",
     },
     light: {
-      backgroundColor: "#c8aa72",
+      backgroundColor: "#e7d6b4",
       backgroundImage:
-        "linear-gradient(145deg, rgba(255,249,224,0.22), transparent 36%, rgba(82,52,24,0.14)), repeating-linear-gradient(-7deg, rgba(76,47,21,0.025) 0 2px, transparent 2px 10px)",
+        "linear-gradient(145deg, rgba(255,255,255,0.42), transparent 38%, rgba(94,67,35,0.13)), repeating-linear-gradient(-6deg, rgba(96,62,25,0.028) 0 2px, transparent 2px 11px)",
     },
   };
 }
@@ -177,13 +187,16 @@ export function BoardModeToggle({
       }
       className="board-mode-toggle"
     >
-      <span aria-hidden="true">
+      <span aria-hidden="true" className="board-mode-toggle__icon">
         {isMedieval ? "♜" : "♞"}
       </span>
-      <span>
-        {isMedieval
-          ? "2D classique"
-          : "3D médiéval"}
+      <span className="board-mode-toggle__copy">
+        <span className="board-mode-toggle__eyebrow">Vue du plateau</span>
+        <span>
+          {isMedieval
+            ? "2D classique"
+            : "3D médiévale"}
+        </span>
       </span>
     </button>
   );

@@ -221,45 +221,47 @@ export default function OnlineMatch({
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="w-full max-w-xl space-y-3">
-          <div
-            className={[
-              "chess-board-live overflow-hidden rounded-2xl shadow-2xl",
-              boardVisualMode === "medieval"
-                ? "chess-board-live--medieval"
-                : "",
-            ].join(" ")}
-          >
+          <div className="board-presentation">
+            <div
+              className={[
+                "chess-board-live overflow-hidden rounded-2xl shadow-2xl",
+                boardVisualMode === "medieval"
+                  ? "chess-board-live--medieval"
+                  : "",
+              ].join(" ")}
+            >
+              <Chessboard
+                options={{
+                position: displayedFen,
+                onPieceDrop: handlePieceDrop,
+                onSquareClick:
+                  tapToMove.onSquareClick,
+                boardOrientation: game.youAre,
+                allowDragging: canMove,
+                allowDrawingArrows: false,
+                animationDurationInMs: 260,
+                showNotation: true,
+                squareStyles,
+                darkSquareStyle:
+                  boardPalette.dark,
+                lightSquareStyle:
+                  boardPalette.light,
+                pieces:
+                  boardVisualMode ===
+                  "medieval"
+                    ? MEDIEVAL_PIECES
+                    : undefined,
+                }}
+              />
+              <MoveEffects
+                move={moveEffect}
+                orientation={game.youAre}
+                visualMode={boardVisualMode}
+              />
+            </div>
             <BoardModeToggle
               mode={boardVisualMode}
               onToggle={toggleBoardVisualMode}
-            />
-            <Chessboard
-              options={{
-              position: displayedFen,
-              onPieceDrop: handlePieceDrop,
-              onSquareClick:
-                tapToMove.onSquareClick,
-              boardOrientation: game.youAre,
-              allowDragging: canMove,
-              allowDrawingArrows: false,
-              animationDurationInMs: 260,
-              showNotation: true,
-              squareStyles,
-              darkSquareStyle:
-                boardPalette.dark,
-              lightSquareStyle:
-                boardPalette.light,
-              pieces:
-                boardVisualMode ===
-                "medieval"
-                  ? MEDIEVAL_PIECES
-                  : undefined,
-              }}
-            />
-            <MoveEffects
-              move={moveEffect}
-              orientation={game.youAre}
-              visualMode={boardVisualMode}
             />
           </div>
           <p className="board-touch-hint">

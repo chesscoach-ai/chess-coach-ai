@@ -439,27 +439,29 @@ export default function ChessBoard({
 
   return (
     <section className="w-full max-w-xl">
-      <div
-        className={[
-          "chess-board-live overflow-hidden rounded-2xl shadow-2xl",
-          boardVisualMode === "medieval"
-            ? "chess-board-live--medieval"
-            : "",
-        ].join(" ")}
-      >
+      <div className="board-presentation">
+        <div
+          className={[
+            "chess-board-live overflow-hidden rounded-2xl shadow-2xl",
+            boardVisualMode === "medieval"
+              ? "chess-board-live--medieval"
+              : "",
+          ].join(" ")}
+        >
+          <Chessboard
+            options={chessboardOptions}
+          />
+          <MoveEffects
+            move={moveEffect}
+            orientation={
+              playerColor ?? "white"
+            }
+            visualMode={boardVisualMode}
+          />
+        </div>
         <BoardModeToggle
           mode={boardVisualMode}
           onToggle={toggleBoardVisualMode}
-        />
-        <Chessboard
-          options={chessboardOptions}
-        />
-        <MoveEffects
-          move={moveEffect}
-          orientation={
-            playerColor ?? "white"
-          }
-          visualMode={boardVisualMode}
         />
       </div>
 
