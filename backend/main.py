@@ -1,7 +1,10 @@
 import hmac
 import os
+import threading
+from contextlib import contextmanager
+from collections import OrderedDict
 from pathlib import Path
-from typing import Literal
+from typing import Iterator, Literal
 
 import chess
 import chess.engine
@@ -52,6 +55,54 @@ STOCKFISH_PATH = Path(
         "STOCKFISH_PATH",
         str(BASE_DIR / "engines" / "stockfish.exe"),
     )
+)
+
+_ENGINE_LOCK = threading.RLock()
+_STOCKFISH_ENGINE: chess.engine.SimpleEngine | None = None
+
+
+def get_stockfish_engine() -> chess.engine.SimpleEngine:
+    global _STOCKFISH_ENGINE
+
+    if _STOCKFISH_ENGINE is None:
+        _STOCKFISH_ENGINE = chess.engine.SimpleEngine.popen_uci(
+            str(STOCKFISH_PATH),
+        )
+        _STOCKFISH_ENGINE.configure(
+            {
+                "Hash": 64,
+                "Threads": 1,
+            }
+        )
+
+    return _STOCKFISH_ENGINE
+
+
+@contextmanager
+def use_stockfish_engine() -> Iterator[chess.engine.SimpleEngine]:
+    with _ENGINE_LOCK:
+        yield get_stockfish_engine()
+
+
+def shutdown_stockfish_engine() -> None:
+    global _STOCKFISH_ENGINE
+
+    with _ENGINE_LOCK:
+        engine = _STOCKFISH_ENGINE
+        _STOCKFISH_ENGINE = None
+
+        if engine is None:
+            return
+
+        try:
+            engine.quit()
+        except (chess.engine.EngineError, OSError):
+            pass
+
+
+app.router.add_event_handler(
+    "shutdown",
+    shutdown_stockfish_engine,
 )
 
 
@@ -144,6 +195,37 @@ class AnalysisResponse(BaseModel):
     top_moves: list[MoveAnalysis]
 
 
+_ANALYSIS_CACHE_LIMIT = 128
+_ANALYSIS_CACHE: OrderedDict[
+    tuple[str, int, int],
+    AnalysisResponse,
+] = OrderedDict()
+
+
+def get_cached_analysis(
+    key: tuple[str, int, int],
+) -> AnalysisResponse | None:
+    with _ENGINE_LOCK:
+        cached = _ANALYSIS_CACHE.get(key)
+        if cached is None:
+            return None
+
+        _ANALYSIS_CACHE.move_to_end(key)
+        return cached.model_copy(deep=True)
+
+
+def cache_analysis(
+    key: tuple[str, int, int],
+    response: AnalysisResponse,
+) -> None:
+    with _ENGINE_LOCK:
+        _ANALYSIS_CACHE[key] = response.model_copy(deep=True)
+        _ANALYSIS_CACHE.move_to_end(key)
+
+        while len(_ANALYSIS_CACHE) > _ANALYSIS_CACHE_LIMIT:
+            _ANALYSIS_CACHE.popitem(last=False)
+
+
 class ExerciseAnalysisRequest(BaseModel):
     fen: str
     depth: int = Field(
@@ -227,8 +309,20 @@ def root() -> dict[str, str]:
 
 @app.get("/health")
 def health() -> dict[str, str]:
+    if not STOCKFISH_PATH.exists():
+        raise HTTPException(
+            status_code=503,
+            detail="Stockfish est introuvable.",
+        )
+
+    # Wake Stockfish together with the Render service so the first real
+    # analysis does not pay the process startup cost.
+    with use_stockfish_engine():
+        pass
+
     return {
         "status": "healthy",
+        "engine": "warm",
     }
 
 
@@ -1013,6 +1107,15 @@ def analyse_position(
             ),
         )
 
+    cache_key = (
+        payload.fen,
+        payload.depth,
+        payload.multipv,
+    )
+    cached_analysis = get_cached_analysis(cache_key)
+    if cached_analysis is not None:
+        return cached_analysis
+
     try:
         board = chess.Board(
             payload.fen,
@@ -1030,9 +1133,7 @@ def analyse_position(
         )
 
     try:
-        with chess.engine.SimpleEngine.popen_uci(
-            str(STOCKFISH_PATH),
-        ) as engine:
+        with use_stockfish_engine() as engine:
             results = engine.analyse(
                 board,
                 chess.engine.Limit(
@@ -1119,7 +1220,7 @@ def analyse_position(
 
             best = top_moves[0]
 
-            return AnalysisResponse(
+            response = AnalysisResponse(
                 best_move=best.move,
                 best_move_san=best.move_san,
                 best_move_details=best,
@@ -1136,8 +1237,11 @@ def analyse_position(
                 depth=best.depth,
                 top_moves=top_moves,
             )
+            cache_analysis(cache_key, response)
+            return response
 
     except chess.engine.EngineTerminatedError as error:
+        shutdown_stockfish_engine()
         raise HTTPException(
             status_code=500,
             detail=(
@@ -1319,9 +1423,7 @@ def review_move(
     )
 
     try:
-        with chess.engine.SimpleEngine.popen_uci(
-            str(STOCKFISH_PATH),
-        ) as engine:
+        with use_stockfish_engine() as engine:
             best_info = engine.analyse(
                 board_before,
                 chess.engine.Limit(
@@ -1545,6 +1647,7 @@ def review_move(
             )
 
     except chess.engine.EngineTerminatedError as error:
+        shutdown_stockfish_engine()
         raise HTTPException(
             status_code=500,
             detail=(

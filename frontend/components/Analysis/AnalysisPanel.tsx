@@ -208,8 +208,10 @@ export default function AnalysisPanel({
     try {
       const result = await ApiService.analysePosition({
         fen,
-        depth: 15,
-        multipv: 3,
+        // The conversational panel displays one recommendation. Asking
+        // Stockfish for extra hidden lines only delays the useful answer.
+        depth: 12,
+        multipv: 1,
       });
 
       if (
@@ -256,7 +258,7 @@ export default function AnalysisPanel({
 
     const timer = window.setTimeout(() => {
       void handleAnalysis();
-    }, 350);
+    }, 180);
 
     return () => {
       window.clearTimeout(timer);
