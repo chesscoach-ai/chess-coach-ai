@@ -2,7 +2,6 @@ export type ExperiencePreferences = {
   soundsEnabled: boolean;
   remindersEnabled: boolean;
   reminderTime: string;
-  boardVisualMode: "classic" | "medieval";
 };
 
 export const EXPERIENCE_PREFERENCES_EVENT =
@@ -16,7 +15,6 @@ export const DEFAULT_EXPERIENCE_PREFERENCES: ExperiencePreferences =
     soundsEnabled: true,
     remindersEnabled: false,
     reminderTime: "19:00",
-    boardVisualMode: "classic",
   };
 
 export function readExperiencePreferences(): ExperiencePreferences {
@@ -47,11 +45,6 @@ export function readExperiencePreferences(): ExperiencePreferences {
         )
           ? parsed.reminderTime
           : "19:00",
-      boardVisualMode:
-        parsed.boardVisualMode ===
-        "medieval"
-          ? "medieval"
-          : "classic",
     };
   } catch {
     return DEFAULT_EXPERIENCE_PREFERENCES;

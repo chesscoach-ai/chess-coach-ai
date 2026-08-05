@@ -13,13 +13,6 @@ import { Chessboard } from "react-chessboard";
 import MoveEffects, {
   useMoveAnimation,
 } from "@/components/ChessBoard/MoveEffects";
-import {
-  BoardModeToggle,
-  getBoardPalette,
-  getChessPieceRole,
-  MEDIEVAL_PIECES,
-  useBoardVisualMode,
-} from "@/components/ChessBoard/MedievalBoard";
 import { useTapToMove } from "@/components/ChessBoard/useTapToMove";
 import { useChessSounds } from "@/hooks/useChessSounds";
 import type { ChessGameController } from "@/hooks/useChessGame";
@@ -109,10 +102,6 @@ export default function ChessBoard({
     moveEffect,
     animateMove,
   } = useMoveAnimation();
-  const {
-    mode: boardVisualMode,
-    toggle: toggleBoardVisualMode,
-  } = useBoardVisualMode();
   const playChessSound =
     useChessSounds();
   const sideToMove =
@@ -149,16 +138,10 @@ export default function ChessBoard({
     }
 
     let isCapture = false;
-    let movedPiece = "p";
-
     try {
       const positionBefore = new Chess(
         currentMove.fenBefore,
       );
-      movedPiece =
-        positionBefore.get(
-          currentMove.from,
-        )?.type ?? "p";
       isCapture = Boolean(
         positionBefore.move({
           from: currentMove.from,
@@ -178,7 +161,6 @@ export default function ChessBoard({
       currentMove.from,
       currentMove.to,
       isCapture,
-      getChessPieceRole(movedPiece),
     );
 
     if (
@@ -407,9 +389,6 @@ export default function ChessBoard({
     tapToMove.squareStyles,
   );
 
-  const boardPalette =
-    getBoardPalette(boardVisualMode);
-
   const chessboardOptions = {
     position: game.fen,
     onPieceDrop: handlePieceDrop,
@@ -423,12 +402,8 @@ export default function ChessBoard({
     squareStyles,
     arrows,
     allowDrawingArrows: mode === "analysis",
-    darkSquareStyle: boardPalette.dark,
-    lightSquareStyle: boardPalette.light,
-    pieces:
-      boardVisualMode === "medieval"
-        ? MEDIEVAL_PIECES
-        : undefined,
+    darkSquareStyle: { backgroundColor: "#4b5563" },
+    lightSquareStyle: { backgroundColor: "#d1d5db" },
   };
 
   const hasReviewIndicators =
@@ -440,14 +415,7 @@ export default function ChessBoard({
   return (
     <section className="w-full max-w-xl">
       <div className="board-presentation">
-        <div
-          className={[
-            "chess-board-live overflow-hidden rounded-2xl shadow-2xl",
-            boardVisualMode === "medieval"
-              ? "chess-board-live--medieval"
-              : "",
-          ].join(" ")}
-        >
+        <div className="chess-board-live overflow-hidden rounded-2xl shadow-2xl">
           <Chessboard
             options={chessboardOptions}
           />
@@ -456,13 +424,8 @@ export default function ChessBoard({
             orientation={
               playerColor ?? "white"
             }
-            visualMode={boardVisualMode}
           />
         </div>
-        <BoardModeToggle
-          mode={boardVisualMode}
-          onToggle={toggleBoardVisualMode}
-        />
       </div>
 
       <p className="board-touch-hint">

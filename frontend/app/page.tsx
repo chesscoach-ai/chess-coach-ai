@@ -39,7 +39,7 @@ export default async function Home() {
                 Chess Clan
               </h1>
               <p className="mt-1 hidden text-sm text-gray-400 md:block">
-                Ton clan pour jouer. Ton mentor pour progresser.
+                Ton clan pour jouer. Ton coach pour progresser.
               </p>
             </div>
           </div>

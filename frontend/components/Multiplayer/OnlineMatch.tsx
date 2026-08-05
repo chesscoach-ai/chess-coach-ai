@@ -13,13 +13,6 @@ import { Chessboard } from "react-chessboard";
 import MoveEffects, {
   useMoveAnimation,
 } from "@/components/ChessBoard/MoveEffects";
-import {
-  BoardModeToggle,
-  getBoardPalette,
-  getChessPieceRole,
-  MEDIEVAL_PIECES,
-  useBoardVisualMode,
-} from "@/components/ChessBoard/MedievalBoard";
 import { useTapToMove } from "@/components/ChessBoard/useTapToMove";
 import { useChessSounds } from "@/hooks/useChessSounds";
 import { getCheckmateAside } from "@/lib/content/playfulVoice";
@@ -67,10 +60,6 @@ export default function OnlineMatch({
     moveEffect,
     animateMove,
   } = useMoveAnimation();
-  const {
-    mode: boardVisualMode,
-    toggle: toggleBoardVisualMode,
-  } = useBoardVisualMode();
   const playChessSound =
     useChessSounds();
   const animatedMoveCount = useRef(
@@ -119,11 +108,6 @@ export default function OnlineMatch({
       lastMove.from,
       lastMove.to,
       lastMove.san.includes("x"),
-      getChessPieceRole(
-        lastMove.san.match(
-          /^[NBRQK]/,
-        )?.[0] ?? "p",
-      ),
     );
     playChessSound({
       capture:
@@ -158,9 +142,6 @@ export default function OnlineMatch({
       tapToMove.squareStyles,
     ],
   );
-  const boardPalette =
-    getBoardPalette(boardVisualMode);
-
   function handlePieceDrop({
     sourceSquare,
     targetSquare,
@@ -177,8 +158,6 @@ export default function OnlineMatch({
 
     try {
       const preview = new Chess(game.fen);
-      const movedPiece =
-        preview.get(input.from)?.type;
       const playedMove =
         preview.move(input);
       setOptimisticPosition({
@@ -189,7 +168,6 @@ export default function OnlineMatch({
         input.from,
         input.to,
         Boolean(playedMove.captured),
-        getChessPieceRole(movedPiece),
       );
       playChessSound({
         capture: Boolean(
@@ -222,14 +200,7 @@ export default function OnlineMatch({
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="w-full max-w-xl space-y-3">
           <div className="board-presentation">
-            <div
-              className={[
-                "chess-board-live overflow-hidden rounded-2xl shadow-2xl",
-                boardVisualMode === "medieval"
-                  ? "chess-board-live--medieval"
-                  : "",
-              ].join(" ")}
-            >
+            <div className="chess-board-live overflow-hidden rounded-2xl shadow-2xl">
               <Chessboard
                 options={{
                 position: displayedFen,
@@ -242,27 +213,19 @@ export default function OnlineMatch({
                 animationDurationInMs: 260,
                 showNotation: true,
                 squareStyles,
-                darkSquareStyle:
-                  boardPalette.dark,
-                lightSquareStyle:
-                  boardPalette.light,
-                pieces:
-                  boardVisualMode ===
-                  "medieval"
-                    ? MEDIEVAL_PIECES
-                    : undefined,
+                darkSquareStyle: {
+                  backgroundColor: "#4b5563",
+                },
+                lightSquareStyle: {
+                  backgroundColor: "#d1d5db",
+                },
                 }}
               />
               <MoveEffects
                 move={moveEffect}
                 orientation={game.youAre}
-                visualMode={boardVisualMode}
               />
             </div>
-            <BoardModeToggle
-              mode={boardVisualMode}
-              onToggle={toggleBoardVisualMode}
-            />
           </div>
           <p className="board-touch-hint">
             <span aria-hidden="true">☝</span>
