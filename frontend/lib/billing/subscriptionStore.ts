@@ -5,6 +5,7 @@ import path from "node:path";
 import { Pool } from "pg";
 
 import { isStripeConfigured } from "@/lib/billing/stripeClient";
+import { hasLifetimeAnalysisAccess } from "@/lib/billing/lifetimeAccess";
 import type {
   AnalysisEntitlement,
   BillingSubscription,
@@ -182,6 +183,7 @@ export async function getAnalysisEntitlement(
     process.env.ANALYSIS_DEV_UNLOCK === "true";
   const previewUnlock =
     hasPreviewAnalysisAccess(userId);
+  const lifetimeUnlock = hasLifetimeAnalysisAccess(userId);
   const subscription = userId
     ? await getBillingSubscription(userId)
     : null;
@@ -194,10 +196,13 @@ export async function getAnalysisEntitlement(
     hasAccess:
       developmentUnlock ||
       previewUnlock ||
+      lifetimeUnlock ||
       hasPaidAccess,
-    status: developmentUnlock || previewUnlock
-      ? "active"
-      : subscription?.status ?? "inactive",
+    status: lifetimeUnlock
+      ? "lifetime"
+      : developmentUnlock || previewUnlock
+        ? "active"
+        : subscription?.status ?? "inactive",
     priceMonthlyCents:
       getAnalysisPriceMonthlyCents(),
     priceAnnualCents:

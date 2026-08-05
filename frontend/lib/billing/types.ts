@@ -7,9 +7,11 @@ export type SubscriptionStatus =
   | "paused"
   | "canceled";
 
+export type AnalysisAccessStatus = SubscriptionStatus | "lifetime";
+
 export type AnalysisEntitlement = {
   hasAccess: boolean;
-  status: SubscriptionStatus;
+  status: AnalysisAccessStatus;
   priceMonthlyCents: number;
   priceAnnualCents: number;
   billingConfigured: boolean;
