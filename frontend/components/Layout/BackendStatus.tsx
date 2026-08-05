@@ -17,6 +17,7 @@ export default function BackendStatus({
       return;
     }
     let isMounted = true;
+    let timeoutId: number | undefined;
 
     async function checkBackend(): Promise<void> {
       try {
@@ -35,18 +36,22 @@ export default function BackendStatus({
         if (isMounted) {
           setStatus("offline");
         }
+      } finally {
+        if (isMounted) {
+          timeoutId = window.setTimeout(() => {
+            void checkBackend();
+          }, 10_000);
+        }
       }
     }
 
-    checkBackend();
-
-    const intervalId = window.setInterval(() => {
-      checkBackend();
-    }, 10_000);
+    void checkBackend();
 
     return () => {
       isMounted = false;
-      window.clearInterval(intervalId);
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
     };
   }, [disabled]);
 
@@ -66,7 +71,7 @@ export default function BackendStatus({
 
   const statusConfig = {
     loading: {
-      label: "Connexion au moteur…",
+      label: "Réveil du moteur d’analyse…",
       dotClassName: "bg-yellow-400",
       textClassName: "text-yellow-300",
     },

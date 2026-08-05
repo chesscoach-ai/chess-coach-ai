@@ -15,7 +15,9 @@ export async function GET() {
           Accept: "application/json",
         }),
         cache: "no-store",
-        signal: AbortSignal.timeout(4_000),
+        // Render's free engine instance can take several seconds to wake up.
+        // Keep this request alive so a cold start remains a loading state.
+        signal: AbortSignal.timeout(55_000),
       },
     );
 
