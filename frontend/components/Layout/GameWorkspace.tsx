@@ -363,6 +363,7 @@ export default function GameWorkspace({
                 onMovePlayed={
                   handleMovePlayed
                 }
+                onReset={handleReset}
               />
             </div>
           </div>

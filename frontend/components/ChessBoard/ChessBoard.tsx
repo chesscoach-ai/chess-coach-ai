@@ -41,6 +41,7 @@ type ChessBoardProps = {
   suggestedMove?: SuggestedMove | null;
   reviewIndicators?: ReviewBoardIndicators | null;
   onMovePlayed?: (moveData: PlayedMoveData) => void;
+  onReset?: () => void;
   mode?: "analysis" | "competitive";
   playerColor?: "white" | "black" | null;
   interactionDisabled?: boolean;
@@ -88,6 +89,7 @@ export default function ChessBoard({
   suggestedMove = null,
   reviewIndicators = null,
   onMovePlayed,
+  onReset,
   mode = "analysis",
   playerColor = null,
   interactionDisabled = false,
@@ -252,7 +254,11 @@ export default function ChessBoard({
   }
 
   function resetGame(): void {
-    game.reset();
+    if (onReset) {
+      onReset();
+    } else {
+      game.reset();
+    }
     setErrorMessage("");
   }
 
