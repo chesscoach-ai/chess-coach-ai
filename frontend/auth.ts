@@ -5,6 +5,7 @@ import { compare } from "bcryptjs";
 import { z } from "zod";
 
 import { findUserByEmail } from "@/lib/auth/userStore";
+import { recordLegalAcceptance } from "@/lib/legal/acceptanceStore";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -44,4 +45,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google,
   ],
   session: { strategy: "jwt" },
+  callbacks: {
+    async signIn({ user, account }) {
+      if (
+        account?.provider === "google" &&
+        user.email
+      ) {
+        await recordLegalAcceptance(
+          user.email,
+          "google",
+        );
+      }
+      return true;
+    },
+  },
 });

@@ -10,13 +10,13 @@ import {
 } from "react";
 import {
   ApiService,
-  type MoveAnalysis,
   type PositionAnalysisResponse,
 } from "@/services/api/ApiService";
 import {
   getAiPersona,
   type AiPersonaId,
 } from "@/lib/ai/opponents";
+import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
 
 type AnalysisPanelProps = {
   fen: string;
@@ -277,15 +277,39 @@ export default function AnalysisPanel({
         <ErrorMessage message={errorMessage} />
       )}
 
+      {!analysis &&
+        !isLoading &&
+        !errorMessage && (
+          <CoachMentorMessage
+            compact
+            title="À toi de jouer."
+          >
+            Joue un coup ou importe une partie. Je te dirai d’abord ce qui
+            compte vraiment, puis tu pourras ouvrir les chiffres si tu veux
+            entrer dans la salle des machines.
+          </CoachMentorMessage>
+        )}
+
+      {isLoading && !analysis && (
+        <CoachMentorMessage
+          compact
+          title="Je regarde la position…"
+        >
+          Donne-moi une seconde : je vérifie les menaces, la sécurité des
+          rois et le plan le plus utile. Promis, pas de récitation de robot.
+        </CoachMentorMessage>
+      )}
+
       {analysis && (
         <div className="mt-3 space-y-3">
-          <CompactAnalysisSummary
+          <CoachPositionSummary
             analysis={analysis}
+            coachPersonaId={coachPersonaId}
           />
 
           <details className="group rounded-xl border border-gray-800 bg-gray-950/40">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-gray-200">
-              Déplier l’analyse complète
+              Voir les détails techniques
               <span className="text-blue-300 transition group-open:rotate-180">
                 ⌄
               </span>
@@ -319,10 +343,6 @@ export default function AnalysisPanel({
                 showExplanation={showTermExplanations}
               />
 
-              <TopMovesSection
-                topMoves={analysis.top_moves}
-                showTermExplanations={showTermExplanations}
-              />
             </div>
           </details>
         </div>
@@ -342,12 +362,12 @@ function PanelHeader({
     <div className="mb-4 flex items-start justify-between gap-4">
       <div>
         <h2 className="text-lg font-semibold text-white">
-          Analyse Stockfish
+          Analyse du Coach IA
         </h2>
 
         <p className="mt-1 text-sm leading-6 text-gray-400">
-          Les idées essentielles de la position, expliquées sans
-          surcharge.
+          Un verdict, une explication et un plan concret. Le moteur reste
+          discrètement en coulisses.
         </p>
       </div>
       <button
@@ -362,36 +382,30 @@ function PanelHeader({
   );
 }
 
-function CompactAnalysisSummary({
+function CoachPositionSummary({
   analysis,
+  coachPersonaId,
 }: {
   analysis: PositionAnalysisResponse;
+  coachPersonaId: AiPersonaId;
 }) {
   const move =
     analysis.best_move_details;
+  const persona =
+    getAiPersona(coachPersonaId);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-900/60 bg-blue-950/20 px-4 py-3">
-      <div className="min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-blue-300">
-          Meilleur coup
-        </p>
-        <p className="mt-0.5 truncate text-base font-black text-white">
-          {move.move_san}{" "}
-          <span className="font-medium text-gray-400">
-            · {move.beginner_label}
-          </span>
-        </p>
-      </div>
-      <div className="flex items-center gap-2 text-xs">
-        <span className="rounded-full border border-gray-700 px-2.5 py-1 text-gray-300">
-          Éval. {formatEvaluation(analysis)}
-        </span>
-        <span className="rounded-full border border-gray-700 px-2.5 py-1 text-gray-500">
-          Prof. {analysis.depth}
-        </span>
-      </div>
-    </div>
+    <CoachMentorMessage
+      name={persona.name}
+      title={`Mon choix : le ${move.moved_piece} joue ${move.move_san}`}
+    >
+      <p>{move.beginner_description}</p>
+      <p className="mt-2 text-blue-100">
+        {getPersonaCoachLead(coachPersonaId)}{" "}
+        {move.strategic_ideas[0] ??
+          move.explanation}
+      </p>
+    </CoachMentorMessage>
   );
 }
 
@@ -436,6 +450,10 @@ function BestMoveCard({
           <div className="mt-2 flex flex-wrap gap-2 text-xs">
             <MoveBadge>
               Notation : {move.move_san}
+            </MoveBadge>
+
+            <MoveBadge>
+              Pièce : {move.moved_piece}
             </MoveBadge>
 
             <MoveBadge>
@@ -645,136 +663,6 @@ function EvaluationBar({
         <span>Équilibre</span>
         <span>Noirs</span>
       </div>
-    </div>
-  );
-}
-
-function TopMovesSection({
-  topMoves,
-  showTermExplanations,
-}: {
-  topMoves: MoveAnalysis[];
-  showTermExplanations: boolean;
-}) {
-  if (!topMoves || topMoves.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="pt-1">
-      <div className="mb-3">
-        <h3 className="text-base font-semibold text-white">
-          Les meilleures idées dans cette position
-        </h3>
-
-        <p className="mt-1 text-sm leading-6 text-gray-400">
-          Chaque proposition est traduite pour expliquer la
-          pièce à déplacer et l’objectif général du coup.
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        {topMoves.map((move) => (
-          <TopMoveCard
-            key={`${move.rank}-${move.move}`}
-            move={move}
-            showTermExplanations={showTermExplanations}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TopMoveCard({
-  move,
-  showTermExplanations,
-}: {
-  move: MoveAnalysis;
-  showTermExplanations: boolean;
-}) {
-  return (
-    <article className="rounded-xl border border-gray-800 bg-gray-950 p-4 transition hover:border-gray-700">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex min-w-0 items-start gap-3">
-          <RankBadge rank={move.rank} />
-
-          <div className="min-w-0">
-            <p className="text-lg font-bold leading-7 text-white">
-              {move.beginner_label}
-            </p>
-
-            <p className="mt-1 text-sm text-gray-500">
-              Notation : {move.move_san}
-              {" · "}
-              {move.from_square} → {move.to_square}
-            </p>
-          </div>
-        </div>
-
-        <div className="shrink-0 sm:text-right">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            Évaluation
-          </p>
-
-          <p className="mt-1 text-lg font-bold text-white">
-            {formatEvaluation(move)}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-4 rounded-xl border border-gray-800 bg-gray-900/60 p-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          Explication simple
-        </p>
-
-        <p className="mt-1 text-sm leading-6 text-gray-300">
-          {move.beginner_description}
-        </p>
-
-        <TermExplanations
-          enabled={showTermExplanations}
-          texts={[move.beginner_description]}
-        />
-      </div>
-
-      {move.strategic_ideas.length > 0 && (
-        <div className="mt-3 rounded-xl border border-gray-800 bg-gray-900/60 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-            Idées stratégiques
-          </p>
-
-          <ul className="mt-2 space-y-1.5 text-sm leading-6 text-gray-300">
-            {move.strategic_ideas.map((idea, index) => (
-              <li
-                key={`${idea}-${index}`}
-                className="flex gap-2"
-              >
-                <span aria-hidden="true">•</span>
-                <span>{idea}</span>
-              </li>
-            ))}
-          </ul>
-
-          <TermExplanations
-            enabled={showTermExplanations}
-            texts={move.strategic_ideas}
-          />
-        </div>
-      )}
-
-    </article>
-  );
-}
-
-function RankBadge({
-  rank,
-}: {
-  rank: number;
-}) {
-  return (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-700 bg-gray-900 text-sm font-bold text-white">
-      {rank}
     </div>
   );
 }

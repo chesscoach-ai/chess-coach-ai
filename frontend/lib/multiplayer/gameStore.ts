@@ -63,6 +63,7 @@ type StoredGame = {
   turnStartedAt: string | null;
   result: GameResult | null;
   termination: string | null;
+  drawOfferById?: string | null;
   createdAt: string;
   updatedAt: string;
   matchType?: "private" | "matchmaking";
@@ -240,6 +241,7 @@ function makeStoredGame(
     turnStartedAt: null,
     result: null,
     termination: null,
+    drawOfferById: null,
     createdAt: now,
     updatedAt: now,
     matchType,
@@ -310,6 +312,7 @@ function finishLocalGame(
   game.status = "finished";
   game.result = result;
   game.termination = termination;
+  game.drawOfferById = null;
   game.turnStartedAt = null;
   game.updatedAt =
     new Date().toISOString();
@@ -348,6 +351,7 @@ async function finishPostgresGame(
   game.status = "finished";
   game.result = result;
   game.termination = termination;
+  game.drawOfferById = null;
   game.turnStartedAt = null;
   game.updatedAt =
     new Date().toISOString();
@@ -412,6 +416,12 @@ function toPublicGame(game: StoredGame, playerId: string): OnlineGame {
     },
     result: game.result,
     termination: game.termination,
+    drawOfferBy:
+      game.drawOfferById === game.whiteId
+        ? "white"
+        : game.drawOfferById === game.blackId
+          ? "black"
+          : null,
     matchType: game.matchType ?? "private",
     createdAt: game.createdAt,
     endedAt:
@@ -825,6 +835,7 @@ function playStoredMove(
     to: input.to,
     playedAt: now.toISOString(),
   });
+  game.drawOfferById = null;
   game.whiteTimeMs =
     clocks.whiteMs + (color === "white" ? game.incrementMs : 0);
   game.blackTimeMs =
@@ -936,6 +947,99 @@ export async function resignOnlineGame(
   }
 }
 
+export async function offerOnlineGameDraw(
+  gameId: string,
+  player: AuthenticatedPlayer,
+): Promise<OnlineGame> {
+  const database = getPool();
+
+  if (!database) {
+    return withLocalLock((local) => {
+      const game = local.games[gameId];
+      if (!game) throw new Error("GAME_NOT_FOUND");
+      assertParticipant(game, player.id);
+      if (game.status !== "active" || !game.blackId) {
+        throw new Error("GAME_NOT_ACTIVE");
+      }
+      if (game.drawOfferById) throw new Error("DRAW_OFFER_PENDING");
+      game.drawOfferById = player.id;
+      game.updatedAt = new Date().toISOString();
+      return toPublicGame(game, player.id);
+    });
+  }
+
+  await databaseReady;
+  const client = await database.connect();
+  try {
+    await client.query("BEGIN");
+    const game = await getLockedPostgresGame(client, gameId);
+    assertParticipant(game, player.id);
+    if (game.status !== "active" || !game.blackId) {
+      throw new Error("GAME_NOT_ACTIVE");
+    }
+    if (game.drawOfferById) throw new Error("DRAW_OFFER_PENDING");
+    game.drawOfferById = player.id;
+    await savePostgresGame(client, game);
+    await client.query("COMMIT");
+    return toPublicGame(game, player.id);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function respondToOnlineGameDraw(
+  gameId: string,
+  player: AuthenticatedPlayer,
+  accept: boolean,
+): Promise<OnlineGame> {
+  const database = getPool();
+
+  if (!database) {
+    return withLocalLock((local) => {
+      const game = local.games[gameId];
+      if (!game) throw new Error("GAME_NOT_FOUND");
+      assertParticipant(game, player.id);
+      if (game.status !== "active") throw new Error("GAME_NOT_ACTIVE");
+      if (!game.drawOfferById) throw new Error("DRAW_OFFER_NOT_FOUND");
+      if (game.drawOfferById === player.id) throw new Error("DRAW_OFFER_OWN");
+      if (accept) {
+        finishLocalGame(local, game, "1/2-1/2", "Nulle par accord");
+      } else {
+        game.drawOfferById = null;
+        game.updatedAt = new Date().toISOString();
+      }
+      return toPublicGame(game, player.id);
+    });
+  }
+
+  await databaseReady;
+  const client = await database.connect();
+  try {
+    await client.query("BEGIN");
+    const game = await getLockedPostgresGame(client, gameId);
+    assertParticipant(game, player.id);
+    if (game.status !== "active") throw new Error("GAME_NOT_ACTIVE");
+    if (!game.drawOfferById) throw new Error("DRAW_OFFER_NOT_FOUND");
+    if (game.drawOfferById === player.id) throw new Error("DRAW_OFFER_OWN");
+    if (accept) {
+      await finishPostgresGame(client, game, "1/2-1/2", "Nulle par accord");
+    } else {
+      game.drawOfferById = null;
+    }
+    await savePostgresGame(client, game);
+    await client.query("COMMIT");
+    return toPublicGame(game, player.id);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function getOnlinePlayerRating(playerId: string): Promise<number> {
   const database = getPool();
   if (!database) {
@@ -964,7 +1068,7 @@ function buildGamePgn(
       ? "Partie classée en ligne"
       : "Partie privée en ligne",
   );
-  chess.setHeader("Site", "Chess Coach AI");
+  chess.setHeader("Site", "Chess Clan");
   chess.setHeader(
     "Date",
     game.createdAt.slice(0, 10).replaceAll("-", "."),
@@ -1050,6 +1154,10 @@ export async function listFinishedOnlineGames(
     .slice(0, 100)
     .map((game) => ({
       id: game.id,
+      youAre:
+        game.whiteId === player.id
+          ? "white"
+          : "black",
       white: {
         name: game.whiteName,
         rating: game.whiteRatingBefore,
@@ -1462,6 +1570,25 @@ export async function getPlayerMatchStats(
   playerId: string,
   monthPrefix?: string,
 ): Promise<PlayerMatchStats> {
+  return calculatePlayerMatchStats(
+    playerId,
+    monthPrefix ? [monthPrefix] : undefined,
+    true,
+  );
+}
+
+export async function getPlayerMatchStatsForDateKeys(
+  playerId: string,
+  dateKeys: string[],
+): Promise<PlayerMatchStats> {
+  return calculatePlayerMatchStats(playerId, dateKeys, false);
+}
+
+async function calculatePlayerMatchStats(
+  playerId: string,
+  dateKeys?: string[],
+  matchPrefix = false,
+): Promise<PlayerMatchStats> {
   const database = getPool();
   let games: StoredGame[];
 
@@ -1486,7 +1613,12 @@ export async function getPlayerMatchStats(
         game.status === "finished" &&
         game.result &&
         (game.whiteId === playerId || game.blackId === playerId) &&
-        (!monthPrefix || game.updatedAt.startsWith(monthPrefix)),
+        (!dateKeys ||
+          dateKeys.some((dateKey) => {
+            const playedAt = game.endedAt ?? game.updatedAt;
+            if (matchPrefix) return playedAt.startsWith(dateKey);
+            return getParisGameDateKey(new Date(playedAt)) === dateKey;
+          })),
     )
     .reduce(
       (total, game) => {
@@ -1510,4 +1642,16 @@ export async function getPlayerMatchStats(
     );
 
   return stats;
+}
+
+function getParisGameDateKey(date: Date): string {
+  const parts = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const read = (type: string) =>
+    parts.find((part) => part.type === type)?.value ?? "00";
+  return `${read("year")}-${read("month")}-${read("day")}`;
 }

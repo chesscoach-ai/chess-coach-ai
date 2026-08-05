@@ -6,6 +6,7 @@ type MenuItem =
 
 const ITEMS: MenuItem[] = [
   { label: "Échiquier", targetId: "game-board", primary: true },
+  { label: "Coach IA", targetId: "coach-analysis" },
   { label: "Statistiques", targetId: "statistics" },
   { label: "Historique", targetId: "game-history" },
   { label: "Bilan du coach", targetId: "coach-summary" },
@@ -30,7 +31,7 @@ export default function WorkspaceMenu() {
   }
 
   return (
-    <nav aria-label="Navigation de l’espace de travail" className="sticky top-0 z-40 -mx-2 overflow-x-auto border-b border-gray-800/80 bg-gray-950/90 px-2 py-3 shadow-lg backdrop-blur-xl">
+    <nav aria-label="Navigation de l’espace de travail" className="sticky top-0 z-40 -mx-2 hidden overflow-x-auto border-b border-gray-800/80 bg-gray-950/90 px-2 py-3 shadow-lg backdrop-blur-xl md:block">
       <div className="flex min-w-max items-center gap-2">
         {ITEMS.map((item) => {
           const classes = item.primary

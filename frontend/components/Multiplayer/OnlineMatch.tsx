@@ -13,6 +13,14 @@ import { Chessboard } from "react-chessboard";
 import MoveEffects, {
   useMoveAnimation,
 } from "@/components/ChessBoard/MoveEffects";
+import {
+  BoardModeToggle,
+  getChessPieceRole,
+  MEDIEVAL_PIECES,
+  useBoardVisualMode,
+} from "@/components/ChessBoard/MedievalBoard";
+import { useChessSounds } from "@/hooks/useChessSounds";
+import { getCheckmateAside } from "@/lib/content/playfulVoice";
 import type {
   OnlineGame,
   OnlineMoveInput,
@@ -26,6 +34,9 @@ export default function OnlineMatch({
   isLoading,
   onMove,
   onResign,
+  onOfferDraw,
+  onAcceptDraw,
+  onDeclineDraw,
   onLeave,
   onRematch,
   onOpenReview,
@@ -35,6 +46,9 @@ export default function OnlineMatch({
   isLoading: boolean;
   onMove: (input: OnlineMoveInput) => Promise<boolean>;
   onResign: () => Promise<void>;
+  onOfferDraw: () => Promise<void>;
+  onAcceptDraw: () => Promise<void>;
+  onDeclineDraw: () => Promise<void>;
   onLeave: () => void;
   onRematch: () => Promise<void>;
   onOpenReview: (
@@ -46,10 +60,17 @@ export default function OnlineMatch({
     displayedFen: string;
   } | null>(null);
   const [isMovePending, setIsMovePending] = useState(false);
+  const [confirmingResign, setConfirmingResign] = useState(false);
   const {
     moveEffect,
     animateMove,
   } = useMoveAnimation();
+  const {
+    mode: boardVisualMode,
+    toggle: toggleBoardVisualMode,
+  } = useBoardVisualMode();
+  const playChessSound =
+    useChessSounds();
   const animatedMoveCount = useRef(
     game.moves.length,
   );
@@ -91,12 +112,26 @@ export default function OnlineMatch({
       lastMove.from,
       lastMove.to,
       lastMove.san.includes("x"),
+      getChessPieceRole(
+        lastMove.san.match(
+          /^[NBRQK]/,
+        )?.[0] ?? "p",
+      ),
     );
+    playChessSound({
+      capture:
+        lastMove.san.includes("x"),
+      check:
+        lastMove.san.includes("+"),
+      checkmate:
+        lastMove.san.includes("#"),
+    });
   }, [
     animateMove,
     game.id,
     game.moves.length,
     lastMove,
+    playChessSound,
   ]);
   const squareStyles = useMemo<Record<string, CSSProperties>>(() => {
     if (!lastMove) return {};
@@ -123,6 +158,8 @@ export default function OnlineMatch({
 
     try {
       const preview = new Chess(game.fen);
+      const movedPiece =
+        preview.get(input.from)?.type;
       const playedMove =
         preview.move(input);
       setOptimisticPosition({
@@ -133,7 +170,16 @@ export default function OnlineMatch({
         input.from,
         input.to,
         Boolean(playedMove.captured),
+        getChessPieceRole(movedPiece),
       );
+      playChessSound({
+        capture: Boolean(
+          playedMove.captured,
+        ),
+        check: preview.isCheck(),
+        checkmate:
+          preview.isCheckmate(),
+      });
       animatedMoveCount.current =
         game.moves.length + 1;
     } catch {
@@ -155,7 +201,18 @@ export default function OnlineMatch({
       )}
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="chess-board-live w-full max-w-xl overflow-hidden rounded-2xl shadow-2xl">
+        <div
+          className={[
+            "chess-board-live w-full max-w-xl overflow-hidden rounded-2xl shadow-2xl",
+            boardVisualMode === "medieval"
+              ? "chess-board-live--medieval"
+              : "",
+          ].join(" ")}
+        >
+          <BoardModeToggle
+            mode={boardVisualMode}
+            onToggle={toggleBoardVisualMode}
+          />
           <Chessboard
             options={{
               position: displayedFen,
@@ -166,13 +223,29 @@ export default function OnlineMatch({
               animationDurationInMs: 260,
               showNotation: true,
               squareStyles,
-              darkSquareStyle: { backgroundColor: "#4b5563" },
-              lightSquareStyle: { backgroundColor: "#d1d5db" },
+              darkSquareStyle: {
+                backgroundColor:
+                  boardVisualMode === "medieval"
+                    ? "#4f3926"
+                    : "#4b5563",
+              },
+              lightSquareStyle: {
+                backgroundColor:
+                  boardVisualMode === "medieval"
+                    ? "#c9a86a"
+                    : "#d1d5db",
+              },
+              pieces:
+                boardVisualMode ===
+                "medieval"
+                  ? MEDIEVAL_PIECES
+                  : undefined,
             }}
           />
           <MoveEffects
             move={moveEffect}
             orientation={game.youAre}
+            visualMode={boardVisualMode}
           />
         </div>
 
@@ -188,16 +261,95 @@ export default function OnlineMatch({
             </p>
           )}
 
+          {game.status === "active" &&
+            game.drawOfferBy &&
+            game.drawOfferBy !== game.youAre && (
+              <section
+                aria-live="polite"
+                className="rounded-xl border border-amber-700/70 bg-amber-950/30 p-4"
+              >
+                <p className="font-semibold text-amber-100">
+                  Ton adversaire propose la nulle
+                </p>
+                <p className="mt-1 text-sm text-amber-200/70">
+                  Accepter termine la partie sans vainqueur. Tu peux aussi
+                  refuser et continuer le duel.
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    disabled={isLoading}
+                    onClick={() => void onAcceptDraw()}
+                    className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
+                  >
+                    Accepter
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isLoading}
+                    onClick={() => void onDeclineDraw()}
+                    className="rounded-lg border border-gray-600 px-3 py-2 text-sm font-semibold text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+                  >
+                    Continuer
+                  </button>
+                </div>
+              </section>
+            )}
+
+          {confirmingResign && game.status === "active" && (
+            <section className="rounded-xl border border-red-800 bg-red-950/30 p-4">
+              <p className="font-semibold text-red-100">
+                Abandonner cette partie ?
+              </p>
+              <p className="mt-1 text-sm text-red-200/70">
+                La victoire et les points Elo seront attribués à ton
+                adversaire.
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={() => {
+                    setConfirmingResign(false);
+                    void onResign();
+                  }}
+                  className="rounded-lg bg-red-700 px-3 py-2 text-sm font-bold text-white hover:bg-red-600 disabled:opacity-50"
+                >
+                  Oui, abandonner
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmingResign(false)}
+                  className="rounded-lg border border-gray-600 px-3 py-2 text-sm font-semibold text-gray-200 hover:bg-gray-800"
+                >
+                  Continuer à jouer
+                </button>
+              </div>
+            </section>
+          )}
+
           <div className="grid grid-cols-2 gap-2">
             {game.status === "active" ? (
-              <button
-                type="button"
-                disabled={isLoading}
-                onClick={() => void onResign()}
-                className="rounded-xl border border-red-900 px-4 py-2.5 text-sm font-semibold text-red-300 transition hover:bg-red-950/30 disabled:opacity-50"
-              >
-                Abandonner
-              </button>
+              <>
+                <button
+                  type="button"
+                  disabled={isLoading || Boolean(game.drawOfferBy)}
+                  onClick={() => void onOfferDraw()}
+                  className="rounded-xl border border-amber-800 px-4 py-2.5 text-sm font-semibold text-amber-200 transition hover:bg-amber-950/30 disabled:opacity-50"
+                >
+                  {game.drawOfferBy === game.youAre
+                    ? "Nulle proposée"
+                    : "Proposer la nulle"}
+                </button>
+                <button
+                  type="button"
+                  disabled={isLoading || confirmingResign}
+                  onClick={() => setConfirmingResign(true)}
+                  className="rounded-xl border border-red-900 px-4 py-2.5 text-sm font-semibold text-red-300 transition hover:bg-red-950/30 disabled:opacity-50"
+                >
+                  Abandonner
+                </button>
+              </>
             ) : game.status ===
               "finished" ? (
               <>
@@ -278,8 +430,8 @@ function WaitingRoom({
                 Nous cherchons un joueur proche de ton Elo…
               </p>
               <p className="mt-1 text-sm text-gray-400">
-                La partie démarrera automatiquement dès qu’un adversaire est
-                trouvé.
+                La partie démarrera dès qu’un adversaire de ton niveau, et
+                suffisamment courageux, sera trouvé.
               </p>
             </>
           ) : (
@@ -325,6 +477,15 @@ function OnlineMatchCard({ game }: { game: OnlineGame }) {
         : game.youAre === game.turn
           ? "À toi de jouer"
           : "Au tour de ton adversaire";
+  const checkmateAside =
+    game.status === "finished" &&
+    game.termination
+      ?.toLocaleLowerCase("fr")
+      .includes("échec et mat")
+      ? getCheckmateAside(
+          didCurrentPlayerWin(game),
+        )
+      : null;
 
   return (
     <section className="rounded-2xl border border-gray-800 bg-gray-900 p-5 shadow-lg">
@@ -336,6 +497,11 @@ function OnlineMatchCard({ game }: { game: OnlineGame }) {
             {game.timeControl.label}
           </p>
           <h2 className="mt-1 text-xl font-bold text-white">{activeText}</h2>
+          {checkmateAside && (
+            <p className="mt-1 text-sm leading-5 text-amber-200/80">
+              {checkmateAside}
+            </p>
+          )}
         </div>
         {game.result && (
           <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-sm font-bold text-emerald-300">
@@ -381,6 +547,17 @@ function OnlineMatchCard({ game }: { game: OnlineGame }) {
         )}
       </div>
     </section>
+  );
+}
+
+function didCurrentPlayerWin(
+  game: OnlineGame,
+): boolean {
+  return (
+    (game.youAre === "white" &&
+      game.result === "1-0") ||
+    (game.youAre === "black" &&
+      game.result === "0-1")
   );
 }
 

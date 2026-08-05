@@ -17,9 +17,10 @@ import type {
   PlayedMoveData,
 } from "@/components/ChessBoard";
 import GameSummary from "@/components/Coach/GameSummary";
-import LearningPath from "@/components/Coach/LearningPath";
+import DailyCoachMission from "@/components/Coach/DailyCoachMission";
 import LivePositionOverview from "@/components/Coach/LivePositionOverview";
 import MoveReviewCard from "@/components/Coach/MoveReviewCard";
+import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
 import type { CurrentUser } from "@/components/Layout/ProductWorkspace";
 import WorkspaceMenu from "@/components/Layout/WorkspaceMenu";
 import MoveList from "@/components/PGN/MoveList";
@@ -319,7 +320,7 @@ export default function GameWorkspace({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <WorkspaceMenu />
 
       <section
@@ -384,35 +385,36 @@ export default function GameWorkspace({
           />
         </div>
 
-        <aside className="min-w-0 xl:sticky xl:top-24">
+        <aside className="min-w-0 space-y-4 xl:sticky xl:top-24">
+          <AiOpponentPanel
+            opponent={aiOpponent}
+            context="analysis"
+          />
           <LivePositionOverview
             review={
               reviews.selectedMoveReview
             }
-            positionAnalysis={
-              positionAnalysis.currentPositionAnalysis
-            }
             isReviewLoading={
               reviews.isSelectedMoveReviewing
-            }
-            isPositionLoading={
-              positionAnalysis.isCurrentPositionAnalyzing
-            }
-            selectedMove={
-              positionAnalysis.suggestedMove
-                ? `${positionAnalysis.suggestedMove.from}${positionAnalysis.suggestedMove.to}`
-                : null
             }
             coachPersonaId={aiOpponent.personaId}
             livePrecision={
               livePrecision
             }
-            onMoveSelect={
-              positionAnalysis.selectSuggestedMove
-            }
           />
         </aside>
       </section>
+
+      <DailyCoachMission
+        profile={learningProfile}
+        moveCount={game.moves.length}
+        hasPositionAnalysis={Boolean(
+          positionAnalysis.currentPositionAnalysis,
+        )}
+        reviewedMoveCount={
+          Object.keys(reviews.moveReviews).length
+        }
+      />
 
       {reviewGameId && (
         <section className="rounded-xl border border-emerald-800/70 bg-emerald-950/25 px-4 py-3">
@@ -420,54 +422,21 @@ export default function GameWorkspace({
             Bilan de partie en ligne
           </p>
           <p className="mt-1 text-sm text-gray-300">
-            Stockfish analyse automatiquement chaque coup. Utilise les flèches ou la liste des coups pour revoir les décisions une par une.
+            Le Coach IA relit automatiquement chaque coup. Utilise la liste
+            des coups pour parcourir ses verdicts, tes moments forts et les
+            décisions à retravailler.
           </p>
         </section>
       )}
-
-      <AiOpponentPanel
-        opponent={aiOpponent}
-        context="analysis"
-      />
 
       <PlayerStatistics
         currentUser={currentUser}
         variant="analysis"
       />
 
-      <details className="group rounded-2xl border border-blue-900/60 bg-gray-900/70 shadow-lg">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 sm:px-5">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-300">
-              Parcours personnalisé
-            </p>
-            <p className="mt-1 text-sm text-gray-400">
-              Ouvre ton plan de progression et les conseils du coach.
-            </p>
-          </div>
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-700 text-blue-300 transition group-open:rotate-180">
-            ⌄
-          </span>
-        </summary>
-        <div className="border-t border-gray-800 p-3">
-          <LearningPath
-            profile={learningProfile}
-            moveCount={game.moves.length}
-            hasPositionAnalysis={Boolean(
-              positionAnalysis.currentPositionAnalysis,
-            )}
-            reviewedMoveCount={
-              Object.keys(
-                reviews.moveReviews,
-              ).length
-            }
-          />
-        </div>
-      </details>
-
       <section className="grid items-start gap-6 xl:grid-cols-2">
         <div
-          id="stockfish-analysis"
+          id="coach-analysis"
           className="scroll-mt-24"
         >
           <AnalysisPanel
@@ -659,21 +628,14 @@ function getMoveImpact(
 
 function EmptyMoveReview() {
   return (
-    <section className="flex min-h-64 items-center justify-center rounded-2xl border border-dashed border-gray-800 bg-gray-900/50 p-8 text-center shadow-lg">
-      <div className="max-w-md">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-          Analyse du coup
-        </p>
-
-        <h2 className="mt-2 text-xl font-bold text-white">
-          Sélectionne un coup
-        </h2>
-
-        <p className="mt-3 text-sm leading-6 text-gray-400">
-          Le diagnostic détaillé du coup
-          sélectionné apparaîtra ici.
-        </p>
-      </div>
+    <section className="rounded-2xl border border-gray-800 bg-gray-900/50 p-5 shadow-lg">
+      <CoachMentorMessage
+        compact
+        title="Quel coup veux-tu revoir ?"
+      >
+        Sélectionne un coup dans la partie. Je te donnerai un verdict, ce que
+        tu as bien vu et le réflexe à retenir pour la prochaine fois.
+      </CoachMentorMessage>
     </section>
   );
 }

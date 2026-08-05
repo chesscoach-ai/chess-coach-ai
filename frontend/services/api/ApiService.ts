@@ -1,6 +1,3 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://127.0.0.1:8000";
 const SECURE_ANALYSIS_BASE_URL = "/api/analysis-engine";
 let activeGameReviewId: string | null =
   null;
@@ -104,9 +101,11 @@ export type MoveReviewRequest = {
 export type MoveReviewResponse = {
   played_move: string;
   played_move_san: string;
+  played_move_piece: string;
 
   best_move: string;
   best_move_san: string;
+  best_move_piece: string;
 
   is_best_move: boolean;
 
@@ -194,36 +193,24 @@ export class ApiService {
   }
 
   static async getHealth(): Promise<ApiHealthResponse> {
-    const controller = new AbortController();
-
-    const timeoutId = window.setTimeout(
-      () => controller.abort(),
-      2000,
+    const response = await fetch(
+      `/api/engine-health?t=${Date.now()}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+        cache: "no-store",
+      },
     );
 
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/health?t=${Date.now()}`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-          cache: "no-store",
-          signal: controller.signal,
-        },
-      );
-
-      if (!response.ok) {
-        throw await ApiService.parseError(response);
-      }
-
-      return (
-        await response.json()
-      ) as ApiHealthResponse;
-    } finally {
-      window.clearTimeout(timeoutId);
+    if (!response.ok) {
+      throw await ApiService.parseError(response);
     }
+
+    return (
+      await response.json()
+    ) as ApiHealthResponse;
   }
 
   static async analysePosition(

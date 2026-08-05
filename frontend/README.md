@@ -72,29 +72,33 @@ Sans `DATABASE_URL`, les parties de développement sont conservées dans
 `.data/multiplayer.json`. En production, les tables PostgreSQL nécessaires sont
 créées automatiquement.
 
-## Abonnement Analyse
+## Abonnement Coach+
 
-L’espace Analyse est réservé aux abonnés et coûte exactement 2 € par mois. Le
+L’espace Analyse est réservé aux abonnés Coach+ à `2,99 EUR` par mois ou
+`24,99 EUR` par an. Le multijoueur reste gratuit. Le
 verrouillage est vérifié dans la page et dans le proxy serveur qui protège les
 appels à Stockfish.
 
 Dans Stripe :
 
-1. créez un produit « Chess Coach Analyse » ;
-2. ajoutez un tarif récurrent de `2,00 EUR`, facturé chaque mois ;
-3. copiez son identifiant `price_...` dans `STRIPE_PRICE_ID` ;
-4. configurez un webhook vers
+1. créez un produit « Chess Clan Coach+ » ;
+2. ajoutez un tarif récurrent de `2,99 EUR`, facturé chaque mois ;
+3. ajoutez un tarif récurrent de `24,99 EUR`, facturé chaque année ;
+4. copiez leurs identifiants dans `STRIPE_PRICE_ID` et
+   `STRIPE_PRICE_ID_ANNUAL` ;
+5. configurez un webhook vers
    `https://votre-domaine/api/billing/webhook` ;
-5. abonnez le webhook aux événements `checkout.session.completed`,
+6. abonnez le webhook aux événements `checkout.session.completed`,
    `customer.subscription.created`, `customer.subscription.updated` et
    `customer.subscription.deleted` ;
-6. copiez le secret de signature dans `STRIPE_WEBHOOK_SECRET`.
+7. copiez le secret de signature dans `STRIPE_WEBHOOK_SECRET`.
 
 Variables nécessaires :
 
 ```env
 STRIPE_SECRET_KEY=sk_...
 STRIPE_PRICE_ID=price_...
+STRIPE_PRICE_ID_ANNUAL=price_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
@@ -106,6 +110,36 @@ l’environnement de développement.
 Chaque analyse complète enrichit un profil pédagogique agrégé : Elo, thèmes
 d’erreur récurrents, gravité et recommandations. Les parties brutes ne sont pas
 dupliquées dans ce profil.
+
+## Notifications mobiles
+
+Les visiteurs disposent d’un rappel local lorsque la PWA est active. Un joueur
+connecté peut aussi enregistrer chaque téléphone pour recevoir un véritable
+Web Push lorsque l’application est fermée.
+
+Générez une paire VAPID sans jamais publier la clé privée :
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+Renseignez ensuite `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` et
+`VAPID_SUBJECT` dans `.env.local` et dans le service Web Render. Les abonnements
+sont conservés dans PostgreSQL et supprimés automatiquement lorsque le
+fournisseur Push signale qu’ils ont expiré.
+
+Le distributeur protégé doit être appelé toutes les 15 minutes par un
+planificateur :
+
+```text
+POST https://votre-domaine/api/push/dispatch
+Authorization: Bearer VOTRE_CRON_SECRET
+```
+
+Le Blueprint crée `CRON_SECRET`, mais ne crée volontairement aucun Cron Job
+payant. Pour la phase de test, utilisez un planificateur HTTP existant. Lorsque
+le produit commencera à générer des revenus, un Cron Job Render pourra appeler
+ce point d’entrée.
 
 ## Adversaires IA
 

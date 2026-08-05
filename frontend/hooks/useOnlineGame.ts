@@ -199,6 +199,30 @@ export function useOnlineGame(enabled: boolean) {
     }
   }
 
+  async function draw(
+    action: "offer" | "accept" | "decline",
+  ): Promise<void> {
+    if (!game) return;
+    setIsLoading(true);
+    setError("");
+    try {
+      storeGame(
+        await request(`/api/multiplayer/games/${game.id}/draw`, {
+          method: "POST",
+          body: JSON.stringify({ action }),
+        }),
+      );
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "La proposition de nulle n’a pas pu être envoyée.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   async function rematch(): Promise<void> {
     if (!game) return;
     setIsLoading(true);
@@ -242,6 +266,9 @@ export function useOnlineGame(enabled: boolean) {
     findMatch,
     move,
     resign,
+    offerDraw: () => draw("offer"),
+    acceptDraw: () => draw("accept"),
+    declineDraw: () => draw("decline"),
     rematch,
     leave: async () => {
       if (game?.status === "waiting") {

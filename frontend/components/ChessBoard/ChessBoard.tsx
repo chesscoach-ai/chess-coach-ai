@@ -13,6 +13,13 @@ import { Chessboard } from "react-chessboard";
 import MoveEffects, {
   useMoveAnimation,
 } from "@/components/ChessBoard/MoveEffects";
+import {
+  BoardModeToggle,
+  getChessPieceRole,
+  MEDIEVAL_PIECES,
+  useBoardVisualMode,
+} from "@/components/ChessBoard/MedievalBoard";
+import { useChessSounds } from "@/hooks/useChessSounds";
 import type { ChessGameController } from "@/hooks/useChessGame";
 import type { MoveClassification } from "@/services/api/ApiService";
 export type SuggestedMove = {
@@ -100,10 +107,19 @@ export default function ChessBoard({
     moveEffect,
     animateMove,
   } = useMoveAnimation();
+  const {
+    mode: boardVisualMode,
+    toggle: toggleBoardVisualMode,
+  } = useBoardVisualMode();
+  const playChessSound =
+    useChessSounds();
   const lastAnimatedPosition =
     useRef(
       game.currentMove?.fenAfter ?? null,
     );
+  const lastSoundPosition = useRef(
+    game.currentMove?.fenAfter ?? null,
+  );
 
   useEffect(() => {
     const currentMove =
@@ -118,12 +134,18 @@ export default function ChessBoard({
     }
 
     let isCapture = false;
+    let movedPiece = "p";
 
     try {
+      const positionBefore = new Chess(
+        currentMove.fenBefore,
+      );
+      movedPiece =
+        positionBefore.get(
+          currentMove.from,
+        )?.type ?? "p";
       isCapture = Boolean(
-        new Chess(
-          currentMove.fenBefore,
-        ).move({
+        positionBefore.move({
           from: currentMove.from,
           to: currentMove.to,
           promotion:
@@ -141,10 +163,27 @@ export default function ChessBoard({
       currentMove.from,
       currentMove.to,
       isCapture,
+      getChessPieceRole(movedPiece),
     );
+
+    if (
+      currentMove.fenAfter !==
+      lastSoundPosition.current
+    ) {
+      lastSoundPosition.current =
+        currentMove.fenAfter;
+      playChessSound({
+        capture: isCapture,
+        check:
+          currentMove.san.includes("+"),
+        checkmate:
+          currentMove.san.includes("#"),
+      });
+    }
   }, [
     animateMove,
     game.currentMove,
+    playChessSound,
   ]);
 
   function handlePieceDrop({
@@ -168,6 +207,20 @@ export default function ChessBoard({
     const from = sourceSquare as Square;
     const to = targetSquare as Square;
     const fenBefore = game.fen;
+    const preview = new Chess(fenBefore);
+    let previewMove:
+      | ReturnType<Chess["move"]>
+      | null = null;
+
+    try {
+      previewMove = preview.move({
+        from,
+        to,
+        promotion: "q",
+      });
+    } catch {
+      previewMove = null;
+    }
 
     const moveWasPlayed = game.move(from, to);
 
@@ -180,6 +233,15 @@ export default function ChessBoard({
     }
 
     setErrorMessage("");
+    lastSoundPosition.current =
+      preview.fen();
+    playChessSound({
+      capture: Boolean(
+        previewMove?.captured,
+      ),
+      check: preview.isCheck(),
+      checkmate: preview.isCheckmate(),
+    });
 
     onMovePlayed?.({
       fenBefore,
@@ -340,11 +402,21 @@ export default function ChessBoard({
     arrows,
     allowDrawingArrows: mode === "analysis",
     darkSquareStyle: {
-      backgroundColor: "#4b5563",
+      backgroundColor:
+        boardVisualMode === "medieval"
+          ? "#4f3926"
+          : "#4b5563",
     },
     lightSquareStyle: {
-      backgroundColor: "#d1d5db",
+      backgroundColor:
+        boardVisualMode === "medieval"
+          ? "#c9a86a"
+          : "#d1d5db",
     },
+    pieces:
+      boardVisualMode === "medieval"
+        ? MEDIEVAL_PIECES
+        : undefined,
   };
 
   const hasReviewIndicators =
@@ -355,7 +427,18 @@ export default function ChessBoard({
 
   return (
     <section className="w-full max-w-xl">
-      <div className="chess-board-live overflow-hidden rounded-2xl shadow-2xl">
+      <div
+        className={[
+          "chess-board-live overflow-hidden rounded-2xl shadow-2xl",
+          boardVisualMode === "medieval"
+            ? "chess-board-live--medieval"
+            : "",
+        ].join(" ")}
+      >
+        <BoardModeToggle
+          mode={boardVisualMode}
+          onToggle={toggleBoardVisualMode}
+        />
         <Chessboard
           options={chessboardOptions}
         />
@@ -364,6 +447,7 @@ export default function ChessBoard({
           orientation={
             playerColor ?? "white"
           }
+          visualMode={boardVisualMode}
         />
       </div>
 
@@ -408,7 +492,7 @@ export default function ChessBoard({
 
             {suggestedMove && (
                 <p className="mt-1 text-sm font-medium text-blue-400">
-                  Suggestion Stockfish :{" "}
+                  Idée du Coach IA :{" "}
                   {suggestedMove.from}
                   {" → "}
                   {suggestedMove.to}

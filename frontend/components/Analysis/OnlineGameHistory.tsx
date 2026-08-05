@@ -230,7 +230,8 @@ export default function OnlineGameHistory({
             Aucune partie terminée
           </p>
           <p className="mt-2 text-sm text-gray-500">
-            Termine une partie en ligne pour voir apparaître son bilan ici.
+            Termine une partie en ligne : pour le moment, aucun roi n’a encore
+            été suffisamment malmené pour produire un bilan.
           </p>
         </div>
       ) : (

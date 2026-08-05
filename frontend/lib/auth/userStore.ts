@@ -5,6 +5,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { hash } from "bcryptjs";
 import { Pool } from "pg";
+import { recordLegalAcceptance } from "@/lib/legal/acceptanceStore";
 
 export type StoredUser = {
   id: string;
@@ -138,6 +139,10 @@ export async function createUser(input: {
           user.createdAt,
         ],
       );
+      await recordLegalAcceptance(
+        user.email,
+        "credentials",
+      );
       return user;
     } catch (error) {
       if (
@@ -157,5 +162,31 @@ export async function createUser(input: {
   }
 
   await writeUsers([...users, user]);
+  await recordLegalAcceptance(
+    user.email,
+    "credentials",
+  );
   return user;
+}
+
+export async function deleteUserByEmail(
+  email: string,
+): Promise<void> {
+  const normalizedEmail =
+    email.trim().toLocaleLowerCase("fr");
+  const database = getPool();
+  if (database) {
+    await databaseReady;
+    await database.query(
+      "DELETE FROM users WHERE email = $1",
+      [normalizedEmail],
+    );
+    return;
+  }
+  const users = await readUsers();
+  await writeUsers(
+    users.filter(
+      (user) => user.email !== normalizedEmail,
+    ),
+  );
 }

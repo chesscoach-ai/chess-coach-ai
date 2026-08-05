@@ -8,6 +8,16 @@ export function explainPlayedMove(
   review: MoveReviewResponse,
   personaId: AiPersonaId = "balanced",
 ): string {
+  const playedPiece = describePieceMove(
+    review.played_move_piece,
+    review.played_move,
+    review.played_move_san,
+  );
+  const bestPiece = describePieceMove(
+    review.best_move_piece,
+    review.best_move,
+    review.best_move_san,
+  );
   const effects: string[] = [];
 
   if (review.played_move_is_capture) {
@@ -30,14 +40,14 @@ export function explainPlayedMove(
 
   const verdict =
     review.classification === "excellent"
-      ? `${review.played_move_san}, très joli ! Tu as trouvé une réponse très précise.${effectText}`
+      ? `${playedPiece}, très joli ! Tu as trouvé une réponse très précise.${effectText} C’était aussi le meilleur choix : ${bestPiece}.`
       : review.classification === "good"
-        ? `${review.played_move_san} est une bonne décision : ton idée tient la route.${effectText}`
+        ? `${playedPiece} est une bonne décision : ton idée tient la route.${effectText} Le meilleur choix était ${bestPiece}.`
         : review.classification === "inaccuracy"
-          ? `${review.played_move_san} reste jouable, mais ${review.best_move_san} rendait ton plan un peu plus simple.${effectText}`
+          ? `${playedPiece} reste jouable, mais ${bestPiece} rendait ton plan un peu plus simple.${effectText}`
           : review.classification === "mistake"
-            ? `Je vois ce que tu cherchais avec ${review.played_move_san}. Le souci, c’est que ${review.best_move_san} protégeait mieux ta position.${effectText}`
-            : `Oups, ${review.played_move_san} laisse une vraie occasion à l’adversaire. Rien de grave : regarde ${review.best_move_san} et demande-toi quelle menace il empêchait.${effectText}`;
+            ? `Je vois ce que tu cherchais : ${playedPiece}. Le souci, c’est que ${bestPiece} protégeait mieux ta position.${effectText}`
+            : `Oups, ${playedPiece} laisse une vraie occasion à l’adversaire. Si elle est repérée, ton roi risque de finir maté sauvagement. Rien de grave : le meilleur choix était ${bestPiece}. Demande-toi quelle menace il empêchait.${effectText}`;
 
   switch (personaId) {
     case "tal":
@@ -53,6 +63,21 @@ export function explainPlayedMove(
     default:
       return `${verdict} Pour le prochain coup, prends une seconde pour vérifier les menaces des deux camps.`;
   }
+}
+
+function describePieceMove(
+  piece: string,
+  uci: string,
+  san: string,
+): string {
+  const from = uci.slice(0, 2);
+  const to = uci.slice(2, 4);
+  const article = /^[aeiouyh]/i.test(piece)
+    ? "l’"
+    : piece === "tour" || piece === "dame"
+      ? "la "
+      : "le ";
+  return `${article}${piece} va de ${from} vers ${to} (${san})`;
 }
 
 export function formatEngineEvaluation(

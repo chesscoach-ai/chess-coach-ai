@@ -10,8 +10,10 @@ export type SubscriptionStatus =
 export type AnalysisEntitlement = {
   hasAccess: boolean;
   status: SubscriptionStatus;
-  priceMonthlyCents: 200;
+  priceMonthlyCents: number;
+  priceAnnualCents: number;
   billingConfigured: boolean;
+  commercialLaunchEnabled: boolean;
   canManage: boolean;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;

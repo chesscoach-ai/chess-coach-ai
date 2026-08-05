@@ -23,6 +23,11 @@ import {
   markExerciseCompleted,
   recordTrainingActivity,
 } from "@/lib/pgnExerciseProgress";
+import {
+  readPlacementSession,
+  recordPlacementAttempt,
+  writePlacementSession,
+} from "@/lib/learning/placement";
 
 function convertMoveToUci(
   move: ExerciseMove,
@@ -103,6 +108,41 @@ export default function ExerciseTrainer() {
       },
     );
     recordTrainingActivity("completed");
+    if (session.placementDifficulty) {
+      const placement = readPlacementSession();
+      if (placement) {
+        writePlacementSession(
+          recordPlacementAttempt(placement, {
+            exerciseId: session.sourceExampleId,
+            difficulty: session.placementDifficulty,
+            elapsedTime: session.elapsedTime,
+            mistakes: session.mistakes,
+            hintsUsed: session.hintsUsed,
+          }),
+        );
+      }
+    }
+    void fetch(
+      "/api/progression/exercises",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          exerciseId:
+            session.sourceExampleId,
+          elapsedTime:
+            session.elapsedTime,
+          mistakes: session.mistakes,
+          hintsUsed: session.hintsUsed,
+        }),
+      },
+    ).catch(() => {
+      // La progression locale reste disponible hors ligne.
+      // La synchronisation classée reprendra à la prochaine session.
+    });
   }, [session]);
 
   function handleMovePlayed(
@@ -347,14 +387,14 @@ export default function ExerciseTrainer() {
               {session.status === "correct" && (
                 <div className="mt-5 rounded-2xl border border-emerald-700 bg-emerald-950/40 p-4">
                   <p className="font-bold text-emerald-300">
-                    Excellent coup !
+                    Excellent coup ! Le roi adverse commence à chercher une sortie.
                   </p>
 
                   <p className="mt-1 text-sm leading-6 text-emerald-200/80">
                     {session.mistakes === 0 &&
                     session.hintsUsed === 0
                       ? "Trouvé sans aide : ta lecture de la position est très solide."
-                      : "Bien joué. Reviens sur cette position plus tard pour l’ancrer sans aide."}
+                      : "Bien joué. Reviens sur cette position plus tard pour l’ancrer sans aide — la prochaine fois, aucune pitié pour l’échiquier."}
                   </p>
 
                   <p className="mt-3 text-sm font-semibold text-emerald-200">
@@ -471,10 +511,14 @@ export default function ExerciseTrainer() {
 
             {exerciseIsFinished && (
               <Link
-                href="/exercises"
+                href={
+                  session.returnHref ??
+                  "/exercises"
+                }
                 className="flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 font-semibold transition hover:bg-blue-500"
               >
-                Choisir un autre exercice
+                {session.returnLabel ??
+                  "Choisir un autre exercice"}
               </Link>
             )}
           </aside>

@@ -12,8 +12,10 @@ function makeReview(
   return {
     played_move: "e2e4",
     played_move_san: "e4",
+    played_move_piece: "pion",
     best_move: "e2e4",
     best_move_san: "e4",
+    best_move_piece: "pion",
     is_best_move: true,
     evaluation_before: 0.3,
     evaluation_before_type: "centipawn",
@@ -40,6 +42,12 @@ describe("explications pédagogiques", () => {
     );
     expect(explainPlayedMove(makeReview())).toContain(
       "réponse très précise",
+    );
+    expect(explainPlayedMove(makeReview())).toContain(
+      "le pion va de e2 vers e4",
+    );
+    expect(explainPlayedMove(makeReview())).toContain(
+      "meilleur choix",
     );
   });
 

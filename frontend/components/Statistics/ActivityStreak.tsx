@@ -64,9 +64,9 @@ export default function ActivityStreak({
     statistics?.currentStreak ?? 0;
 
   return (
-    <section className="mx-auto mb-3 flex w-full max-w-2xl flex-wrap items-center justify-between gap-4 rounded-2xl border border-blue-900/60 bg-gradient-to-r from-blue-950/45 to-gray-900 px-4 py-3 shadow-lg">
-      <div className="flex items-center gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/15 text-blue-300 shadow-[0_0_20px_rgba(59,130,246,0.16)]">
+    <section className="mx-auto mb-3 flex w-full max-w-2xl flex-wrap items-center justify-between gap-2 rounded-xl border border-blue-900/60 bg-gradient-to-r from-blue-950/45 to-gray-900 px-3 py-2 shadow-lg sm:gap-4 sm:rounded-2xl sm:px-4 sm:py-3">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/15 text-blue-300 shadow-[0_0_20px_rgba(59,130,246,0.16)] sm:h-11 sm:w-11 sm:rounded-xl">
           <FlameIcon />
         </span>
         <div>
@@ -75,7 +75,7 @@ export default function ActivityStreak({
               ? `Série de ${streak} jour${streak > 1 ? "s" : ""}`
               : "Ta série de jeu"}
           </p>
-          <p className="mt-0.5 text-xs text-gray-400">
+          <p className="mt-0.5 hidden text-xs text-gray-400 sm:block">
             {currentUser
               ? streak > 0
                 ? "Continue aujourd’hui pour entretenir la flamme."
@@ -85,7 +85,7 @@ export default function ActivityStreak({
         </div>
       </div>
 
-      <div className="flex items-end gap-1.5">
+      <div className="order-3 flex w-full items-end justify-between gap-1 border-t border-blue-900/40 pt-2 sm:order-none sm:w-auto sm:border-0 sm:pt-0">
         {days.map((day) => {
           const active =
             activeDates.has(day.key);
@@ -100,7 +100,7 @@ export default function ActivityStreak({
               </span>
               <span
                 className={[
-                  "mt-1 flex h-7 w-7 items-center justify-center rounded-md border text-xs font-black transition",
+                "mt-1 flex h-6 w-6 items-center justify-center rounded-md border text-[10px] font-black transition sm:h-7 sm:w-7 sm:text-xs",
                   active
                     ? "border-blue-400 bg-blue-500 text-white shadow-[0_0_12px_rgba(59,130,246,0.35)]"
                     : day.isToday

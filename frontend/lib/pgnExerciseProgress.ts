@@ -3,6 +3,7 @@ export type PGNExerciseProgress = {
   startedAt: string;
   completedAt: string | null;
   attempts: number;
+  successfulRepetitions?: number;
   bestTimeSeconds?: number;
   lastMistakes?: number;
   needsReview?: boolean;
@@ -84,6 +85,7 @@ export function markExerciseStarted(
   const existing = map[exampleId];
 
   const next: PGNExerciseProgress = {
+    ...existing,
     exampleId,
     startedAt:
       existing?.startedAt ?? now,
@@ -118,6 +120,8 @@ export function markExerciseCompleted(
     completedAt: now,
     attempts:
       existing?.attempts ?? 1,
+    successfulRepetitions:
+      (existing?.successfulRepetitions ?? 0) + 1,
     bestTimeSeconds:
       result
         ? Math.min(

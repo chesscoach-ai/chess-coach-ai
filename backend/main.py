@@ -1,11 +1,13 @@
+import hmac
 import os
 from pathlib import Path
 from typing import Literal
 
 import chess
 import chess.engine
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 
@@ -13,6 +15,27 @@ app = FastAPI(
     title="Chess Coach AI API",
     version="0.9.0",
 )
+
+
+@app.middleware("http")
+async def protect_engine_api(request: Request, call_next):
+    expected_secret = os.getenv("BACKEND_API_SECRET", "").strip()
+    if expected_secret and request.url.path != "/health":
+        provided_secret = request.headers.get(
+            "X-Backend-Api-Secret",
+            "",
+        )
+        if not hmac.compare_digest(
+            provided_secret,
+            expected_secret,
+        ):
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Accès au moteur refusé."},
+            )
+
+    return await call_next(request)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -164,9 +187,11 @@ class MoveReviewRequest(BaseModel):
 class MoveReviewResponse(BaseModel):
     played_move: str
     played_move_san: str
+    played_move_piece: str
 
     best_move: str
     best_move_san: str
+    best_move_piece: str
 
     is_best_move: bool
 
@@ -1259,6 +1284,13 @@ def review_move(
     played_move_san = board_before.san(
         played_move,
     )
+    played_piece = board_before.piece_at(
+        played_move.from_square,
+    )
+    played_move_piece = PIECE_NAMES.get(
+        played_piece.piece_type if played_piece else chess.PAWN,
+        "pièce",
+    )
 
     played_move_is_capture = (
         board_before.is_capture(
@@ -1329,6 +1361,13 @@ def review_move(
 
             best_move_san = board_before.san(
                 best_move,
+            )
+            best_piece = board_before.piece_at(
+                best_move.from_square,
+            )
+            best_move_piece = PIECE_NAMES.get(
+                best_piece.piece_type if best_piece else chess.PAWN,
+                "pièce",
             )
 
             (
@@ -1454,8 +1493,14 @@ def review_move(
                 played_move_san=(
                     played_move_san
                 ),
+                played_move_piece=(
+                    played_move_piece
+                ),
                 best_move=best_move.uci(),
                 best_move_san=best_move_san,
+                best_move_piece=(
+                    best_move_piece
+                ),
                 is_best_move=is_best_move,
                 evaluation_before=(
                     evaluation_before

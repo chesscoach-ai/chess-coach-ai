@@ -11,6 +11,7 @@ import type {
   CommunityDashboard,
   CommunityMember,
 } from "@/lib/community/types";
+import { getBattleBanner } from "@/lib/rewards/banners";
 
 export default function CommunityHub({
   currentUser,
@@ -118,10 +119,16 @@ export default function CommunityHub({
     COMMUNITY_AVATARS.find(
       (avatar) => avatar.id === dashboard.profile.avatarId,
     ) ?? COMMUNITY_AVATARS[0];
+  const currentBanner = getBattleBanner(dashboard.profile.bannerId ?? "");
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-2xl border border-violet-800/60 bg-gradient-to-br from-gray-900 via-violet-950/35 to-blue-950/30 p-6">
+      <section
+        className={[
+          "overflow-hidden rounded-2xl border bg-gradient-to-br p-6",
+          currentBanner.panelClass,
+        ].join(" ")}
+      >
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
           <Image
             src={currentAvatar.image}
@@ -139,6 +146,9 @@ export default function CommunityHub({
             </h2>
             <p className="mt-1 text-sm text-gray-400">
               {currentAvatar.name} · {currentAvatar.rarity}
+            </p>
+            <p className="mt-1 text-xs font-bold text-violet-300">
+              {currentBanner.icon} Bannière « {currentBanner.name} »
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -223,6 +233,7 @@ export default function CommunityHub({
 
       <ClanPanel
         clan={dashboard.clan}
+        expedition={dashboard.clanExpedition}
         leaderboard={dashboard.clanLeaderboard}
         isLoading={isLoading}
         onAction={(body) =>
@@ -366,11 +377,13 @@ function LeaguePanel({ dashboard }: { dashboard: CommunityDashboard }) {
 
 function ClanPanel({
   clan,
+  expedition,
   leaderboard,
   isLoading,
   onAction,
 }: {
   clan: CommunityClan | null;
+  expedition: CommunityDashboard["clanExpedition"];
   leaderboard: CommunityClan[];
   isLoading: boolean;
   onAction: (
@@ -393,18 +406,21 @@ function ClanPanel({
             {clan ? `[${clan.tag}] ${clan.name}` : "Rejoins une bannière"}
           </h2>
           {clan ? (
-            <div className="mt-4 rounded-xl border border-red-900/50 bg-red-950/20 p-4">
-              <p className="text-3xl font-black text-white">
-                {clan.monthlyPoints}
-              </p>
-              <p className="text-xs uppercase tracking-wide text-red-300">
-                points rapportés ce mois
-              </p>
-              <p className="mt-2 text-sm text-gray-400">
-                {clan.memberCount} chevalier
-                {clan.memberCount > 1 ? "s" : ""} dans le clan
-              </p>
-            </div>
+            <>
+              <div className="mt-4 rounded-xl border border-red-900/50 bg-red-950/20 p-4">
+                <p className="text-3xl font-black text-white">
+                  {clan.monthlyPoints}
+                </p>
+                <p className="text-xs uppercase tracking-wide text-red-300">
+                  points rapportés ce mois
+                </p>
+                <p className="mt-2 text-sm text-gray-400">
+                  {clan.memberCount} chevalier
+                  {clan.memberCount > 1 ? "s" : ""} dans le clan
+                </p>
+              </div>
+              {expedition && <ClanExpeditionPanel expedition={expedition} />}
+            </>
           ) : (
             <div className="mt-4 space-y-3">
               <input
@@ -487,5 +503,89 @@ function ClanPanel({
         </div>
       </div>
     </section>
+  );
+}
+
+function ClanExpeditionPanel({
+  expedition,
+}: {
+  expedition: NonNullable<CommunityDashboard["clanExpedition"]>;
+}) {
+  const progress = Math.min(
+    100,
+    (expedition.medals / expedition.goal) * 100,
+  );
+
+  return (
+    <details
+      open
+      className="mt-3 overflow-hidden rounded-xl border border-orange-900/60 bg-gray-950/45"
+    >
+      <summary className="cursor-pointer list-none p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-300">
+              Expédition hebdomadaire
+            </p>
+            <p className="mt-1 text-sm font-black text-white">
+              {expedition.stage}
+            </p>
+            <p className="mt-0.5 text-[11px] text-gray-500">
+              Semaine du {expedition.weekLabel}
+            </p>
+          </div>
+          <span className="text-2xl" aria-hidden="true">
+            ⚔️
+          </span>
+        </div>
+        <div className="mt-3 flex items-center justify-between text-[11px]">
+          <span className="font-bold text-gray-400">
+            {expedition.nextStageAt
+              ? `Prochaine étape à ${expedition.nextStageAt}`
+              : "Citadelle conquise !"}
+          </span>
+          <span className="font-black text-orange-300">
+            {expedition.medals}/{expedition.goal} médailles
+          </span>
+        </div>
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-800">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-orange-600 via-amber-400 to-yellow-200"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </summary>
+
+      <div className="border-t border-gray-800 px-4 py-3">
+        <p className="text-[11px] leading-5 text-gray-500">
+          4 médailles par victoire, 2 par nulle et 1 par défaite. Oui, même une
+          partie où tu es maté sauvagement fait avancer la troupe.
+        </p>
+        <div className="mt-3 space-y-2">
+          {expedition.contributions.map((member, index) => (
+            <div
+              key={member.id}
+              className="flex items-center gap-3 rounded-lg bg-gray-900/80 px-3 py-2"
+            >
+              <span className="w-5 text-center text-xs font-black text-gray-600">
+                {index + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-bold text-white">
+                  {member.name}
+                </p>
+                <p className="text-[10px] text-gray-500">
+                  {member.games} partie{member.games > 1 ? "s" : ""} ·{" "}
+                  {member.wins} V · {member.draws} N · {member.losses} D
+                </p>
+              </div>
+              <span className="text-xs font-black text-orange-300">
+                {member.medals} ⚔
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </details>
   );
 }

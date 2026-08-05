@@ -19,10 +19,6 @@ type AnalyseExercisePositionOptions = {
   multipv?: number;
 };
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://127.0.0.1:8000";
-
 function extractErrorMessage(
   payload: unknown,
 ): string | null {
@@ -48,7 +44,7 @@ export async function analyseExercisePosition(
   } = options;
 
   const response = await fetch(
-    `${API_URL}/api/exercises/analyse-position`,
+    "/api/exercise-engine",
     {
       method: "POST",
       headers: {

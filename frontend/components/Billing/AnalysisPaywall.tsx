@@ -15,6 +15,28 @@ export default function AnalysisPaywall({
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [plan, setPlan] = useState<"monthly" | "annual">("annual");
+  const currency = new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+  });
+  const formattedPrice = currency.format(
+    (plan === "annual"
+      ? entitlement.priceAnnualCents
+      : entitlement.priceMonthlyCents) / 100,
+  );
+  const annualMonthlyEquivalent = currency.format(
+    entitlement.priceAnnualCents / 1_200,
+  );
+  const annualSaving = Math.max(
+    0,
+    Math.round(
+      (1 -
+        entitlement.priceAnnualCents /
+          (entitlement.priceMonthlyCents * 12)) *
+        100,
+    ),
+  );
 
   async function redirectToBilling(endpoint: "checkout" | "portal") {
     setIsLoading(true);
@@ -23,6 +45,10 @@ export default function AnalysisPaywall({
       const response = await fetch(`/api/billing/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body:
+          endpoint === "checkout"
+            ? JSON.stringify({ plan })
+            : undefined,
       });
       const payload = (await response.json()) as {
         url?: string;
@@ -49,10 +75,10 @@ export default function AnalysisPaywall({
       <div className="grid gap-8 p-6 md:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)] md:p-9">
         <div>
           <span className="inline-flex rounded-full border border-blue-700 bg-blue-950/50 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-blue-300">
-            Chess Coach Analyse
+            Chess Clan Coach+
           </span>
           <h2 className="mt-5 max-w-2xl text-3xl font-black tracking-tight text-white sm:text-4xl">
-            Un coach qui apprend réellement de tes parties
+            Le mentor qui transforme tes parties en progrès
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-gray-300">
             Comprends les moments décisifs, rejoue tes erreurs et reçois un
@@ -80,15 +106,54 @@ export default function AnalysisPaywall({
         </div>
 
         <div className="self-center rounded-2xl border border-blue-700 bg-blue-950/30 p-6">
-          <p className="text-sm font-semibold text-blue-300">
-            Un tarif simple
-          </p>
+          <p className="text-sm font-semibold text-blue-300">Choisis ton rythme</p>
+          <div
+            role="radiogroup"
+            aria-label="Formule Coach+"
+            className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-gray-950/60 p-1"
+          >
+            <button
+              type="button"
+              role="radio"
+              aria-checked={plan === "annual"}
+              onClick={() => setPlan("annual")}
+              className={[
+                "rounded-lg px-3 py-2 text-xs font-bold transition",
+                plan === "annual"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-400 hover:text-white",
+              ].join(" ")}
+            >
+              Annuel · -{annualSaving} %
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={plan === "monthly"}
+              onClick={() => setPlan("monthly")}
+              className={[
+                "rounded-lg px-3 py-2 text-xs font-bold transition",
+                plan === "monthly"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-400 hover:text-white",
+              ].join(" ")}
+            >
+              Mensuel
+            </button>
+          </div>
           <div className="mt-2 flex items-end gap-2">
-            <span className="text-5xl font-black text-white">2 €</span>
-            <span className="pb-1 text-gray-400">/ mois</span>
+            <span className="text-5xl font-black text-white">
+              {formattedPrice}
+            </span>
+            <span className="pb-1 text-gray-400">
+              / {plan === "annual" ? "an" : "mois"}
+            </span>
           </div>
           <p className="mt-3 text-sm leading-6 text-gray-400">
-            Annulable à tout moment depuis le portail sécurisé Stripe.
+            {plan === "annual"
+              ? `Soit ${annualMonthlyEquivalent} par mois.`
+              : "Sans engagement annuel."}{" "}
+            Annulable depuis le portail sécurisé Stripe.
           </p>
 
           {!currentUser ? (
@@ -113,14 +178,15 @@ export default function AnalysisPaywall({
                 ? "Ouverture…"
                 : entitlement.canManage
                   ? "Gérer mon abonnement"
-                  : "Débloquer l’analyse"}
+                  : `Choisir Coach+ ${plan === "annual" ? "annuel" : "mensuel"}`}
             </button>
           )}
 
           {currentUser && !entitlement.billingConfigured && (
             <p className="mt-3 text-xs leading-5 text-amber-300">
-              Le paiement est prêt dans l’application mais les clés Stripe
-              doivent encore être ajoutées au déploiement.
+              {entitlement.commercialLaunchEnabled
+                ? "Le paiement est en cours de validation avant son ouverture."
+                : "Les abonnements ne sont pas encore ouverts. Aucun paiement ne peut être déclenché."}
             </p>
           )}
           {error && (
@@ -129,7 +195,7 @@ export default function AnalysisPaywall({
             </p>
           )}
           <p className="mt-4 text-center text-xs text-gray-500">
-            Paiement sécurisé · pas d’engagement annuel
+            Multijoueur gratuit · aucun avantage compétitif payant
           </p>
         </div>
       </div>

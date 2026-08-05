@@ -124,6 +124,58 @@ describe("local multiplayer store", () => {
     expect(synchronized.black?.name).toBe("Noé");
   });
 
+  it("requires both players to agree before ending a game as a draw", async () => {
+    const white = { id: "draw-white@example.test", name: "Lina" };
+    const black = { id: "draw-black@example.test", name: "Sam" };
+
+    const invitation = await store.createOnlineGame(white, 10);
+    const joined = await store.joinOnlineGame(invitation.inviteCode, black);
+
+    const offered = await store.offerOnlineGameDraw(joined.id, white);
+    expect(offered.drawOfferBy).toBe("white");
+    expect(offered.status).toBe("active");
+
+    await expect(
+      store.respondToOnlineGameDraw(joined.id, white, true),
+    ).rejects.toThrow("DRAW_OFFER_OWN");
+
+    const declined = await store.respondToOnlineGameDraw(
+      joined.id,
+      black,
+      false,
+    );
+    expect(declined.drawOfferBy).toBeNull();
+    expect(declined.status).toBe("active");
+
+    await store.offerOnlineGameDraw(joined.id, black);
+    const finished = await store.respondToOnlineGameDraw(
+      joined.id,
+      white,
+      true,
+    );
+    expect(finished.status).toBe("finished");
+    expect(finished.result).toBe("1/2-1/2");
+    expect(finished.termination).toBe("Nulle par accord");
+    expect(finished.white.ratingAfter).toBe(1200);
+    expect(finished.black?.ratingAfter).toBe(1200);
+    expect(finished.drawOfferBy).toBeNull();
+  });
+
+  it("withdraws an unanswered draw offer when play continues", async () => {
+    const white = { id: "move-white@example.test", name: "Iris" };
+    const black = { id: "move-black@example.test", name: "Noam" };
+
+    const invitation = await store.createOnlineGame(white, 5);
+    const joined = await store.joinOnlineGame(invitation.inviteCode, black);
+    await store.offerOnlineGameDraw(joined.id, black);
+
+    const continued = await store.playOnlineMove(joined.id, white, {
+      from: "e2",
+      to: "e4",
+    });
+    expect(continued.drawOfferBy).toBeNull();
+  });
+
   it("persists an avatar, a friendship and a clan", async () => {
     const player = { id: "match-a@example.test", name: "Mina" };
 

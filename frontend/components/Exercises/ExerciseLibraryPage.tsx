@@ -8,6 +8,8 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import LearningSkillPath from "@/components/Exercises/LearningSkillPath";
+import PlacementDiagnostic from "@/components/Exercises/PlacementDiagnostic";
 import PGNLibraryBrowser from "@/components/PGN/PGNLibraryBrowser";
 import {
   PGN_EXAMPLES,
@@ -16,12 +18,27 @@ import {
 import { buildExercise } from "@/lib/exercise/buildExercise";
 import { buildStockfishExercise } from "@/lib/exercise/buildStockfishExercise";
 import { saveExerciseSession } from "@/lib/exercises/exerciseStorage";
+import { buildSkillPath } from "@/lib/learning/skillPath";
+import type { LearningProfile } from "@/lib/learning/types";
+import {
+  getNextPlacementExerciseId,
+  readPlacementSession,
+  startPlacementSession,
+  writePlacementSession,
+  type PlacementResult,
+  type PlacementSession,
+} from "@/lib/learning/placement";
 import {
   getAllExerciseProgress,
   getTrainingStreak,
   markExerciseStarted,
   recordTrainingActivity,
 } from "@/lib/pgnExerciseProgress";
+import {
+  mergeSyncedExerciseProgress,
+  type SyncedExerciseProgress,
+} from "@/lib/progression/exerciseProgress";
+import { buildDailyTrainingPlan } from "@/lib/pgnDailyTrainingPlan";
 
 export default function ExerciseLibraryPage() {
   const router = useRouter();
@@ -31,69 +48,153 @@ export default function ExerciseLibraryPage() {
 
   const [error, setError] =
     useState<string | null>(null);
-  const [progress, setProgress] =
-    useState(() => ({ completed: 0, streak: 0 }));
+  const [trainingStreak, setTrainingStreak] = useState(0);
   const [progressMap, setProgressMap] =
     useState<
       ReturnType<
         typeof getAllExerciseProgress
       >
     >({});
+  const [learningProfile, setLearningProfile] =
+    useState<LearningProfile | null>(null);
+  const [placementSession, setPlacementSession] =
+    useState<PlacementSession | null>(null);
+  const [placementResult, setPlacementResult] =
+    useState<PlacementResult | null>(null);
 
   useEffect(() => {
-    const loadId = window.setTimeout(() => {
-      const storedProgress =
-        getAllExerciseProgress();
+    const controller = new AbortController();
+
+    async function loadProgress() {
+      let storedProgress = getAllExerciseProgress();
       const streak = getTrainingStreak();
+      const localPlacement = readPlacementSession();
+      setPlacementSession(localPlacement);
+      setPlacementResult(localPlacement?.result ?? null);
+      try {
+        const [progressResponse, profileResponse, placementResponse] =
+          await Promise.all([
+          fetch("/api/progression/exercises", {
+            cache: "no-store",
+            signal: controller.signal,
+          }),
+          fetch("/api/learning/profile", {
+            cache: "no-store",
+            signal: controller.signal,
+          }),
+          fetch("/api/learning/placement", {
+            cache: "no-store",
+            signal: controller.signal,
+          }),
+        ]);
+        if (progressResponse.ok) {
+          const payload = (await progressResponse.json()) as {
+            progress?: SyncedExerciseProgress[];
+          };
+          storedProgress = mergeSyncedExerciseProgress(
+            storedProgress,
+            payload.progress ?? [],
+          );
+        }
+        if (profileResponse.ok) {
+          const payload = (await profileResponse.json()) as {
+            profile?: LearningProfile;
+          };
+          setLearningProfile(payload.profile ?? null);
+        }
+        let serverPlacement: PlacementResult | null = null;
+        if (placementResponse.ok) {
+          const payload = (await placementResponse.json()) as {
+            result?: PlacementResult | null;
+          };
+          serverPlacement = payload.result ?? null;
+          if (
+            serverPlacement &&
+            (!localPlacement?.result ||
+              serverPlacement.completedAt >
+                localPlacement.result.completedAt)
+          ) {
+            const restored = {
+              exerciseIds: serverPlacement.attempts.map(
+                (attempt) => attempt.exerciseId,
+              ),
+              attempts: serverPlacement.attempts,
+              result: serverPlacement,
+            };
+            writePlacementSession(restored);
+            setPlacementSession(restored);
+            setPlacementResult(serverPlacement);
+          }
+        }
+        if (
+          localPlacement?.result &&
+          (!serverPlacement ||
+            localPlacement.result.completedAt >
+              serverPlacement.completedAt)
+        ) {
+          const syncResponse = await fetch("/api/learning/placement", {
+            method: "POST",
+            signal: controller.signal,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              attempts: localPlacement.result.attempts,
+            }),
+          });
+          if (syncResponse.ok) {
+            const payload = (await syncResponse.json()) as {
+              result?: PlacementResult;
+            };
+            if (payload.result) {
+              setPlacementResult(payload.result);
+            }
+          }
+        }
+      } catch {
+        if (controller.signal.aborted) return;
+        // La carte reste utilisable avec la progression locale hors ligne.
+      }
       setProgressMap(storedProgress);
 
-      setProgress({
-        completed: Object.values(
-          storedProgress,
-        ).filter(
-          (item) =>
-            item.completedAt !== null,
-        ).length,
-        streak: streak.current,
-      });
-    }, 0);
-
-    return () =>
-      window.clearTimeout(loadId);
-  }, []);
-
-  const recommendedExercise =
-    useMemo(() => {
-      return (
-        PGN_EXAMPLES.find(
-          (example) =>
-            progressMap[example.id]
-              ?.needsReview,
-        ) ??
-        PGN_EXAMPLES.find(
-          (example) =>
-            !progressMap[example.id],
-        ) ??
-        PGN_EXAMPLES[0]
-      );
-    }, [progressMap]);
-
-  function startRecommendedExercise(): void {
-    if (!recommendedExercise) {
-      return;
+      setTrainingStreak(streak.current);
     }
 
-    markExerciseStarted(
-      recommendedExercise.id,
-    );
+    void loadProgress();
+    return () => controller.abort();
+  }, []);
+
+  const skillPath = useMemo(
+    () =>
+      buildSkillPath({
+        examples: PGN_EXAMPLES,
+        progress: progressMap,
+        profile: learningProfile
+          ? {
+              primaryWeakness: learningProfile.primaryWeakness,
+              rating: learningProfile.rating,
+            }
+          : placementResult
+            ? {
+                primaryWeakness: null,
+                rating: placementResult.estimatedRating,
+              }
+            : null,
+      }),
+    [learningProfile, placementResult, progressMap],
+  );
+  const dailyPlan = useMemo(
+    () => buildDailyTrainingPlan(PGN_EXAMPLES, progressMap),
+    [progressMap],
+  );
+
+  function startPathExercise(example: PGNExample): void {
+    markExerciseStarted(example.id);
     recordTrainingActivity("started");
-    void handleSelectExercise(
-      recommendedExercise,
-    );
+    void handleSelectExercise(example);
   }
 
   async function handleSelectExercise(
     example: PGNExample,
+    options?: { placement?: boolean },
   ): Promise<void> {
     setError(null);
     setLoadingExerciseId(example.title);
@@ -126,7 +227,16 @@ export default function ExerciseLibraryPage() {
         analysis,
       );
 
-      saveExerciseSession(session);
+      saveExerciseSession(
+        options?.placement
+          ? {
+              ...session,
+              returnHref: "/exercises?placement=1",
+              returnLabel: "Continuer le diagnostic",
+              placementDifficulty: example.difficulty,
+            }
+          : session,
+      );
 
       router.push("/exercises/training");
     } catch {
@@ -151,6 +261,13 @@ export default function ExerciseLibraryPage() {
             example.decisionNumber,
           decisionCount:
             example.decisionCount,
+          ...(options?.placement
+            ? {
+                returnHref: "/exercises?placement=1",
+                returnLabel: "Continuer le diagnostic",
+                placementDifficulty: example.difficulty,
+              }
+            : {}),
         });
         router.push("/exercises/training");
       } catch (caughtError) {
@@ -166,13 +283,30 @@ export default function ExerciseLibraryPage() {
     }
   }
 
+  function launchPlacement(session: PlacementSession): void {
+    const nextId = getNextPlacementExerciseId(session);
+    const example = PGN_EXAMPLES.find((item) => item.id === nextId);
+    if (!example) return;
+    markExerciseStarted(example.id);
+    recordTrainingActivity("started");
+    void handleSelectExercise(example, { placement: true });
+  }
+
+  function startPlacement(): void {
+    const session = startPlacementSession(PGN_EXAMPLES);
+    writePlacementSession(session);
+    setPlacementSession(session);
+    setPlacementResult(null);
+    launchPlacement(session);
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <div className="mx-auto max-w-7xl px-6 py-8">
         <div className="mb-8 flex items-center justify-between gap-4">
           <div>
             <p className="mb-2 text-sm font-medium uppercase tracking-widest text-emerald-400">
-              Chess Coach
+              Coach Chess Clan
             </p>
 
             <h1 className="text-3xl font-bold">
@@ -193,47 +327,25 @@ export default function ExerciseLibraryPage() {
           </Link>
         </div>
 
-        <section className="mb-7 grid gap-3 md:grid-cols-[minmax(0,1.4fr)_1fr_1fr]">
-          <button
-            type="button"
-            onClick={startRecommendedExercise}
-            disabled={
-              loadingExerciseId !== null
-            }
-            className="rounded-2xl border border-emerald-700/60 bg-emerald-950/25 p-5 text-left transition hover:border-emerald-500 hover:bg-emerald-950/40 disabled:opacity-60"
-          >
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">
-              Séance conseillée par le coach
-            </p>
-            <p className="mt-2 text-lg font-bold">
-              {recommendedExercise?.title}
-            </p>
-            <p className="mt-1 text-sm text-slate-400">
-              Priorité aux positions à revoir, puis aux exercices encore inconnus.
-            </p>
-          </button>
+        <PlacementDiagnostic
+          session={placementSession}
+          result={placementResult}
+          isLoading={loadingExerciseId !== null}
+          onStart={startPlacement}
+          onContinue={() => {
+            if (placementSession) launchPlacement(placementSession);
+          }}
+          onRestart={startPlacement}
+        />
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-            <p className="text-sm text-slate-400">
-              Série actuelle
-            </p>
-            <p className="mt-2 text-3xl font-bold text-orange-300">
-              🔥 {progress.streak} jour
-              {progress.streak > 1
-                ? "s"
-                : ""}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-            <p className="text-sm text-slate-400">
-              Positions maîtrisées
-            </p>
-            <p className="mt-2 text-3xl font-bold text-blue-300">
-              {progress.completed}
-            </p>
-          </div>
-        </section>
+        <LearningSkillPath
+          path={skillPath}
+          dailyPlan={dailyPlan}
+          examples={PGN_EXAMPLES}
+          streak={trainingStreak}
+          isLoading={loadingExerciseId !== null}
+          onStart={startPathExercise}
+        />
 
         {error && (
           <div className="mb-6 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">

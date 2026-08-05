@@ -2,6 +2,10 @@ import { billingErrorResponse } from "@/lib/billing/apiResponse";
 import { getAnalysisEntitlement } from "@/lib/billing/subscriptionStore";
 import { getAuthenticatedPlayer } from "@/lib/multiplayer/playerSession";
 import { canAccessGameReview } from "@/lib/billing/gameReviewStore";
+import {
+  getBackendHeaders,
+  getBackendUrl,
+} from "@/lib/api/backendServer";
 
 export const runtime = "nodejs";
 
@@ -39,18 +43,12 @@ export async function POST(
       return Response.json({ detail: "Route d’analyse inconnue." }, { status: 404 });
     }
 
-    const backendUrl = (
-      process.env.BACKEND_URL ??
-      (process.env.BACKEND_HOSTPORT
-        ? `http://${process.env.BACKEND_HOSTPORT}`
-        : "http://127.0.0.1:8000")
-    ).replace(/\/$/, "");
-    const response = await fetch(`${backendUrl}/${endpoint}`, {
+    const response = await fetch(`${getBackendUrl()}/${endpoint}`, {
       method: "POST",
-      headers: {
+      headers: getBackendHeaders({
         Accept: "application/json",
         "Content-Type": "application/json",
-      },
+      }),
       body: await request.text(),
       cache: "no-store",
     });

@@ -6,6 +6,7 @@ import type {
   MoveClassification,
   MoveReviewResponse,
 } from "@/services/api/ApiService";
+import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
 
 type GameSummaryProps = {
   moveReviews: Record<
@@ -537,16 +538,17 @@ function CoachSummary({
   );
 
   return (
-    <div className="mt-5 rounded-xl border border-gray-800 bg-gray-950/50 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-        {analysedMoves >= totalMoves
-          ? "Synthèse"
-          : "Première tendance"}
-      </p>
-
-      <p className="mt-2 text-sm leading-6 text-gray-300">
+    <div className="mt-5">
+      <CoachMentorMessage
+        compact
+        title={
+          analysedMoves >= totalMoves
+            ? "Voilà ce que je retiens de ta partie."
+            : "Je commence à voir une tendance."
+        }
+      >
         {message}
-      </p>
+      </CoachMentorMessage>
     </div>
   );
 }
@@ -749,7 +751,7 @@ function buildCoachSummary(
   }
 
   if (accuracy >= 90) {
-    return "Très bonne partie : tes décisions sont cohérentes et proches des recommandations de Stockfish.";
+    return "Très bonne partie : tes décisions sont cohérentes et ton plan résiste très bien à l’analyse du Coach IA.";
   }
 
   return "La partie est solide dans l’ensemble. Étudie les variantes proposées pour comprendre pourquoi certains coups étaient légèrement meilleurs.";

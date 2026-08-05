@@ -4,6 +4,7 @@ import { billingErrorResponse } from "@/lib/billing/apiResponse";
 import { saveBillingSubscription } from "@/lib/billing/subscriptionStore";
 import type { SubscriptionStatus } from "@/lib/billing/types";
 import { getStripe } from "@/lib/billing/stripeClient";
+import { isDeletedSubscription } from "@/lib/privacy/accountData";
 
 export const runtime = "nodejs";
 
@@ -62,6 +63,9 @@ async function persistStripeSubscription(
   userId: string | null,
 ): Promise<void> {
   if (!userId) return;
+  if (await isDeletedSubscription(subscription.id)) {
+    return;
+  }
   const customerId =
     typeof subscription.customer === "string"
       ? subscription.customer

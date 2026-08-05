@@ -51,6 +51,7 @@ export type OnlineGame = {
   };
   result: GameResult | null;
   termination: string | null;
+  drawOfferBy: PlayerColor | null;
   matchType: "private" | "matchmaking";
   createdAt: string;
   endedAt: string | null;
@@ -61,6 +62,7 @@ export type OnlineGame = {
 
 export type OnlineGameHistoryItem = {
   id: string;
+  youAre: PlayerColor;
   white: OnlinePlayer;
   black: OnlinePlayer;
   result: GameResult;

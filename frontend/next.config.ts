@@ -1,19 +1,60 @@
 import type { NextConfig } from "next";
 
-const backendUrl = (
-  process.env.BACKEND_URL ??
-  (process.env.BACKEND_HOSTPORT
-    ? `http://${process.env.BACKEND_HOSTPORT}`
-    : "http://127.0.0.1:8000")
-).replace(/\/$/, "");
-
 const nextConfig: NextConfig = {
-  output: "standalone",
-  async rewrites() {
+  turbopack: {
+    root: process.cwd(),
+  },
+  async headers() {
     return [
       {
-        source: "/backend-api/:path*",
-        destination: `${backendUrl}/:path*`,
+        source: "/:path*",
+        headers: [
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value:
+              "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+          },
+          ...(process.env.NODE_ENV === "production"
+            ? [
+                {
+                  key: "Strict-Transport-Security",
+                  value:
+                    "max-age=31536000; includeSubDomains",
+                },
+              ]
+            : []),
+        ],
+      },
+      {
+        source: "/sw.js",
+        headers: [
+          {
+            key: "Content-Type",
+            value:
+              "application/javascript; charset=utf-8",
+          },
+          {
+            key: "Cache-Control",
+            value:
+              "no-cache, no-store, must-revalidate",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+        ],
       },
     ];
   },

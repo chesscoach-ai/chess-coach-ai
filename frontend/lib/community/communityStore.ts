@@ -10,6 +10,10 @@ import {
   getCommunityAvatar,
   type CommunityAvatarId,
 } from "@/lib/community/avatars";
+import {
+  buildClanExpedition,
+  getParisWeekDateKeys,
+} from "@/lib/community/clanExpedition";
 import type {
   CommunityClan,
   CommunityDashboard,
@@ -19,9 +23,11 @@ import {
   getOnlinePlayerRating,
   getOnlinePlayerSummaries,
   getPlayerMatchStats,
+  getPlayerMatchStatsForDateKeys,
   searchOnlinePlayers,
 } from "@/lib/multiplayer/gameStore";
 import type { AuthenticatedPlayer } from "@/lib/multiplayer/playerSession";
+import { getBattleRewardCosmetics } from "@/lib/rewards/battleRewardStore";
 
 type StoredProfile = {
   avatarId: CommunityAvatarId;
@@ -284,12 +290,16 @@ export async function getCommunityDashboard(
     friendIds = friends.rows.map((row) => row.friend_id);
   }
 
-  const rating = await getOnlinePlayerRating(player.id);
-  const friendPlayers = await getOnlinePlayerSummaries(friendIds);
+  const [rating, friendPlayers, cosmetics] = await Promise.all([
+    getOnlinePlayerRating(player.id),
+    getOnlinePlayerSummaries(friendIds),
+    getBattleRewardCosmetics(player.id),
+  ]);
   const [profile] = await buildMembers([
     { id: player.id, name: player.name, rating },
   ]);
   profile.avatarId = ownAvatarId;
+  profile.bannerId = cosmetics.selectedBannerId;
   const friends = (await buildMembers(friendPlayers)).sort(
     (first, second) => second.rating - first.rating,
   );
@@ -305,9 +315,14 @@ export async function getCommunityDashboard(
       second.monthlyPoints - first.monthlyPoints ||
       second.memberCount - first.memberCount,
   );
-  const ownClanId = storedClans.find((clan) =>
+  const ownStoredClan = storedClans.find((clan) =>
     clan.members.includes(player.id),
-  )?.id;
+  );
+  const ownClanId = ownStoredClan?.id;
+  const weekDateKeys = getParisWeekDateKeys();
+  const clanExpedition = ownStoredClan
+    ? await buildStoredClanExpedition(ownStoredClan, weekDateKeys)
+    : null;
 
   return {
     profile,
@@ -322,8 +337,27 @@ export async function getCommunityDashboard(
     clan: ownClanId
       ? clans.find((clan) => clan.id === ownClanId) ?? null
       : null,
+    clanExpedition,
     clanLeaderboard: clans.slice(0, 8),
   };
+}
+
+async function buildStoredClanExpedition(
+  clan: StoredClan,
+  weekDateKeys: string[],
+) {
+  const summaries = await getOnlinePlayerSummaries(clan.members);
+  const names = Object.fromEntries(
+    summaries.map((member) => [member.id, member.name]),
+  );
+  const contributions = await Promise.all(
+    clan.members.map(async (id) => ({
+      id,
+      name: names[id] ?? "Chevalier mystérieux",
+      ...(await getPlayerMatchStatsForDateKeys(id, weekDateKeys)),
+    })),
+  );
+  return buildClanExpedition(contributions, weekDateKeys);
 }
 
 export async function selectCommunityAvatar(

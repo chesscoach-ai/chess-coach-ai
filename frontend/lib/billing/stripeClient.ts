@@ -8,6 +8,7 @@ export function isStripeConfigured(): boolean {
   return Boolean(
     process.env.STRIPE_SECRET_KEY &&
       process.env.STRIPE_PRICE_ID &&
+      process.env.STRIPE_PRICE_ID_ANNUAL &&
       process.env.STRIPE_WEBHOOK_SECRET,
   );
 }
@@ -21,8 +22,13 @@ export function getStripe(): Stripe {
   return stripe;
 }
 
-export function getStripePriceId(): string {
-  const priceId = process.env.STRIPE_PRICE_ID;
+export function getStripePriceId(
+  plan: "monthly" | "annual",
+): string {
+  const priceId =
+    plan === "annual"
+      ? process.env.STRIPE_PRICE_ID_ANNUAL
+      : process.env.STRIPE_PRICE_ID;
   if (!priceId) throw new Error("BILLING_NOT_CONFIGURED");
   return priceId;
 }

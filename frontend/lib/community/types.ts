@@ -1,4 +1,6 @@
 import type { CommunityAvatarId } from "@/lib/community/avatars";
+import type { ClanExpedition } from "@/lib/community/clanExpedition";
+import type { BattleBannerId } from "@/lib/rewards/banners";
 
 export type CommunityMember = {
   id: string;
@@ -9,6 +11,7 @@ export type CommunityMember = {
   losses: number;
   draws: number;
   monthlyPoints: number;
+  bannerId?: BattleBannerId;
 };
 
 export type CommunityClan = {
@@ -29,5 +32,6 @@ export type CommunityDashboard = {
     rank: number;
   };
   clan: CommunityClan | null;
+  clanExpedition: ClanExpedition | null;
   clanLeaderboard: CommunityClan[];
 };

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import OnlineGameHistory, {
@@ -9,9 +10,9 @@ import BackendStatus from "@/components/Layout/BackendStatus";
 import GameWorkspace from "@/components/Layout/GameWorkspace";
 import MultiplayerWorkspace from "@/components/Multiplayer/MultiplayerWorkspace";
 import AnalysisPaywall from "@/components/Billing/AnalysisPaywall";
+import DailyJourneyHub from "@/components/Progression/DailyJourneyHub";
 import type { AnalysisEntitlement } from "@/lib/billing/types";
 import { setActiveGameReviewId } from "@/services/api/ApiService";
-import ActivityStreak from "@/components/Statistics/ActivityStreak";
 
 export type ProductMode = "analysis" | "multiplayer";
 
@@ -91,15 +92,37 @@ export default function ProductWorkspace({
     }
   }
 
+  function selectMobileMode(nextMode: ProductMode): void {
+    setMode(nextMode);
+    window.requestAnimationFrame(() => {
+      document.getElementById("game-board")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
+
+  function openStatistics(): void {
+    document.getElementById("statistics")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+
   return (
     <div className="w-full">
-      <ActivityStreak
+      <DailyJourneyHub
         currentUser={currentUser}
+        mode={mode}
+        onPlay={() =>
+          selectMobileMode("multiplayer")
+        }
+        onCoach={() =>
+          selectMobileMode("analysis")
+        }
       />
 
-      <ModeSelector mode={mode} onChange={setMode} />
-
-      <div className="mt-4 flex justify-center">
+      <div className="mt-2 flex justify-center sm:mt-4">
         <BackendStatus disabled={mode === "multiplayer"} />
       </div>
 
@@ -165,70 +188,93 @@ export default function ProductWorkspace({
           }
         />
       )}
+
+      <MobileDock
+        mode={mode}
+        onModeChange={selectMobileMode}
+        onStatisticsOpen={openStatistics}
+      />
     </div>
   );
 }
 
-function ModeSelector({
+function MobileDock({
   mode,
-  onChange,
+  onModeChange,
+  onStatisticsOpen,
 }: {
   mode: ProductMode;
-  onChange: (mode: ProductMode) => void;
+  onModeChange: (mode: ProductMode) => void;
+  onStatisticsOpen: () => void;
 }) {
+  const itemClass =
+    "flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[10px] font-bold transition active:scale-95";
+
   return (
-    <section
-      aria-label="Choix du mode"
-      className="mx-auto grid w-full max-w-2xl grid-cols-2 rounded-2xl border border-gray-800 bg-gray-900 p-1.5 shadow-xl"
+    <nav
+      aria-label="Navigation mobile principale"
+      className="safe-bottom fixed inset-x-0 bottom-0 z-50 border-t border-gray-800 bg-gray-950/95 px-2 pt-2 shadow-[0_-12px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl md:hidden"
     >
-      <ModeButton
-        active={mode === "analysis"}
-        title="Mode analyse"
-        description="Joue, importe et apprends avec le coach."
-        onClick={() => onChange("analysis")}
-      />
-      <ModeButton
-        active={mode === "multiplayer"}
-        title="Mode multijoueur"
-        description="Affronte un joueur sans aucune assistance."
-        onClick={() => onChange("multiplayer")}
-      />
-    </section>
+      <div className="mx-auto flex max-w-md gap-1">
+        <button
+          type="button"
+          aria-current={mode === "multiplayer" ? "page" : undefined}
+          onClick={() => onModeChange("multiplayer")}
+          className={`${itemClass} ${
+            mode === "multiplayer"
+              ? "bg-blue-600/20 text-blue-300"
+              : "text-gray-500"
+          }`}
+        >
+          <DockIcon path="M8 5v14l11-7L8 5Z" />
+          Jouer
+        </button>
+        <button
+          type="button"
+          aria-current={mode === "analysis" ? "page" : undefined}
+          onClick={() => onModeChange("analysis")}
+          className={`${itemClass} ${
+            mode === "analysis"
+              ? "bg-blue-600/20 text-blue-300"
+              : "text-gray-500"
+          }`}
+        >
+          <DockIcon path="M9 18h6m-5 3h4m3-12a5 5 0 1 0-10 0c0 2 1 3.5 2.5 4.5V15h5v-1.5C16 12 17 11 17 9Z" />
+          Coach
+        </button>
+        <Link
+          href="/exercises"
+          className={`${itemClass} text-gray-500`}
+        >
+          <DockIcon path="M12 3 4 7v10l8 4 8-4V7l-8-4Zm0 0v18M4 7l8 4 8-4" />
+          Exercices
+        </Link>
+        <button
+          type="button"
+          onClick={onStatisticsOpen}
+          className={`${itemClass} text-gray-500`}
+        >
+          <DockIcon path="M5 20V10m7 10V4m7 16v-7" />
+          Progrès
+        </button>
+      </div>
+    </nav>
   );
 }
 
-function ModeButton({
-  active,
-  title,
-  description,
-  onClick,
-}: {
-  active: boolean;
-  title: string;
-  description: string;
-  onClick: () => void;
-}) {
+function DockIcon({ path }: { path: string }) {
   return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={[
-        "rounded-xl px-3 py-3 text-left transition sm:px-5",
-        active
-          ? "bg-blue-600 text-white shadow-lg"
-          : "text-gray-400 hover:bg-gray-800 hover:text-gray-200",
-      ].join(" ")}
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-5 w-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     >
-      <span className="block text-sm font-bold sm:text-base">{title}</span>
-      <span
-        className={[
-          "mt-1 hidden text-xs leading-5 sm:block",
-          active ? "text-blue-100" : "text-gray-500",
-        ].join(" ")}
-      >
-        {description}
-      </span>
-    </button>
+      <path d={path} />
+    </svg>
   );
 }

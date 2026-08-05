@@ -8,8 +8,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,6 +23,28 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+summary {
+  touch-action: manipulation;
+}
+
+.safe-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+.safe-page-bottom {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  .safe-page-bottom {
+    padding-bottom: 2.5rem;
+  }
 }
 
 .chess-board-live {
@@ -35,6 +57,201 @@ body {
   transition:
     filter 180ms ease,
     transform 180ms ease;
+}
+
+.board-mode-toggle {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  border-radius: 999px;
+  background: rgba(3, 7, 18, 0.82);
+  color: #f8fafc;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 24px rgba(3, 7, 18, 0.34);
+  backdrop-filter: blur(10px);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.board-mode-toggle:hover {
+  border-color: #60a5fa;
+  background: rgba(30, 64, 175, 0.9);
+  transform: translateY(-1px);
+}
+
+.chess-board-live--medieval {
+  overflow: visible;
+  border: clamp(5px, 1.3vw, 10px) solid #352515;
+  border-radius: 1.15rem;
+  background: #21170f;
+  box-shadow:
+    0 2px 0 #8b6a37 inset,
+    0 12px 0 #1a110a,
+    0 22px 38px rgba(0, 0, 0, 0.55),
+    0 0 44px rgba(245, 158, 11, 0.12);
+  perspective: 950px;
+}
+
+.chess-board-live--medieval > div:first-of-type {
+  overflow: hidden;
+  border-radius: 0.55rem;
+  filter: saturate(0.92) sepia(0.08)
+    contrast(1.04);
+  transform: rotateX(0.6deg)
+    translateZ(0);
+  transform-origin: center bottom;
+}
+
+.medieval-piece {
+  position: relative;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  border-radius: 46% 46% 38% 38%;
+  transform: translateY(-2%) scale(0.92);
+  transform-origin: center bottom;
+  filter: drop-shadow(0 8px 3px rgba(0, 0, 0, 0.46));
+  user-select: none;
+}
+
+.medieval-piece::after {
+  position: absolute;
+  right: 17%;
+  bottom: 9%;
+  left: 17%;
+  height: 9%;
+  content: "";
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.32);
+  filter: blur(2px);
+  transform: translateY(100%);
+}
+
+.medieval-piece__glyph {
+  position: relative;
+  z-index: 2;
+  font-family: Georgia, "Times New Roman",
+    serif;
+  font-size: clamp(2rem, 8.4vw, 4.6rem);
+  font-weight: 900;
+  line-height: 1;
+  transform: scaleX(0.9);
+}
+
+.medieval-piece--ivory
+  .medieval-piece__glyph {
+  color: #f4e6bd;
+  text-shadow:
+    -1px -1px 0 #fff8dd,
+    1px 1px 0 #806433,
+    2px 4px 0 #49371f,
+    0 0 8px rgba(255, 247, 214, 0.55);
+}
+
+.medieval-piece--obsidian
+  .medieval-piece__glyph {
+  color: #263143;
+  text-shadow:
+    -1px -1px 0 #738099,
+    1px 1px 0 #05080e,
+    2px 4px 0 #020409,
+    0 0 7px rgba(59, 130, 246, 0.34);
+}
+
+.medieval-piece__crest {
+  position: absolute;
+  top: 15%;
+  right: 9%;
+  z-index: 3;
+  display: grid;
+  width: 20%;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgba(253, 230, 138, 0.78);
+  border-radius: 50% 50% 45% 45%;
+  background: #1d4ed8;
+  color: #fef3c7;
+  font-family: Arial, sans-serif;
+  font-size: clamp(0.28rem, 0.8vw, 0.52rem);
+  font-weight: 900;
+  letter-spacing: -0.08em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
+}
+
+.chess-move-impact--medieval
+  .chess-move-ripple {
+  border-color: rgba(251, 191, 36, 0.96);
+  box-shadow:
+    0 0 20px rgba(245, 158, 11, 0.82),
+    inset 0 0 12px rgba(254, 240, 138, 0.5);
+}
+
+.medieval-piece-signature {
+  z-index: 2;
+  display: grid;
+  width: 72%;
+  height: 72%;
+  place-items: center;
+  color: #fef3c7;
+  font-family: Georgia, serif;
+  font-size: clamp(1.15rem, 3vw, 2.2rem);
+  font-weight: 900;
+  text-shadow: 0 0 12px #f59e0b;
+}
+
+.chess-move-impact--pawn
+  .medieval-piece-signature::before {
+  content: "✦";
+  animation: medieval-pawn-march 460ms
+    ease-out forwards;
+}
+
+.chess-move-impact--knight
+  .medieval-piece-signature::before {
+  content: "♞";
+  animation: medieval-knight-charge 560ms
+    cubic-bezier(0.16, 0.84, 0.32, 1)
+    forwards;
+}
+
+.chess-move-impact--bishop
+  .medieval-piece-signature::before {
+  content: "╱";
+  animation: medieval-bishop-slash 500ms
+    ease-out forwards;
+}
+
+.chess-move-impact--rook
+  .medieval-piece-signature::before {
+  content: "▦";
+  animation: medieval-rook-impact 520ms
+    ease-out forwards;
+}
+
+.chess-move-impact--queen
+  .medieval-piece-signature::before {
+  content: "♛";
+  animation: medieval-queen-flare 590ms
+    ease-out forwards;
+}
+
+.chess-move-impact--king
+  .medieval-piece-signature::before {
+  content: "♚";
+  animation: medieval-king-command 620ms
+    ease-out forwards;
 }
 
 .chess-move-origin,
@@ -164,6 +381,122 @@ body {
   }
 }
 
+@keyframes medieval-pawn-march {
+  0% {
+    opacity: 0;
+    transform: translateY(65%) scale(0.35);
+  }
+  45% {
+    opacity: 1;
+    transform: translateY(-12%) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-55%) scale(0.7);
+  }
+}
+
+@keyframes medieval-knight-charge {
+  0% {
+    opacity: 0;
+    transform: translate(-75%, 55%) rotate(-28deg) scale(0.35);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(8%, -18%) rotate(8deg) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(38%, -55%) rotate(18deg) scale(0.72);
+  }
+}
+
+@keyframes medieval-bishop-slash {
+  0% {
+    opacity: 0;
+    transform: rotate(-45deg) scaleY(0.1);
+  }
+  42% {
+    opacity: 1;
+    transform: rotate(-45deg) scaleY(1.8);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(-45deg) scaleY(2.6);
+  }
+}
+
+@keyframes medieval-rook-impact {
+  0% {
+    opacity: 0;
+    transform: translateY(-65%) scale(1.35);
+  }
+  45% {
+    opacity: 1;
+    transform: translateY(12%) scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(24%) scaleX(1.65) scaleY(0.6);
+  }
+}
+
+@keyframes medieval-queen-flare {
+  0% {
+    opacity: 0;
+    transform: rotate(-35deg) scale(0.2);
+  }
+  50% {
+    opacity: 1;
+    transform: rotate(12deg) scale(1.32);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(32deg) scale(1.85);
+  }
+}
+
+@keyframes medieval-king-command {
+  0% {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+  70% {
+    opacity: 0.9;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.65);
+  }
+}
+
+@media (max-width: 640px) {
+  .board-mode-toggle {
+    top: 0.35rem;
+    right: 0.35rem;
+    min-height: 1.75rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.62rem;
+  }
+
+  .medieval-piece__crest {
+    display: none;
+  }
+
+  .chess-board-live--medieval {
+    border-width: 5px;
+    box-shadow:
+      0 2px 0 #8b6a37 inset,
+      0 7px 0 #1a110a,
+      0 14px 24px rgba(0, 0, 0, 0.45);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .chess-move-origin,
   .chess-move-ripple,
@@ -171,5 +504,16 @@ body {
   .chess-capture-particle {
     display: none;
     animation: none;
+  }
+
+  .medieval-piece-signature {
+    display: none;
+  }
+
+  .chess-board-live--medieval
+    > div:first-of-type,
+  .board-mode-toggle {
+    transition: none;
+    transform: none;
   }
 }

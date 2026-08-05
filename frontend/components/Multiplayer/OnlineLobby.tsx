@@ -5,6 +5,32 @@ import { useState, type FormEvent } from "react";
 
 import type { CurrentUser } from "@/components/Layout/ProductWorkspace";
 
+const TIME_CONTROLS = [
+  {
+    minutes: 1,
+    label: "Bullet",
+    duration: "1 min",
+    description: "Décisions éclair",
+  },
+  {
+    minutes: 5,
+    label: "Blitz",
+    duration: "5 min",
+    description: "Rapide et tactique",
+  },
+  {
+    minutes: 10,
+    label: "Rapide",
+    duration: "10 min",
+    description: "Idéal pour progresser",
+  },
+] as const;
+
+const EXTRA_TIME_CONTROLS = [
+  { minutes: 3, label: "Blitz 3 min" },
+  { minutes: 15, label: "Rapide 15 min" },
+] as const;
+
 export default function OnlineLobby({
   currentUser,
   isLoading,
@@ -66,31 +92,78 @@ export default function OnlineLobby({
             </h2>
             <p className="mt-2 text-sm leading-6 text-gray-300">
               La recherche privilégie un joueur situé à moins de 250 points
-              Elo. Ton classement évolue à la fin de la partie.
+              Elo. Ton classement évolue à la fin de la partie, sans énergie
+              à attendre ni publicité entre deux duels.
             </p>
           </div>
-          <div className="flex min-w-64 flex-col gap-3">
-            <label className="text-sm font-semibold text-gray-200">
-              Cadence
-              <select
-                value={minutes}
-                onChange={(event) => setMinutes(Number(event.target.value))}
-                className="mt-2 w-full rounded-xl border border-blue-800 bg-gray-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+          <div className="flex w-full flex-col gap-3 md:max-w-md">
+            <div>
+              <p className="text-sm font-semibold text-gray-200">
+                Choisis ton arène
+              </p>
+              <div
+                role="radiogroup"
+                aria-label="Cadence de la partie"
+                className="mt-2 grid grid-cols-3 gap-2"
               >
-                <option value={1}>1 minute — Bullet</option>
-                <option value={3}>3 minutes — Blitz</option>
-                <option value={5}>5 minutes — Blitz</option>
-                <option value={10}>10 minutes — Rapide conseillé</option>
-                <option value={15}>15 minutes — Rapide confortable</option>
-              </select>
-            </label>
+                {TIME_CONTROLS.map((control) => (
+                  <button
+                    key={control.minutes}
+                    type="button"
+                    role="radio"
+                    aria-checked={minutes === control.minutes}
+                    onClick={() => setMinutes(control.minutes)}
+                    className={[
+                      "min-h-20 rounded-xl border p-2 text-left transition",
+                      minutes === control.minutes
+                        ? "border-blue-300 bg-blue-500 text-white shadow-lg shadow-blue-950/40"
+                        : "border-blue-900 bg-gray-950/80 text-gray-400 hover:border-blue-700 hover:text-white",
+                    ].join(" ")}
+                  >
+                    <span className="block text-sm font-black">
+                      {control.label}
+                    </span>
+                    <span className="mt-0.5 block text-xs font-bold">
+                      {control.duration}
+                    </span>
+                    <span className="mt-1 hidden text-[10px] opacity-75 sm:block">
+                      {control.description}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <details className="mt-2 text-xs text-gray-400">
+                <summary className="cursor-pointer py-1 font-semibold hover:text-gray-200">
+                  Autres cadences
+                </summary>
+                <div className="mt-1 grid grid-cols-2 gap-2">
+                  {EXTRA_TIME_CONTROLS.map((control) => (
+                    <button
+                      key={control.minutes}
+                      type="button"
+                      onClick={() => setMinutes(control.minutes)}
+                      className={[
+                        "rounded-lg border px-3 py-2 font-bold",
+                        minutes === control.minutes
+                          ? "border-blue-400 bg-blue-950 text-blue-100"
+                          : "border-gray-700 bg-gray-950 hover:border-gray-500",
+                      ].join(" ")}
+                    >
+                      {control.label}
+                    </button>
+                  ))}
+                </div>
+              </details>
+            </div>
             <button
               type="button"
               disabled={isLoading}
               onClick={() => void onFindMatch(minutes)}
               className="rounded-xl bg-blue-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-950/40 transition hover:bg-blue-400 disabled:cursor-wait disabled:opacity-60"
             >
-              {isLoading ? "Recherche en cours…" : "Trouver une partie"}
+              {isLoading
+                ? "Recherche en cours…"
+                : `Jouer maintenant · ${minutes} min`}
             </button>
           </div>
         </div>

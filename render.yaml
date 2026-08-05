@@ -7,6 +7,9 @@ services:
     plan: free
     healthCheckPath: /health
     autoDeployTrigger: commit
+    envVars:
+      - key: BACKEND_API_SECRET
+        generateValue: true
 
   - type: web
     name: chess-coach-web
@@ -16,18 +19,22 @@ services:
     plan: free
     buildCommand: npm ci && npm run build
     startCommand: npm start
-    healthCheckPath: /
+    healthCheckPath: /api/health
     autoDeployTrigger: commit
+    maxShutdownDelaySeconds: 30
     envVars:
       - key: NODE_VERSION
-        value: 24.18.0
-      - key: NEXT_PUBLIC_API_URL
-        value: /backend-api
+        value: 24.14.1
       - key: BACKEND_URL
         fromService:
           type: web
           name: chess-coach-api
           envVarKey: RENDER_EXTERNAL_URL
+      - key: BACKEND_API_SECRET
+        fromService:
+          type: web
+          name: chess-coach-api
+          envVarKey: BACKEND_API_SECRET
       - key: DATABASE_URL
         fromDatabase:
           name: chess-coach-db
@@ -39,6 +46,52 @@ services:
           type: web
           name: chess-coach-web
           envVarKey: RENDER_EXTERNAL_URL
+      - key: AUTH_GOOGLE_ID
+        sync: false
+      - key: AUTH_GOOGLE_SECRET
+        sync: false
+      - key: COMMERCIAL_LAUNCH_ENABLED
+        value: "false"
+      - key: ANALYSIS_PRICE_MONTHLY_CENTS
+        value: "299"
+      - key: ANALYSIS_PRICE_ANNUAL_CENTS
+        value: "2499"
+      - key: ANALYSIS_PREVIEW_EMAILS
+        sync: false
+      - key: LEGAL_ENTITY_NAME
+        sync: false
+      - key: LEGAL_ADDRESS
+        sync: false
+      - key: LEGAL_REGISTRATION_NUMBER
+        sync: false
+      - key: LEGAL_PUBLICATION_DIRECTOR
+        sync: false
+      - key: SUPPORT_EMAIL
+        sync: false
+      - key: PRIVACY_EMAIL
+        sync: false
+      - key: LEGAL_DOCUMENTS_REVIEWED
+        value: "false"
+      - key: LEGAL_TERMS_VERSION
+        sync: false
+      - key: LEGAL_PRIVACY_VERSION
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PRICE_ID
+        sync: false
+      - key: STRIPE_PRICE_ID_ANNUAL
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
+      - key: CRON_SECRET
+        generateValue: true
 
 databases:
   - name: chess-coach-db

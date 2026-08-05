@@ -6,10 +6,11 @@ import type {
   MoveReviewResponse,
 } from "@/services/api/ApiService";
 import {
-  getAiPersona,
   type AiPersonaId,
 } from "@/lib/ai/opponents";
 import { explainPlayedMove } from "@/lib/chess/pedagogy";
+import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
+import { getAiPersona } from "@/lib/ai/opponents";
 
 type MoveReviewCardProps = {
   moveData: PlayedMoveData;
@@ -118,7 +119,7 @@ function LoadingReview({
       <span className="h-5 w-5 animate-spin rounded-full border-2 border-gray-700 border-t-blue-400" />
 
       <span>
-        Stockfish évalue le coup{" "}
+        Ton coach relit le coup{" "}
         <strong className="text-gray-200">
           {formatUciMove(move)}
         </strong>
@@ -167,38 +168,29 @@ function ReviewContent({
 
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <ReviewStat
           label="Coup joué"
-          value={review.played_move_san}
+          value={`${capitalize(review.played_move_piece)} · ${review.played_move_san}`}
         />
 
         <ReviewStat
           label="Meilleur coup"
-          value={review.best_move_san}
+          value={`${capitalize(review.best_move_piece)} · ${review.best_move_san}`}
           positive={review.is_best_move}
         />
 
-        <ReviewStat
-          label="Perte"
-          value={formatEvaluationLoss(
-            review.evaluation_loss,
-          )}
-          positive={
-            review.evaluation_loss <= 0.1
-          }
-        />
       </div>
 
-      <div className="rounded-xl border border-gray-800 bg-gray-950/50 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          {persona.name} te répond
-        </p>
-
-        <p className="mt-2 text-sm leading-6 text-gray-300">
+      <CoachMentorMessage
+        compact
+        name={persona.name}
+        title={getCoachReactionTitle(review)}
+      >
+        <p>
           {explainPlayedMove(review, coachPersonaId)}
         </p>
-      </div>
+      </CoachMentorMessage>
 
       <EvaluationComparison
         review={review}
@@ -415,17 +407,21 @@ function getClassificationClassName(
   }
 }
 
-function formatEvaluationLoss(
-  evaluationLoss: number,
+function getCoachReactionTitle(
+  review: MoveReviewResponse,
 ): string {
-  const unit =
-    evaluationLoss <= 1
-      ? "pion"
-      : "pions";
-
-  return `${evaluationLoss
-    .toFixed(2)
-    .replace(".", ",")} ${unit}`;
+  switch (review.classification) {
+    case "excellent":
+      return "Très propre. Garde ce réflexe.";
+    case "good":
+      return "Bonne décision, avec une petite marge de progression.";
+    case "inaccuracy":
+      return "Pas dramatique : voici le détail qui t’a échappé.";
+    case "mistake":
+      return "On ralentit ici : ce moment mérite d’être rejoué.";
+    case "blunder":
+      return "Ouch… tu t’es fait mater sauvagement par la tactique.";
+  }
 }
 
 function formatEvaluation(
@@ -463,6 +459,10 @@ function formatUciMove(
     2,
     4,
   )}`;
+}
+
+function capitalize(value: string): string {
+  return value.charAt(0).toLocaleUpperCase("fr") + value.slice(1);
 }
 
 export default MoveReviewCard;

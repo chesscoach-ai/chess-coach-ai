@@ -14,6 +14,7 @@ const registrationSchema = z
     email: z.string().trim().email(),
     password: z.string().min(8).max(128),
     confirmation: z.string(),
+    terms: z.literal("accepted"),
   })
   .refine((data) => data.password === data.confirmation);
 
@@ -45,6 +46,7 @@ export async function register(
     email: formData.get("email"),
     password: formData.get("password"),
     confirmation: formData.get("confirmation"),
+    terms: formData.get("terms"),
   });
 
   if (!parsed.success) {
@@ -71,6 +73,11 @@ export async function register(
   return {};
 }
 
-export async function loginWithGoogle(): Promise<void> {
+export async function loginWithGoogle(
+  formData: FormData,
+): Promise<void> {
+  if (formData.get("terms") !== "accepted") {
+    return;
+  }
   await signIn("google", { redirectTo: "/" });
 }

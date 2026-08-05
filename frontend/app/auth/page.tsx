@@ -14,7 +14,7 @@ export default function AuthPage() {
         <Link href="/" className="text-sm text-blue-300 hover:text-blue-200">
           ← Retour à l’analyse
         </Link>
-        <h1 className="mt-5 text-3xl font-bold">Ton espace Chess Coach</h1>
+        <h1 className="mt-5 text-3xl font-bold">Ton espace Chess Clan</h1>
         <p className="mt-2 text-sm leading-6 text-gray-400">
           Crée ton compte pour préparer ton espace personnel et tes prochaines
           sessions d’entraînement.
@@ -23,6 +23,22 @@ export default function AuthPage() {
         <div className="mt-6">
           {googleIsConfigured ? (
             <form action={loginWithGoogle}>
+              <label className="mb-3 flex items-start gap-3 text-xs leading-5 text-gray-400">
+                <input
+                  type="checkbox"
+                  name="terms"
+                  value="accepted"
+                  required
+                  className="mt-1"
+                />
+                <span>
+                  J’accepte les{" "}
+                  <Link className="text-blue-300" href="/legal/terms">
+                    conditions
+                  </Link>{" "}
+                  et la politique de confidentialité.
+                </span>
+              </label>
               <button
                 type="submit"
                 className="w-full rounded-xl border border-gray-700 bg-white px-4 py-3 font-semibold text-gray-900 transition hover:bg-gray-100"

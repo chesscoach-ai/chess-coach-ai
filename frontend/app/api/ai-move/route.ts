@@ -11,6 +11,10 @@ import {
 } from "@/lib/ai/opponents";
 import { selectAiMove } from "@/lib/ai/selectMove";
 import type { PositionAnalysisResponse } from "@/services/api/ApiService";
+import {
+  getBackendHeaders,
+  getBackendUrl,
+} from "@/lib/api/backendServer";
 
 export const runtime = "nodejs";
 
@@ -48,18 +52,12 @@ export async function POST(request: Request) {
     }
 
     const level = getAiLevel(parsed.data.levelId);
-    const backendUrl = (
-      process.env.BACKEND_URL ??
-      (process.env.BACKEND_HOSTPORT
-        ? `http://${process.env.BACKEND_HOSTPORT}`
-        : "http://127.0.0.1:8000")
-    ).replace(/\/$/, "");
-    const response = await fetch(`${backendUrl}/analysis`, {
+    const response = await fetch(`${getBackendUrl()}/analysis`, {
       method: "POST",
-      headers: {
+      headers: getBackendHeaders({
         Accept: "application/json",
         "Content-Type": "application/json",
-      },
+      }),
       body: JSON.stringify({
         fen: parsed.data.fen,
         depth: level.depth,

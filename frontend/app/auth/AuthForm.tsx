@@ -65,12 +65,34 @@ export default function AuthForm() {
           autoComplete={mode === "login" ? "current-password" : "new-password"}
         />
         {mode === "register" && (
-          <Field
-            label="Confirmer le mot de passe"
-            name="confirmation"
-            type="password"
-            autoComplete="new-password"
-          />
+          <>
+            <Field
+              label="Confirmer le mot de passe"
+              name="confirmation"
+              type="password"
+              autoComplete="new-password"
+            />
+            <label className="flex items-start gap-3 text-xs leading-5 text-gray-400">
+              <input
+                type="checkbox"
+                name="terms"
+                value="accepted"
+                required
+                className="mt-1"
+              />
+              <span>
+                J’accepte les{" "}
+                <a className="text-blue-300" href="/legal/terms">
+                  conditions d’utilisation
+                </a>{" "}
+                et j’ai lu la{" "}
+                <a className="text-blue-300" href="/legal/privacy">
+                  politique de confidentialité
+                </a>
+                .
+              </span>
+            </label>
+          </>
         )}
 
         {state.error && (

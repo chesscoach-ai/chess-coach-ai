@@ -8,11 +8,17 @@ import {
 } from "react";
 import type { CSSProperties } from "react";
 
+import type {
+  BoardVisualMode,
+  ChessPieceRole,
+} from "@/components/ChessBoard/MedievalBoard";
+
 export type AnimatedBoardMove = {
   id: number;
   from: string;
   to: string;
   capture: boolean;
+  piece: ChessPieceRole;
 };
 
 type BoardOrientation = "white" | "black";
@@ -46,6 +52,7 @@ export function useMoveAnimation(): {
     from: string,
     to: string,
     capture?: boolean,
+    piece?: ChessPieceRole,
   ) => void;
 } {
   const [moveEffect, setMoveEffect] =
@@ -71,7 +78,8 @@ export function useMoveAnimation(): {
     (
       from: string,
       to: string,
-      capture = false,
+      capture: boolean = false,
+      piece: ChessPieceRole = "pawn",
     ) => {
       sequence.current += 1;
       setMoveEffect({
@@ -79,6 +87,7 @@ export function useMoveAnimation(): {
         from,
         to,
         capture,
+        piece,
       });
 
       if (clearTimer.current !== null) {
@@ -104,9 +113,11 @@ export function useMoveAnimation(): {
 export default function MoveEffects({
   move,
   orientation,
+  visualMode = "classic",
 }: {
   move: AnimatedBoardMove | null;
   orientation: BoardOrientation;
+  visualMode?: BoardVisualMode;
 }) {
   if (!move) {
     return null;
@@ -138,11 +149,18 @@ export default function MoveEffects({
           move.capture
             ? "chess-move-impact--capture"
             : "",
+          visualMode === "medieval"
+            ? `chess-move-impact--medieval chess-move-impact--${move.piece}`
+            : "",
         ].join(" ")}
         style={targetStyle}
       >
         <span className="chess-move-ripple" />
         <span className="chess-move-flash" />
+
+        {visualMode === "medieval" && (
+          <span className="medieval-piece-signature" />
+        )}
 
         {move.capture &&
           Array.from({ length: 8 }).map(

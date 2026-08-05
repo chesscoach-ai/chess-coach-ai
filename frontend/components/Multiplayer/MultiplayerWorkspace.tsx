@@ -9,6 +9,7 @@ import type { CurrentUser } from "@/components/Layout/ProductWorkspace";
 import OnlineLobby from "@/components/Multiplayer/OnlineLobby";
 import OnlineMatch from "@/components/Multiplayer/OnlineMatch";
 import CommunityHub from "@/components/Multiplayer/CommunityHub";
+import BattleRoad from "@/components/Multiplayer/BattleRoad";
 import PlayerStatistics from "@/components/Statistics/PlayerStatistics";
 import { useChessGame } from "@/hooks/useChessGame";
 import { useOnlineGame } from "@/hooks/useOnlineGame";
@@ -30,15 +31,7 @@ export default function MultiplayerWorkspace({
   const online = useOnlineGame(Boolean(currentUser) && kind === "online");
 
   return (
-    <div className="space-y-6">
-      <FairPlayNotice />
-
-      <PlayerStatistics
-        currentUser={currentUser}
-        variant="multiplayer"
-        refreshKey={`${online.game?.id ?? "lobby"}-${online.game?.status ?? "idle"}`}
-      />
-
+    <div className="space-y-4 sm:space-y-6">
       <div
         role="tablist"
         aria-label="Type de partie multijoueur"
@@ -66,6 +59,14 @@ export default function MultiplayerWorkspace({
         />
       </div>
 
+      <BattleRoad
+        currentUser={currentUser}
+        refreshKey={`${online.game?.id ?? "lobby"}-${online.game?.status ?? "idle"}`}
+        onPlay={() =>
+          setKind("online")
+        }
+      />
+
       {kind === "community" ? (
         <CommunityHub currentUser={currentUser} />
       ) : kind === "online" ? (
@@ -76,6 +77,9 @@ export default function MultiplayerWorkspace({
             isLoading={online.isLoading}
             onMove={online.move}
             onResign={online.resign}
+            onOfferDraw={online.offerDraw}
+            onAcceptDraw={online.acceptDraw}
+            onDeclineDraw={online.declineDraw}
             onLeave={online.leave}
             onRematch={online.rematch}
             onOpenReview={
@@ -97,6 +101,14 @@ export default function MultiplayerWorkspace({
       ) : (
         <LocalMatch />
       )}
+
+      <FairPlayNotice />
+
+      <PlayerStatistics
+        currentUser={currentUser}
+        variant="multiplayer"
+        refreshKey={`${online.game?.id ?? "lobby"}-${online.game?.status ?? "idle"}`}
+      />
     </div>
   );
 }
@@ -211,8 +223,9 @@ function KindButton({
 
 function FairPlayNotice() {
   return (
-    <section className="rounded-2xl border border-violet-900/60 bg-violet-950/25 p-4">
-      <div className="flex items-start gap-3">
+    <details className="group rounded-2xl border border-violet-900/50 bg-violet-950/20">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+        <div className="flex items-center gap-3">
         <span
           aria-hidden="true"
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-violet-300"
@@ -220,17 +233,24 @@ function FairPlayNotice() {
           ♟
         </span>
         <div>
-          <h2 className="font-semibold text-violet-100">
+          <h2 className="text-sm font-semibold text-violet-100">
             Partie sans assistance
           </h2>
-          <p className="mt-1 text-sm leading-6 text-gray-400">
-            Stockfish, les évaluations, les suggestions et le coach sont
-            entièrement désactivés pendant la partie. L’analyse sera proposée
-            seulement après le résultat.
+          <p className="mt-0.5 text-xs text-gray-500">
+            Stockfish reste masqué jusqu’au résultat.
           </p>
         </div>
-      </div>
-    </section>
+        </div>
+        <span className="text-violet-300 transition group-open:rotate-180">
+          ⌄
+        </span>
+      </summary>
+      <p className="border-t border-violet-900/40 px-4 py-3 text-sm leading-6 text-gray-400">
+        Les évaluations, les suggestions et le coach sont entièrement
+        désactivés pendant la partie. L’analyse sera proposée seulement après
+        le résultat.
+      </p>
+    </details>
   );
 }
 
@@ -330,8 +350,8 @@ function LocalPlayerRow({
 function getLocalGameResult(game: Chess): string | null {
   if (game.isCheckmate()) {
     return game.turn() === "w"
-      ? "Victoire des Noirs par échec et mat"
-      : "Victoire des Blancs par échec et mat";
+      ? "Les Noirs ont maté sauvagement le roi blanc"
+      : "Les Blancs ont maté sauvagement le roi noir";
   }
   if (game.isStalemate()) return "Partie nulle par pat";
   if (game.isThreefoldRepetition()) return "Partie nulle par répétition";

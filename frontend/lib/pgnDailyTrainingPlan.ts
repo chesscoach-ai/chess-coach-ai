@@ -9,12 +9,15 @@ export type PGNDailyPlanItem = {
   example: PGNExample;
   reason: string;
   priority: "high" | "medium" | "low";
+  kind: "review" | "new";
+  dueAt: string | null;
 };
 
 export type PGNDailyTrainingPlan = {
   date: string;
   estimatedMinutes: number;
   completedItems: number;
+  dueItems: number;
   items: PGNDailyPlanItem[];
 };
 
@@ -22,6 +25,36 @@ function getDateKey(
   date = new Date(),
 ): string {
   return date.toISOString().slice(0, 10);
+}
+
+export function getSpacedReviewState(
+  progress: PGNExerciseProgress | undefined,
+  today = new Date(),
+): {
+  due: boolean;
+  dueAt: string | null;
+  intervalDays: number;
+} {
+  if (!progress?.completedAt) {
+    return { due: false, dueAt: null, intervalDays: 0 };
+  }
+  const repetitions = Math.max(1, progress.successfulRepetitions ?? 1);
+  const intervalDays = progress.needsReview
+    ? 0
+    : repetitions === 1
+      ? 3
+      : repetitions === 2
+        ? 7
+        : repetitions === 3
+          ? 14
+          : 30;
+  const dueDate = new Date(progress.completedAt);
+  dueDate.setDate(dueDate.getDate() + intervalDays);
+  return {
+    due: dueDate.getTime() <= today.getTime(),
+    dueAt: getDateKey(dueDate),
+    intervalDays,
+  };
 }
 
 function getCategoryCount(
@@ -46,6 +79,7 @@ function scoreExample(
     PGNExerciseProgress
   >,
   weakestCategory: PGNExampleCategory,
+  today: Date,
 ): number {
   const itemProgress =
     progress[example.id];
@@ -56,7 +90,8 @@ function scoreExample(
   } else if (!itemProgress.completedAt) {
     score += 65;
   } else {
-    score -= 35;
+    const review = getSpacedReviewState(itemProgress, today);
+    score += review.due ? (itemProgress.needsReview ? 150 : 105) : -35;
   }
 
   if (
@@ -125,9 +160,20 @@ function getReason(
     PGNExerciseProgress
   >,
   weakestCategory: PGNExampleCategory,
+  today: Date,
 ): string {
   const itemProgress =
     progress[example.id];
+
+  if (itemProgress?.completedAt) {
+    const review = getSpacedReviewState(itemProgress, today);
+    if (itemProgress.needsReview) {
+      return "À revoir maintenant : une erreur ou plusieurs indices ont fragilisé ce réflexe.";
+    }
+    if (review.due) {
+      return `Révision espacée après ${review.intervalDays} jours pour vérifier que le réflexe tient toujours.`;
+    }
+  }
 
   if (
     itemProgress &&
@@ -160,6 +206,7 @@ export function buildDailyTrainingPlan(
     PGNExerciseProgress
   >,
   targetSize = 3,
+  today = new Date(),
 ): PGNDailyTrainingPlan {
   const categories: PGNExampleCategory[] =
     [
@@ -193,23 +240,28 @@ export function buildDailyTrainingPlan(
           b,
           progress,
           weakestCategory,
+          today,
         ) -
         scoreExample(
           a,
           progress,
           weakestCategory,
+          today,
         ),
     )
     .slice(0, targetSize);
 
   const items =
     selected.map(
-      (example, index) => ({
+      (example, index) => {
+        const review = getSpacedReviewState(progress[example.id], today);
+        return {
         example,
         reason: getReason(
           example,
           progress,
           weakestCategory,
+          today,
         ),
         priority:
           index === 0
@@ -217,26 +269,20 @@ export function buildDailyTrainingPlan(
             : index === 1
               ? "medium"
               : "low",
-      }),
+        kind: review.due ? "review" : "new",
+        dueAt: review.dueAt,
+      };
+      },
     ) satisfies PGNDailyPlanItem[];
 
   return {
-    date: getDateKey(),
-    estimatedMinutes: items.reduce(
-      (sum, item) =>
-        sum +
-        getPGNExampleMetrics(
-          item.example,
-        ).estimatedMinutes,
-      0,
-    ),
+    date: getDateKey(today),
+    estimatedMinutes: Math.max(3, items.length * 2),
     completedItems: items.filter(
       (item) =>
-        Boolean(
-          progress[item.example.id]
-            ?.completedAt,
-        ),
+        progress[item.example.id]?.completedAt?.startsWith(getDateKey(today)),
     ).length,
+    dueItems: items.filter((item) => item.kind === "review").length,
     items,
   };
 }

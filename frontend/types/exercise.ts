@@ -27,6 +27,9 @@ export interface ExerciseSession {
   champion?: string;
   decisionNumber?: number;
   decisionCount?: number;
+  returnHref?: string;
+  returnLabel?: string;
+  placementDifficulty?: "débutant" | "intermédiaire" | "avancé";
 
   playerColor: ExerciseColor;
   hints: string[];

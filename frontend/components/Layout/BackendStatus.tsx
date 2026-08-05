@@ -22,8 +22,6 @@ export default function BackendStatus({
       try {
         const response = await ApiService.getHealth();
 
-        console.log("Réponse du backend :", response);
-
         if (!isMounted) {
           return;
         }
@@ -33,9 +31,7 @@ export default function BackendStatus({
         } else {
           setStatus("offline");
         }
-      } catch (error) {
-        console.error("Connexion au backend impossible :", error);
-
+      } catch {
         if (isMounted) {
           setStatus("offline");
         }
@@ -46,7 +42,7 @@ export default function BackendStatus({
 
     const intervalId = window.setInterval(() => {
       checkBackend();
-    }, 5000);
+    }, 10_000);
 
     return () => {
       isMounted = false;
@@ -56,12 +52,12 @@ export default function BackendStatus({
 
   if (disabled) {
     return (
-      <div className="mb-6 flex items-center gap-2 rounded-full border border-gray-800 bg-gray-900 px-4 py-2">
+      <div className="mb-2 flex items-center gap-2 rounded-full border border-gray-800 bg-gray-900 px-3 py-1.5 sm:mb-4 sm:px-4 sm:py-2">
         <span
           className="h-2.5 w-2.5 rounded-full bg-gray-600"
           aria-hidden="true"
         />
-        <span className="text-sm font-medium text-gray-400">
+        <span className="text-xs font-medium text-gray-400 sm:text-sm">
             Aides d’analyse hors ligne — partie équitable
         </span>
       </div>
@@ -89,13 +85,13 @@ export default function BackendStatus({
   const config = statusConfig[status];
 
   return (
-    <div className="mb-6 flex items-center gap-2 rounded-full border border-gray-800 bg-gray-900 px-4 py-2">
+    <div className="mb-2 flex items-center gap-2 rounded-full border border-gray-800 bg-gray-900 px-3 py-1.5 sm:mb-4 sm:px-4 sm:py-2">
       <span
         className={`h-2.5 w-2.5 rounded-full ${config.dotClassName}`}
         aria-hidden="true"
       />
 
-      <span className={`text-sm font-medium ${config.textClassName}`}>
+      <span className={`text-xs font-medium sm:text-sm ${config.textClassName}`}>
         {config.label}
       </span>
     </div>

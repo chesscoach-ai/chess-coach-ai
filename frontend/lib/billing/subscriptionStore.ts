@@ -10,6 +10,12 @@ import type {
   BillingSubscription,
   SubscriptionStatus,
 } from "@/lib/billing/types";
+import {
+  getAnalysisPriceAnnualCents,
+  getAnalysisPriceMonthlyCents,
+  getCommercialReadiness,
+  hasPreviewAnalysisAccess,
+} from "@/lib/commercial/config";
 
 const dataDirectory = path.join(process.cwd(), ".data");
 const subscriptionsFile = path.join(dataDirectory, "subscriptions.json");
@@ -174,19 +180,34 @@ export async function getAnalysisEntitlement(
   const developmentUnlock =
     process.env.NODE_ENV !== "production" &&
     process.env.ANALYSIS_DEV_UNLOCK === "true";
+  const previewUnlock =
+    hasPreviewAnalysisAccess(userId);
   const subscription = userId
     ? await getBillingSubscription(userId)
     : null;
   const hasPaidAccess =
     subscription?.status === "active" || subscription?.status === "trialing";
+  const commercial =
+    getCommercialReadiness();
 
   return {
-    hasAccess: developmentUnlock || hasPaidAccess,
-    status: developmentUnlock
+    hasAccess:
+      developmentUnlock ||
+      previewUnlock ||
+      hasPaidAccess,
+    status: developmentUnlock || previewUnlock
       ? "active"
       : subscription?.status ?? "inactive",
-    priceMonthlyCents: 200,
-    billingConfigured: isStripeConfigured(),
+    priceMonthlyCents:
+      getAnalysisPriceMonthlyCents(),
+    priceAnnualCents:
+      getAnalysisPriceAnnualCents(),
+    billingConfigured:
+      isStripeConfigured() &&
+      commercial.ready &&
+      commercial.launchEnabled,
+    commercialLaunchEnabled:
+      commercial.launchEnabled,
     canManage: Boolean(subscription?.customerId),
     currentPeriodEnd: subscription?.currentPeriodEnd ?? null,
     cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd ?? false,
