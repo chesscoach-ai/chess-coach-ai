@@ -10,6 +10,7 @@ import OnlineLobby from "@/components/Multiplayer/OnlineLobby";
 import OnlineMatch from "@/components/Multiplayer/OnlineMatch";
 import CommunityHub from "@/components/Multiplayer/CommunityHub";
 import BattleRoad from "@/components/Multiplayer/BattleRoad";
+import MultiplayerProfileBar from "@/components/Multiplayer/MultiplayerProfileBar";
 import PlayerStatistics from "@/components/Statistics/PlayerStatistics";
 import { useChessGame } from "@/hooks/useChessGame";
 import { useOnlineGame } from "@/hooks/useOnlineGame";
@@ -32,6 +33,11 @@ export default function MultiplayerWorkspace({
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      <MultiplayerProfileBar
+        currentUser={currentUser}
+        onOpenCommunity={() => setKind("community")}
+      />
+
       <div
         role="tablist"
         aria-label="Type de partie multijoueur"

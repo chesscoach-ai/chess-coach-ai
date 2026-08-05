@@ -11,7 +11,6 @@ import type {
   CommunityDashboard,
   CommunityMember,
 } from "@/lib/community/types";
-import { getBattleBanner } from "@/lib/rewards/banners";
 
 export default function CommunityHub({
   currentUser,
@@ -70,6 +69,7 @@ export default function CommunityHub({
         );
       }
       await loadDashboard();
+      window.dispatchEvent(new Event("community:updated"));
       return true;
     } catch (requestError) {
       setError(
@@ -115,51 +115,8 @@ export default function CommunityHub({
     );
   }
 
-  const currentAvatar =
-    COMMUNITY_AVATARS.find(
-      (avatar) => avatar.id === dashboard.profile.avatarId,
-    ) ?? COMMUNITY_AVATARS[0];
-  const currentBanner = getBattleBanner(dashboard.profile.bannerId ?? "");
-
   return (
     <div className="space-y-5">
-      <section
-        className={[
-          "overflow-hidden rounded-2xl border bg-gradient-to-br p-4 sm:p-5",
-          currentBanner.panelClass,
-        ].join(" ")}
-      >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <Image
-            src={currentAvatar.image}
-            alt={currentAvatar.name}
-            width={96}
-            height={96}
-            className="h-20 w-20 rounded-xl border border-violet-500/50 object-cover shadow-xl sm:h-24 sm:w-24"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">
-              Profil de chevalier
-            </p>
-            <h2 className="mt-1 text-2xl font-black text-white">
-              {dashboard.profile.name}
-            </h2>
-            <p className="mt-1 text-sm text-gray-400">
-              {currentAvatar.name} · {currentAvatar.rarity}
-            </p>
-            <p className="mt-1 text-xs font-bold text-violet-300">
-              {currentBanner.icon} Bannière « {currentBanner.name} »
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <ProfileStat label="Elo" value={dashboard.profile.rating} />
-            <ProfileStat label="Victoires" value={dashboard.profile.wins} />
-            <ProfileStat label="Défaites" value={dashboard.profile.losses} />
-            <ProfileStat label="Nulles" value={dashboard.profile.draws} />
-          </div>
-        </div>
-      </section>
-
       <section className="rounded-2xl border border-blue-900/60 bg-gradient-to-r from-blue-950/35 via-gray-900 to-red-950/25 p-4 sm:p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
