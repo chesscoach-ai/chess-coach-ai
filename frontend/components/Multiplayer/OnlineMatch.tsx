@@ -197,8 +197,8 @@ export default function OnlineMatch({
         <WaitingRoom game={game} onLeave={onLeave} />
       )}
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="w-full max-w-xl space-y-3">
+      <div className="grid items-start justify-center gap-6 xl:grid-cols-[minmax(620px,760px)_minmax(320px,380px)]">
+        <div className="w-full max-w-[min(760px,78vh)] space-y-3">
           <div className="board-presentation">
             <div className="chess-board-live overflow-hidden rounded-2xl shadow-2xl">
               <Chessboard

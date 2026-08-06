@@ -22,7 +22,6 @@ import LivePositionOverview from "@/components/Coach/LivePositionOverview";
 import MoveReviewCard from "@/components/Coach/MoveReviewCard";
 import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
 import type { CurrentUser } from "@/components/Layout/ProductWorkspace";
-import WorkspaceMenu from "@/components/Layout/WorkspaceMenu";
 import MoveList from "@/components/PGN/MoveList";
 import NavigationControls from "@/components/PGN/NavigationControls";
 import PGNInput from "@/components/PGN/PGNInput";
@@ -321,11 +320,9 @@ export default function GameWorkspace({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <WorkspaceMenu />
-
       <section
         id="game-board"
-        className="scroll-mt-24 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_420px]"
+        className="scroll-mt-20 grid items-start justify-center gap-6 xl:grid-cols-[minmax(620px,760px)_minmax(320px,390px)]"
       >
         <div className="min-w-0 space-y-4">
           <div className="flex items-stretch gap-3">

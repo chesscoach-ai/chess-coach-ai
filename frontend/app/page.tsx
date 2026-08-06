@@ -20,7 +20,7 @@ export default async function Home() {
 
   return (
     <main className="safe-page-bottom min-h-screen bg-gray-950 px-3 pt-3 text-white sm:px-6 sm:pt-6 lg:pt-8">
-      <div className="mx-auto flex max-w-6xl flex-col items-center">
+      <div className="mx-auto flex max-w-[1500px] flex-col items-center">
         <header className="mb-4 flex w-full items-center justify-between gap-4 border-b border-gray-800/80 pb-3 sm:mb-6 sm:pb-4">
           <div className="flex min-w-0 items-center gap-3">
             <Image

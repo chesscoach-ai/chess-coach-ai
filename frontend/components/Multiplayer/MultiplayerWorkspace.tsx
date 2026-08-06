@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Chess } from "chess.js";
 
 import ChessBoard from "@/components/ChessBoard";
@@ -17,25 +17,43 @@ import { useOnlineGame } from "@/hooks/useOnlineGame";
 import { useAiOpponent } from "@/hooks/useAiOpponent";
 import { getAiLevel, getAiPersona } from "@/lib/ai/opponents";
 
-type MultiplayerKind = "online" | "ai" | "local" | "community";
+export type MultiplayerKind = "online" | "ai" | "local" | "community";
 
 export default function MultiplayerWorkspace({
   currentUser,
+  requestedKind,
+  onKindChange,
+  onGameFocusChange,
   onOpenGameReview,
 }: {
   currentUser: CurrentUser | null;
+  requestedKind: MultiplayerKind;
+  onKindChange: (kind: MultiplayerKind) => void;
+  onGameFocusChange: (focused: boolean) => void;
   onOpenGameReview: (
     gameId: string,
   ) => Promise<void>;
 }) {
-  const [kind, setKind] = useState<MultiplayerKind>("online");
+  const kind = requestedKind;
   const online = useOnlineGame(Boolean(currentUser) && kind === "online");
+  const gameFocused =
+    (kind === "online" && Boolean(online.game)) ||
+    kind === "ai" ||
+    kind === "local";
+
+  useEffect(() => {
+    onGameFocusChange(gameFocused);
+  }, [gameFocused, onGameFocusChange]);
+
+  function selectKind(nextKind: MultiplayerKind): void {
+    onKindChange(nextKind);
+  }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div id="multiplayer-workspace" className="scroll-mt-20 space-y-4 sm:space-y-6">
       <MultiplayerProfileBar
         currentUser={currentUser}
-        onOpenCommunity={() => setKind("community")}
+        onOpenCommunity={() => selectKind("community")}
       />
 
       <div
@@ -46,32 +64,32 @@ export default function MultiplayerWorkspace({
         <KindButton
           active={kind === "online"}
           label="Jouer en ligne"
-          onClick={() => setKind("online")}
+          onClick={() => selectKind("online")}
         />
         <KindButton
           active={kind === "ai"}
           label="Défier l’IA"
-          onClick={() => setKind("ai")}
+          onClick={() => selectKind("ai")}
         />
         <KindButton
           active={kind === "local"}
           label="Jouer sur cet écran"
-          onClick={() => setKind("local")}
+          onClick={() => selectKind("local")}
         />
         <KindButton
           active={kind === "community"}
           label="Communauté"
-          onClick={() => setKind("community")}
+          onClick={() => selectKind("community")}
         />
       </div>
 
-      <BattleRoad
-        currentUser={currentUser}
-        refreshKey={`${online.game?.id ?? "lobby"}-${online.game?.status ?? "idle"}`}
-        onPlay={() =>
-          setKind("online")
-        }
-      />
+      {kind === "online" && !online.game && (
+        <BattleRoad
+          currentUser={currentUser}
+          refreshKey="lobby-idle"
+          onPlay={() => selectKind("online")}
+        />
+      )}
 
       {kind === "community" ? (
         <CommunityHub currentUser={currentUser} />
@@ -133,7 +151,7 @@ function AiMatch() {
     <div className="space-y-5">
       <AiOpponentPanel opponent={opponent} context="competitive" />
 
-      <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <section className="grid items-start justify-center gap-6 xl:grid-cols-[minmax(620px,760px)_minmax(320px,380px)]">
         <div className="min-w-0">
           <ChessBoard
             game={game}
@@ -267,7 +285,7 @@ function LocalMatch() {
   const result = getLocalGameResult(position);
 
   return (
-    <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <section className="grid items-start justify-center gap-6 xl:grid-cols-[minmax(620px,760px)_minmax(320px,380px)]">
       <div className="min-w-0">
         <ChessBoard game={game} mode="competitive" />
       </div>

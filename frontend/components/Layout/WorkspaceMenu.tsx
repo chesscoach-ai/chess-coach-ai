@@ -1,49 +1,78 @@
 "use client";
 
-type MenuItem =
-  | { label: string; targetId: string; href?: never; primary?: boolean }
-  | { label: string; href: string; targetId?: never; primary?: boolean };
+import Link from "next/link";
 
-const ITEMS: MenuItem[] = [
-  { label: "Échiquier", targetId: "game-board", primary: true },
-  { label: "Coach IA", targetId: "coach-analysis" },
-  { label: "Statistiques", targetId: "statistics" },
-  { label: "Historique", targetId: "game-history" },
-  { label: "Bilan du coach", targetId: "coach-summary" },
-  { label: "Importer une partie", targetId: "pgn-import" },
-  { label: "Exercices", href: "/exercises" },
-];
+import type { ProductMode } from "@/components/Layout/ProductWorkspace";
 
-export default function WorkspaceMenu() {
-  function scrollToSection(targetId: string): void {
-    const target =
-      document.getElementById(targetId);
-    if (
-      target instanceof
-      HTMLDetailsElement
-    ) {
-      target.open = true;
-    }
-    target?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  }
+type WorkspaceMenuProps = {
+  mode: ProductMode;
+  onPlay: () => void;
+  onCoach: () => void;
+  onCommunity: () => void;
+  onStatistics: () => void;
+  onHistory: () => void;
+};
+
+export default function WorkspaceMenu({
+  mode,
+  onPlay,
+  onCoach,
+  onCommunity,
+  onStatistics,
+  onHistory,
+}: WorkspaceMenuProps) {
+  const baseClass =
+    "flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-bold transition active:scale-[0.98]";
+  const secondaryClass = `${baseClass} text-gray-400 hover:bg-gray-800 hover:text-white`;
 
   return (
-    <nav aria-label="Navigation de l’espace de travail" className="sticky top-0 z-40 -mx-2 hidden overflow-x-auto border-b border-gray-800/80 bg-gray-950/90 px-2 py-3 shadow-lg backdrop-blur-xl md:block">
-      <div className="flex min-w-max items-center gap-2">
-        {ITEMS.map((item) => {
-          const classes = item.primary
-            ? "rounded-xl border border-blue-500 bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-500"
-            : "rounded-xl border border-gray-800 bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-300 transition hover:border-blue-700 hover:bg-blue-950/30 hover:text-white";
-
-          return "href" in item ? (
-            <a key={item.label} href={item.href} className={classes}>{item.label}</a>
-          ) : (
-            <button key={item.label} type="button" onClick={() => scrollToSection(item.targetId)} className={classes}>{item.label}</button>
-          );
-        })}
+    <nav
+      aria-label="Navigation principale"
+      className="sticky top-0 z-50 -mx-3 mb-4 overflow-x-auto border-y border-gray-800/90 bg-gray-950/95 px-3 py-2 shadow-xl backdrop-blur-xl sm:-mx-6 sm:px-6"
+    >
+      <div className="mx-auto flex min-w-max max-w-[1500px] items-center gap-1.5">
+        <button
+          type="button"
+          aria-current={mode === "multiplayer" ? "page" : undefined}
+          onClick={onPlay}
+          className={`${baseClass} ${
+            mode === "multiplayer"
+              ? "bg-blue-600 text-white shadow-lg shadow-blue-950/40"
+              : "text-blue-300 hover:bg-blue-950/50"
+          }`}
+        >
+          <span aria-hidden="true">♞</span>
+          Multijoueur
+        </button>
+        <button
+          type="button"
+          aria-current={mode === "analysis" ? "page" : undefined}
+          onClick={onCoach}
+          className={`${baseClass} ${
+            mode === "analysis"
+              ? "bg-violet-700 text-white shadow-lg shadow-violet-950/40"
+              : "text-violet-300 hover:bg-violet-950/50"
+          }`}
+        >
+          <span aria-hidden="true">💡</span>
+          Coach IA
+        </button>
+        <Link href="/exercises" className={secondaryClass}>
+          <span aria-hidden="true">◆</span>
+          Exercices
+        </Link>
+        <button type="button" onClick={onCommunity} className={secondaryClass}>
+          <span aria-hidden="true">⚔</span>
+          Communauté
+        </button>
+        <button type="button" onClick={onStatistics} className={secondaryClass}>
+          <span aria-hidden="true">↗</span>
+          Progression
+        </button>
+        <button type="button" onClick={onHistory} className={secondaryClass}>
+          <span aria-hidden="true">◷</span>
+          Mes parties
+        </button>
       </div>
     </nav>
   );

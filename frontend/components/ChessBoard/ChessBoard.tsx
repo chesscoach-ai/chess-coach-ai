@@ -419,7 +419,7 @@ export default function ChessBoard({
     );
 
   return (
-    <section className="w-full max-w-xl">
+    <section className="w-full max-w-[min(760px,78vh)]">
       <div className="board-presentation">
         <div className="chess-board-live overflow-hidden rounded-2xl shadow-2xl">
           <Chessboard

@@ -68,10 +68,6 @@ export default function DailyJourneyHub({
     useState<
       JourneyLeaderboardEntry[]
     >([]);
-  const [syncState, setSyncState] =
-    useState<
-      "local" | "synced" | "error"
-    >("local");
   const [friendQuest, setFriendQuest] =
     useState<JourneyFriendQuest | null>(
       null,
@@ -139,15 +135,11 @@ export default function DailyJourneyHub({
               payload.dashboard
                 .lastProtectedDate,
             );
-            setSyncState("synced");
-          } else {
-            setSyncState("error");
           }
         } catch {
           if (controller.signal.aborted) {
             return;
           }
-          setSyncState("error");
         }
       }
 
@@ -497,24 +489,6 @@ export default function DailyJourneyHub({
           </Link>{" "}
           pour synchroniser ta progression.
         </div>
-      )}
-      {currentUser && (
-        <p
-          className={[
-            "border-t px-4 py-2 text-center text-[11px]",
-            syncState === "synced"
-              ? "border-emerald-900/40 bg-emerald-950/15 text-emerald-300"
-              : syncState === "error"
-                ? "border-amber-900/40 bg-amber-950/15 text-amber-300"
-                : "border-gray-800 text-gray-500",
-          ].join(" ")}
-        >
-          {syncState === "synced"
-            ? "✓ Progression synchronisée sur ton compte"
-            : syncState === "error"
-              ? "Progression conservée sur cet appareil · nouvelle tentative au prochain passage"
-              : "Synchronisation en cours…"}
-        </p>
       )}
     </section>
   );

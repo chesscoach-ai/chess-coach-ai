@@ -6,9 +6,11 @@ import { useState } from "react";
 import OnlineGameHistory, {
   type OpenedGameReview,
 } from "@/components/Analysis/OnlineGameHistory";
-import BackendStatus from "@/components/Layout/BackendStatus";
 import GameWorkspace from "@/components/Layout/GameWorkspace";
-import MultiplayerWorkspace from "@/components/Multiplayer/MultiplayerWorkspace";
+import WorkspaceMenu from "@/components/Layout/WorkspaceMenu";
+import MultiplayerWorkspace, {
+  type MultiplayerKind,
+} from "@/components/Multiplayer/MultiplayerWorkspace";
 import AnalysisPaywall from "@/components/Billing/AnalysisPaywall";
 import DailyJourneyHub from "@/components/Progression/DailyJourneyHub";
 import type { AnalysisEntitlement } from "@/lib/billing/types";
@@ -37,6 +39,10 @@ export default function ProductWorkspace({
     useState(0);
   const [reviewError, setReviewError] =
     useState("");
+  const [requestedMultiplayerKind, setRequestedMultiplayerKind] =
+    useState<MultiplayerKind>("online");
+  const [isGameFocused, setIsGameFocused] =
+    useState(false);
 
   function handleReviewReady(
     review: OpenedGameReview,
@@ -45,6 +51,7 @@ export default function ProductWorkspace({
       review.game.id,
     );
     setOpenedReview(review);
+    setIsGameFocused(false);
     setMode("analysis");
     setReviewError("");
   }
@@ -92,39 +99,67 @@ export default function ProductWorkspace({
     }
   }
 
-  function selectMobileMode(nextMode: ProductMode): void {
-    setMode(nextMode);
+  function scrollAfterRender(targetId: string): void {
     window.requestAnimationFrame(() => {
-      document.getElementById("game-board")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
+      window.requestAnimationFrame(() => {
+        document.getElementById(targetId)?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       });
     });
   }
 
+  function selectMobileMode(nextMode: ProductMode): void {
+    if (nextMode === "multiplayer") {
+      setRequestedMultiplayerKind("online");
+    } else {
+      setIsGameFocused(false);
+    }
+    setMode(nextMode);
+    scrollAfterRender("game-board");
+  }
+
   function openStatistics(): void {
-    document.getElementById("statistics")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    scrollAfterRender("statistics");
+  }
+
+  function openCommunity(): void {
+    setRequestedMultiplayerKind("community");
+    setIsGameFocused(false);
+    setMode("multiplayer");
+    scrollAfterRender("multiplayer-workspace");
+  }
+
+  function openHistory(): void {
+    setIsGameFocused(false);
+    setMode("analysis");
+    scrollAfterRender("game-history");
   }
 
   return (
     <div className="w-full">
-      <DailyJourneyHub
-        currentUser={currentUser}
+      <WorkspaceMenu
         mode={mode}
-        onPlay={() =>
-          selectMobileMode("multiplayer")
-        }
-        onCoach={() =>
-          selectMobileMode("analysis")
-        }
+        onPlay={() => selectMobileMode("multiplayer")}
+        onCoach={() => selectMobileMode("analysis")}
+        onCommunity={openCommunity}
+        onStatistics={openStatistics}
+        onHistory={openHistory}
       />
 
-      <div className="mt-2 flex justify-center sm:mt-4">
-        <BackendStatus disabled={mode === "multiplayer"} />
-      </div>
+      {!isGameFocused && (
+        <DailyJourneyHub
+          currentUser={currentUser}
+          mode={mode}
+          onPlay={() =>
+            selectMobileMode("multiplayer")
+          }
+          onCoach={() =>
+            selectMobileMode("analysis")
+          }
+        />
+      )}
 
       {mode === "analysis" ? (
         <div className="space-y-6">
@@ -183,6 +218,9 @@ export default function ProductWorkspace({
       ) : (
         <MultiplayerWorkspace
           currentUser={currentUser}
+          requestedKind={requestedMultiplayerKind}
+          onKindChange={setRequestedMultiplayerKind}
+          onGameFocusChange={setIsGameFocused}
           onOpenGameReview={
             openReviewFromGame
           }

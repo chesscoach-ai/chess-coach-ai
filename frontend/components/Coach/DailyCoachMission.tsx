@@ -59,27 +59,34 @@ export default function DailyCoachMission({
       () => {
         const stored =
           readMissionState(plan.id);
-        setState(stored);
-        setExerciseCompleted(
+        const exerciseDone =
           wasExerciseCompletedToday(
             plan.exercise.id,
             plan.date,
-          ),
+          );
+        setState(stored);
+        setExerciseCompleted(
+          exerciseDone,
         );
         setMasteryStars(
           readMasteryStars(),
         );
 
-        if (detailsRef.current) {
-          detailsRef.current.open =
-            true;
-        }
-        if (
+        const explicitlyFocused =
           new URLSearchParams(
             window.location.search,
           ).get("focus") ===
-          "daily-mission"
-        ) {
+          "daily-mission";
+        const alreadyCompleted =
+          stored.answer !== null &&
+          exerciseDone;
+
+        if (detailsRef.current) {
+          detailsRef.current.open =
+            explicitlyFocused ||
+            !alreadyCompleted;
+        }
+        if (explicitlyFocused) {
           if (detailsRef.current) {
             detailsRef.current.open =
               true;
@@ -119,6 +126,19 @@ export default function DailyCoachMission({
   const answerIsCorrect =
     state.answer ===
     plan.concept.correctAnswer;
+
+  useEffect(() => {
+    if (
+      missionCompleted &&
+      state.rewardClaimed &&
+      detailsRef.current
+    ) {
+      detailsRef.current.open = false;
+    }
+  }, [
+    missionCompleted,
+    state.rewardClaimed,
+  ]);
 
   function updateState(
     next: StoredMissionState,
