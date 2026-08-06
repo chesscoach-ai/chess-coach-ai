@@ -28,7 +28,7 @@ export default function WorkspaceMenu({
   return (
     <nav
       aria-label="Navigation principale"
-      className="sticky top-0 z-50 -mx-3 mb-4 overflow-x-auto border-y border-gray-800/90 bg-gray-950/95 px-3 py-2 shadow-xl backdrop-blur-xl sm:-mx-6 sm:px-6"
+      className="native-sticky-top sticky top-0 z-50 -mx-3 mb-4 overflow-x-auto border-y border-gray-800/90 bg-gray-950/95 px-3 py-2 shadow-xl backdrop-blur-xl sm:-mx-6 sm:px-6"
     >
       <div className="mx-auto flex min-w-max max-w-[1500px] items-center gap-1.5">
         <button

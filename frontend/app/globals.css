@@ -51,6 +51,10 @@ html[data-native-app="true"] .native-offline-banner {
   top: calc(0.75rem + env(safe-area-inset-top));
 }
 
+html[data-native-app="true"] .native-sticky-top {
+  top: env(safe-area-inset-top);
+}
+
 button,
 a,
 summary {
