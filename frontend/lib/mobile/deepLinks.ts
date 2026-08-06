@@ -33,8 +33,8 @@ function resolveCustomScheme(url: URL): string | null {
     }
     return "/?mode=multiplayer";
   }
-  if (action === "coach") return "/";
-  if (action === "exercises") return "/exercises";
+  if (action === "coach") return "/?mode=analysis";
+  if (action === "exercises") return "/?mode=exercises";
   if (action === "account") return "/account";
   return null;
 }

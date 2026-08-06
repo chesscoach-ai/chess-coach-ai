@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   useEffect,
   useRef,
@@ -41,7 +40,13 @@ function convertMoveToUci(
     .toLowerCase();
 }
 
-export default function ExerciseTrainer() {
+export default function ExerciseTrainer({
+  embedded = false,
+  onExit,
+}: {
+  embedded?: boolean;
+  onExit?: () => void;
+} = {}) {
   const [session, setSession] =
     useState<ExerciseSession | null>(null);
   const [learningProfile, setLearningProfile] =
@@ -287,13 +292,20 @@ export default function ExerciseTrainer() {
     });
   }
 
-  function handleLeaveExercise(): void {
+  function handleLeaveExercise(
+    destination = "/exercises",
+  ): void {
     clearExerciseSession();
+    if (onExit) {
+      onExit();
+    } else {
+      window.location.assign(destination);
+    }
   }
 
   if (!session) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-950 px-4 text-white">
+      <main className={`flex items-center justify-center bg-gray-950 px-4 text-white ${embedded ? "min-h-96" : "min-h-screen"}`}>
         <div className="w-full max-w-xl rounded-3xl border border-gray-800 bg-gray-900 p-8 text-center shadow-2xl">
           <h1 className="text-2xl font-bold">
             Aucun exercice sélectionné
@@ -305,12 +317,13 @@ export default function ExerciseTrainer() {
             d’entraînement.
           </p>
 
-          <Link
-            href="/exercises"
+          <button
+            type="button"
+            onClick={() => handleLeaveExercise()}
             className="mt-6 inline-flex rounded-xl bg-blue-600 px-5 py-3 font-semibold transition hover:bg-blue-500"
           >
             Ouvrir la bibliothèque
-          </Link>
+          </button>
         </div>
       </main>
     );
@@ -371,7 +384,7 @@ export default function ExerciseTrainer() {
   });
 
   return (
-    <main className="min-h-screen bg-gray-950 px-3 py-4 text-white sm:px-5 sm:py-6 lg:px-6">
+    <main className={`${embedded ? "min-h-0" : "min-h-screen"} bg-gray-950 px-3 py-4 text-white sm:px-5 sm:py-6 lg:px-6`}>
       <div className="mx-auto max-w-7xl">
         <header className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-800 bg-gray-900/70 px-4 py-3">
           <div>
@@ -400,13 +413,13 @@ export default function ExerciseTrainer() {
               )}
           </div>
 
-          <Link
-            href="/exercises"
-            onClick={handleLeaveExercise}
+          <button
+            type="button"
+            onClick={() => handleLeaveExercise()}
             className="rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-semibold text-gray-300 transition hover:bg-gray-900 hover:text-white"
           >
             Quitter l’exercice
-          </Link>
+          </button>
         </header>
 
         <div className="grid items-start justify-center gap-5 xl:grid-cols-[minmax(600px,760px)_minmax(300px,360px)]">
@@ -576,16 +589,18 @@ export default function ExerciseTrainer() {
             </button>
 
             {exerciseIsFinished && (
-              <Link
-                href={
-                  session.returnHref ??
-                  "/exercises"
+              <button
+                type="button"
+                onClick={() =>
+                  handleLeaveExercise(
+                    session.returnHref ?? "/exercises",
+                  )
                 }
                 className="flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 font-semibold transition hover:bg-blue-500"
               >
                 {session.returnLabel ??
                   "Choisir un autre exercice"}
-              </Link>
+              </button>
             )}
           </aside>
         </div>

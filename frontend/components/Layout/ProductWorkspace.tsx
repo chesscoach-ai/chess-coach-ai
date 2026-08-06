@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -13,13 +12,21 @@ import MultiplayerWorkspace, {
   type MultiplayerKind,
 } from "@/components/Multiplayer/MultiplayerWorkspace";
 import AnalysisPaywall from "@/components/Billing/AnalysisPaywall";
+import ExerciseLibraryPage from "@/components/Exercises/ExerciseLibraryPage";
+import ExerciseTrainer from "@/components/Exercises/ExerciseTrainer";
+import ActivityStreak from "@/components/Statistics/ActivityStreak";
+import PlayerStatistics from "@/components/Statistics/PlayerStatistics";
 import type { AnalysisEntitlement } from "@/lib/billing/types";
 import {
   ApiService,
   setActiveGameReviewId,
 } from "@/services/api/ApiService";
 
-export type ProductMode = "analysis" | "multiplayer";
+export type ProductMode =
+  | "multiplayer"
+  | "analysis"
+  | "exercises"
+  | "progression";
 
 export type CurrentUser = {
   name: string;
@@ -34,7 +41,9 @@ export default function ProductWorkspace({
   analysisEntitlement: AnalysisEntitlement;
 }) {
   const searchParams = useSearchParams();
-  const [mode, setMode] = useState<ProductMode>("analysis");
+  const [mode, setMode] = useState<ProductMode>("multiplayer");
+  const [exerciseView, setExerciseView] =
+    useState<"library" | "training">("library");
   const [openedReview, setOpenedReview] =
     useState<OpenedGameReview | null>(
       null,
@@ -50,7 +59,14 @@ export default function ProductWorkspace({
     const requestedMode = searchParams.get("mode");
     const requestedKind = searchParams.get("kind");
     const timer = window.setTimeout(() => {
-      if (requestedMode === "multiplayer") setMode("multiplayer");
+      if (
+        requestedMode === "multiplayer" ||
+        requestedMode === "analysis" ||
+        requestedMode === "exercises" ||
+        requestedMode === "progression"
+      ) {
+        setMode(requestedMode);
+      }
       if (
         requestedKind === "online" ||
         requestedKind === "friend" ||
@@ -148,14 +164,22 @@ export default function ProductWorkspace({
     scrollAfterRender(
       nextMode === "multiplayer"
         ? "multiplayer-workspace"
-        : "game-board",
+        : nextMode === "analysis"
+          ? "game-board"
+          : nextMode === "exercises"
+            ? "exercise-workspace"
+            : "progression-workspace",
     );
   }
 
+  function openExercises(): void {
+    setMode("exercises");
+    scrollAfterRender("exercise-workspace");
+  }
+
   function openStatistics(): void {
-    setRequestedMultiplayerKind("community");
-    setMode("multiplayer");
-    scrollAfterRender("community-progress");
+    setMode("progression");
+    scrollAfterRender("progression-workspace");
   }
 
   function openCommunity(): void {
@@ -175,6 +199,7 @@ export default function ProductWorkspace({
         mode={mode}
         onPlay={() => selectMobileMode("multiplayer")}
         onCoach={() => selectMobileMode("analysis")}
+        onExercises={openExercises}
         onCommunity={openCommunity}
         onStatistics={openStatistics}
         onHistory={openHistory}
@@ -234,7 +259,7 @@ export default function ProductWorkspace({
             }
           />
         </div>
-      ) : (
+      ) : mode === "multiplayer" ? (
         <MultiplayerWorkspace
           currentUser={currentUser}
           requestedKind={requestedMultiplayerKind}
@@ -243,11 +268,35 @@ export default function ProductWorkspace({
             openReviewFromGame
           }
         />
+      ) : mode === "exercises" ? (
+        <div id="exercise-workspace" className="scroll-mt-20">
+          {exerciseView === "library" ? (
+            <ExerciseLibraryPage
+              embedded
+              onExit={() => selectMobileMode("multiplayer")}
+              onTrainingStart={() => setExerciseView("training")}
+            />
+          ) : (
+            <ExerciseTrainer
+              embedded
+              onExit={() => setExerciseView("library")}
+            />
+          )}
+        </div>
+      ) : (
+        <div
+          id="progression-workspace"
+          className="scroll-mt-20 space-y-4 sm:space-y-6"
+        >
+          <ActivityStreak currentUser={currentUser} />
+          <PlayerStatistics currentUser={currentUser} variant="analysis" />
+        </div>
       )}
 
       <MobileDock
         mode={mode}
         onModeChange={selectMobileMode}
+        onExercisesOpen={openExercises}
         onStatisticsOpen={openStatistics}
       />
     </div>
@@ -257,10 +306,12 @@ export default function ProductWorkspace({
 function MobileDock({
   mode,
   onModeChange,
+  onExercisesOpen,
   onStatisticsOpen,
 }: {
   mode: ProductMode;
   onModeChange: (mode: ProductMode) => void;
+  onExercisesOpen: () => void;
   onStatisticsOpen: () => void;
 }) {
   const itemClass =
@@ -298,17 +349,28 @@ function MobileDock({
           <DockIcon path="M9 18h6m-5 3h4m3-12a5 5 0 1 0-10 0c0 2 1 3.5 2.5 4.5V15h5v-1.5C16 12 17 11 17 9Z" />
           Coach
         </button>
-        <Link
-          href="/exercises"
-          className={`${itemClass} text-gray-500`}
+        <button
+          type="button"
+          aria-current={mode === "exercises" ? "page" : undefined}
+          onClick={onExercisesOpen}
+          className={`${itemClass} ${
+            mode === "exercises"
+              ? "bg-blue-600/20 text-blue-300"
+              : "text-gray-500"
+          }`}
         >
           <DockIcon path="M12 3 4 7v10l8 4 8-4V7l-8-4Zm0 0v18M4 7l8 4 8-4" />
           Exercices
-        </Link>
+        </button>
         <button
           type="button"
+          aria-current={mode === "progression" ? "page" : undefined}
           onClick={onStatisticsOpen}
-          className={`${itemClass} text-gray-500`}
+          className={`${itemClass} ${
+            mode === "progression"
+              ? "bg-blue-600/20 text-blue-300"
+              : "text-gray-500"
+          }`}
         >
           <DockIcon path="M5 20V10m7 10V4m7 16v-7" />
           Progrès

@@ -40,8 +40,24 @@ import {
 } from "@/lib/progression/exerciseProgress";
 import { buildDailyTrainingPlan } from "@/lib/pgnDailyTrainingPlan";
 
-export default function ExerciseLibraryPage() {
+export default function ExerciseLibraryPage({
+  embedded = false,
+  onTrainingStart,
+  onExit,
+}: {
+  embedded?: boolean;
+  onTrainingStart?: () => void;
+  onExit?: () => void;
+} = {}) {
   const router = useRouter();
+
+  function openTrainer(): void {
+    if (onTrainingStart) {
+      onTrainingStart();
+    } else {
+      router.push("/exercises/training");
+    }
+  }
 
   const [loadingExerciseId, setLoadingExerciseId] =
     useState<string | null>(null);
@@ -238,7 +254,7 @@ export default function ExerciseLibraryPage() {
           : session,
       );
 
-      router.push("/exercises/training");
+      openTrainer();
     } catch {
       try {
         const offlineSession = buildExercise(
@@ -269,7 +285,7 @@ export default function ExerciseLibraryPage() {
               }
             : {}),
         });
-        router.push("/exercises/training");
+        openTrainer();
       } catch (caughtError) {
         const message =
           caughtError instanceof Error
@@ -301,8 +317,18 @@ export default function ExerciseLibraryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7">
+    <section
+      className={
+        embedded
+          ? "rounded-3xl bg-slate-950 text-white"
+          : "min-h-screen bg-slate-950 text-white"
+      }
+    >
+      <div
+        className={`mx-auto max-w-6xl ${
+          embedded ? "py-2" : "px-4 py-5 sm:px-6 sm:py-7"
+        }`}
+      >
         <div className="mb-5 flex items-center justify-between gap-4">
           <div>
             <p className="mb-2 text-sm font-medium uppercase tracking-widest text-emerald-400">
@@ -318,12 +344,22 @@ export default function ExerciseLibraryPage() {
             </p>
           </div>
 
+          {embedded ? (
+            <button
+              type="button"
+              onClick={onExit}
+              className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
+            >
+              Retour au jeu
+            </button>
+          ) : (
           <Link
             href="/"
             className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
           >
             Retour à l’analyse
           </Link>
+          )}
         </div>
 
         <LearningSkillPath
@@ -387,13 +423,15 @@ export default function ExerciseLibraryPage() {
           </summary>
           <div className="border-t border-slate-800 p-3 sm:p-4">
             <PGNLibraryBrowser
-              onClose={() => router.push("/")}
+              onClose={() =>
+                onExit ? onExit() : router.push("/")
+              }
               onSelect={handleSelectExercise}
               loadingExerciseId={loadingExerciseId}
             />
           </div>
         </details>
       </div>
-    </main>
+    </section>
   );
 }

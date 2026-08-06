@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
-
 import type { ProductMode } from "@/components/Layout/ProductWorkspace";
 
 type WorkspaceMenuProps = {
   mode: ProductMode;
   onPlay: () => void;
   onCoach: () => void;
+  onExercises: () => void;
   onCommunity: () => void;
   onStatistics: () => void;
   onHistory: () => void;
@@ -17,6 +16,7 @@ export default function WorkspaceMenu({
   mode,
   onPlay,
   onCoach,
+  onExercises,
   onCommunity,
   onStatistics,
   onHistory,
@@ -57,15 +57,33 @@ export default function WorkspaceMenu({
           <span aria-hidden="true">💡</span>
           Coach IA
         </button>
-        <Link href="/exercises" className={secondaryClass}>
+        <button
+          type="button"
+          aria-current={mode === "exercises" ? "page" : undefined}
+          onClick={onExercises}
+          className={`${baseClass} ${
+            mode === "exercises"
+              ? "bg-emerald-700 text-white"
+              : "text-emerald-300 hover:bg-emerald-950/50"
+          }`}
+        >
           <span aria-hidden="true">◆</span>
           Exercices
-        </Link>
+        </button>
         <button type="button" onClick={onCommunity} className={secondaryClass}>
           <span aria-hidden="true">⚔</span>
           Communauté
         </button>
-        <button type="button" onClick={onStatistics} className={secondaryClass}>
+        <button
+          type="button"
+          aria-current={mode === "progression" ? "page" : undefined}
+          onClick={onStatistics}
+          className={`${baseClass} ${
+            mode === "progression"
+              ? "bg-cyan-700 text-white"
+              : "text-gray-400 hover:bg-gray-800 hover:text-white"
+          }`}
+        >
           <span aria-hidden="true">↗</span>
           Progression
         </button>

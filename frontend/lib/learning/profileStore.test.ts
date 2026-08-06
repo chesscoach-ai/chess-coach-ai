@@ -51,7 +51,7 @@ describe("learning profile store", () => {
 
     expect(first.sessionsCount).toBe(1);
     expect(first.primaryWeakness).toBe("opening");
-    expect(first.rating).toBe(1200);
+    expect(first.rating).toBe(600);
     expect(duplicate.sessionsCount).toBe(1);
   });
 });

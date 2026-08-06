@@ -12,7 +12,9 @@ describe("mobile deep links", () => {
     expect(resolveMobileRoute("chessclan://play/online"))
       .toBe("/?mode=multiplayer&kind=online");
     expect(resolveMobileRoute("chessclan://exercises"))
-      .toBe("/exercises");
+      .toBe("/?mode=exercises");
+    expect(resolveMobileRoute("chessclan://coach"))
+      .toBe("/?mode=analysis");
   });
 
   it("rejects unsafe and malformed destinations", () => {

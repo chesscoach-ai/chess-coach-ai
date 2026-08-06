@@ -58,8 +58,8 @@ describe("local multiplayer store", () => {
 
     const finished = await store.resignOnlineGame(joined.id, black);
     expect(finished.result).toBe("1-0");
-    expect(finished.white.ratingAfter).toBe(1216);
-    expect(finished.black?.ratingAfter).toBe(1184);
+    expect(finished.white.ratingAfter).toBe(616);
+    expect(finished.black?.ratingAfter).toBe(584);
     expect(finished.timeControl.speed).toBe("rapid");
     expect(finished.endedAt).not.toBeNull();
 
@@ -95,8 +95,8 @@ describe("local multiplayer store", () => {
       wins: 1,
       draws: 0,
       losses: 0,
-      currentRating: 1216,
-      peakRating: 1216,
+      currentRating: 616,
+      peakRating: 616,
       ratingChange: 16,
       averageAccuracy: 91,
       analyzedGames: 1,
@@ -156,8 +156,8 @@ describe("local multiplayer store", () => {
     expect(finished.status).toBe("finished");
     expect(finished.result).toBe("1/2-1/2");
     expect(finished.termination).toBe("Nulle par accord");
-    expect(finished.white.ratingAfter).toBe(1200);
-    expect(finished.black?.ratingAfter).toBe(1200);
+    expect(finished.white.ratingAfter).toBe(600);
+    expect(finished.black?.ratingAfter).toBe(600);
     expect(finished.drawOfferBy).toBeNull();
   });
 
@@ -179,12 +179,12 @@ describe("local multiplayer store", () => {
   it("persists an avatar, a friendship and a clan", async () => {
     const player = { id: "match-a@example.test", name: "Mina" };
 
-    await community.selectCommunityAvatar(player, "storm-rider");
+    await community.selectCommunityAvatar(player, "iron-squire");
     await community.addCommunityFriend(player, "Noé");
     await community.createCommunityClan(player, "Cavaliers du Nord", "NORD");
 
     const dashboard = await community.getCommunityDashboard(player);
-    expect(dashboard.profile.avatarId).toBe("storm-rider");
+    expect(dashboard.profile.avatarId).toBe("iron-squire");
     expect(dashboard.friends.map((friend) => friend.name)).toContain("Noé");
     expect(dashboard.clan?.tag).toBe("NORD");
   });

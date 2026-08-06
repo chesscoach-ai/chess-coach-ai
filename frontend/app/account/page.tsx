@@ -53,6 +53,25 @@ export default async function AccountPage() {
                 </p>
               </section>
             )}
+            {entitlement.status === "trialing" && entitlement.trialEndsAt && (
+              <section className="rounded-2xl border border-blue-800 bg-blue-950/25 p-6">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">
+                  Essai Chess Clan Coach+
+                </p>
+                <h2 className="mt-2 text-xl font-bold text-white">
+                  Toutes les fonctions sont débloquées
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-gray-300">
+                  Ton mois offert se termine le{" "}
+                  {new Intl.DateTimeFormat("fr-FR", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  }).format(new Date(entitlement.trialEndsAt))}.
+                  Aucun paiement ne sera déclenché automatiquement.
+                </p>
+              </section>
+            )}
             <section className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
               <h2 className="text-xl font-bold">
                 Télécharger mes données

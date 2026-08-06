@@ -15,6 +15,15 @@ export default function AuthPage() {
           ← Retour à l’analyse
         </Link>
         <h1 className="mt-5 text-3xl font-bold">Ton espace Chess Clan</h1>
+        <div className="mt-4 rounded-2xl border border-emerald-800 bg-emerald-950/30 p-4">
+          <p className="font-black text-emerald-300">
+            30 jours de Coach+ offerts
+          </p>
+          <p className="mt-1 text-xs leading-5 text-emerald-100/80">
+            Toutes les analyses et les fonctions du coach sont débloquées dès
+            la création du compte. Aucun paiement n’est demandé pour essayer.
+          </p>
+        </div>
         <p className="mt-2 text-sm leading-6 text-gray-400">
           Crée ton compte pour préparer ton espace personnel et tes prochaines
           sessions d’entraînement.

@@ -18,6 +18,7 @@ export type AnalysisEntitlement = {
   commercialLaunchEnabled: boolean;
   canManage: boolean;
   currentPeriodEnd: string | null;
+  trialEndsAt: string | null;
   cancelAtPeriodEnd: boolean;
 };
 

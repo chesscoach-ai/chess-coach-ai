@@ -78,7 +78,7 @@ type LocalDatabase = {
   games: Record<string, StoredGame>;
 };
 
-const INITIAL_RATING = 1200;
+const INITIAL_RATING = 600;
 const ALLOWED_MINUTES = [
   1, 3, 5, 10, 15,
 ];
@@ -106,10 +106,13 @@ function getPool(): Pool | null {
       CREATE TABLE IF NOT EXISTS multiplayer_players (
         id TEXT PRIMARY KEY,
         display_name VARCHAR(80) NOT NULL,
-        rating INTEGER NOT NULL DEFAULT 1200,
+        rating INTEGER NOT NULL DEFAULT 600,
         games_played INTEGER NOT NULL DEFAULT 0,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+
+      ALTER TABLE multiplayer_players
+        ALTER COLUMN rating SET DEFAULT 600;
 
       CREATE TABLE IF NOT EXISTS multiplayer_games (
         id UUID PRIMARY KEY,

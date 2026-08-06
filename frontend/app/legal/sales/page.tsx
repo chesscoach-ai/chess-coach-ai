@@ -33,6 +33,15 @@ export default function SalesTermsPage() {
           n’accorde d’avantage pendant une partie classée.
         </p>
       </LegalSection>
+      <LegalSection title="Essai gratuit">
+        <p>
+          Chaque compte peut activer une seule période d’essai Coach+ de 30
+          jours. Elle ne demande aucun moyen de paiement et ne se transforme
+          pas automatiquement en abonnement payant. Une empreinte technique du
+          compte est conservée afin d’éviter le renouvellement abusif de
+          l’offre après la suppression puis la recréation du même compte.
+        </p>
+      </LegalSection>
       <LegalSection title="Paiement et renouvellement">
         <p>
           L’abonnement est payé via Stripe et renouvelé selon la périodicité

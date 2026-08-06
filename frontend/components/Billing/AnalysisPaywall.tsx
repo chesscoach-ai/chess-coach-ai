@@ -169,7 +169,7 @@ export default function AnalysisPaywall({
               href="/auth"
               className="mt-6 flex w-full justify-center rounded-xl bg-blue-600 px-4 py-3 font-bold text-white transition hover:bg-blue-500"
             >
-              Se connecter pour s’abonner
+              Créer mon compte — 30 jours offerts
             </Link>
           ) : (
             <button
