@@ -39,7 +39,9 @@ export default function MobileRuntime() {
 
     const setup = async () => {
       await Promise.allSettled([
-        StatusBar.setStyle({ style: Style.Light }),
+        // Capacitor nomme `Dark` le style destiné aux fonds sombres : il
+        // affiche donc les icônes système en clair.
+        StatusBar.setStyle({ style: Style.Dark }),
         StatusBar.setBackgroundColor({ color: "#030712" }),
         SplashScreen.hide(),
       ]);

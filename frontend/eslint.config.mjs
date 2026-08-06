@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Outils et sorties natives générés localement par Gradle/Android.
+    ".android-tools/**",
+    ".gradle-user-home/**",
+    "android/**/build/**",
   ]),
 ]);
 

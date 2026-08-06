@@ -32,7 +32,10 @@ export default function ExperienceSettings({
 }) {
   const preferences =
     useExperiencePreferences();
-  const nativeApp = isNativeApp();
+  // Capacitor n'existe que dans la WebView. Garder la même valeur pendant le
+  // rendu serveur et la première hydratation évite un arbre React différent.
+  const [nativeApp, setNativeApp] =
+    useState(false);
   const [notice, setNotice] =
     useState("");
   const [isNotificationSupported, setIsNotificationSupported] =
@@ -47,6 +50,14 @@ export default function ExperienceSettings({
   ] = useState(false);
   const [isPushBusy, setIsPushBusy] =
     useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setNativeApp(isNativeApp()),
+      0,
+    );
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
