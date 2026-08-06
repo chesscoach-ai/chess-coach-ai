@@ -12,6 +12,11 @@ import {
   saveExperiencePreferences,
 } from "@/lib/preferences/experience";
 import {
+  disableNativePushToken,
+  isNativeApp,
+  requestNativePushRegistration,
+} from "@/lib/mobile/platform";
+import {
   getJourneySummary,
   JOURNEY_STORAGE_KEY,
   type JourneyLedger,
@@ -27,6 +32,7 @@ export default function ExperienceSettings({
 }) {
   const preferences =
     useExperiencePreferences();
+  const nativeApp = isNativeApp();
   const [notice, setNotice] =
     useState("");
   const [isNotificationSupported, setIsNotificationSupported] =
@@ -96,14 +102,20 @@ export default function ExperienceSettings({
     const timer = window.setTimeout(
       () => {
         const supported =
-          "Notification" in window &&
-          "serviceWorker" in
-            navigator &&
-          "PushManager" in window;
+          nativeApp ||
+          ("Notification" in window &&
+            "serviceWorker" in
+              navigator &&
+            "PushManager" in window);
         setIsNotificationSupported(
           supported,
         );
-        if (supported) {
+        if (nativeApp) {
+          setIsServerPushAvailable(isAuthenticated);
+          setIsServerSubscribed(
+            isAuthenticated && preferences.remindersEnabled,
+          );
+        } else if (supported) {
           void inspectPush();
         }
       },
@@ -113,10 +125,11 @@ export default function ExperienceSettings({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, nativeApp, preferences.remindersEnabled]);
 
   useEffect(() => {
     if (
+      nativeApp ||
       !preferences.remindersEnabled ||
       !isNotificationSupported ||
       isServerSubscribed ||
@@ -150,6 +163,7 @@ export default function ExperienceSettings({
     isServerSubscribed,
     preferences.reminderTime,
     preferences.remindersEnabled,
+    nativeApp,
   ]);
 
   function updateSound(
@@ -166,9 +180,57 @@ export default function ExperienceSettings({
     );
   }
 
+  function updateHaptics(enabled: boolean): void {
+    saveExperiencePreferences({
+      ...readExperiencePreferences(),
+      hapticsEnabled: enabled,
+    });
+    setNotice(
+      enabled
+        ? "Vibrations activées : chaque capture aura un peu plus de mordant."
+        : "Vibrations coupées. Tes cavaliers avanceront sur la pointe des sabots.",
+    );
+  }
+
   async function updateReminders(
     enabled: boolean,
   ): Promise<void> {
+    if (nativeApp) {
+      setIsPushBusy(true);
+      try {
+        if (!enabled) {
+          await disableNativePushToken();
+          saveExperiencePreferences({
+            ...readExperiencePreferences(),
+            remindersEnabled: false,
+          });
+          setIsServerSubscribed(false);
+          setNotice("Rappels désactivés. Le coach range son pigeon messager.");
+          return;
+        }
+        if (!isAuthenticated) {
+          setNotice("Connecte-toi avant d’activer les rappels sur ce téléphone.");
+          return;
+        }
+        const registered = await requestNativePushRegistration();
+        if (!registered) {
+          setNotice("Permission refusée : aucun rappel ne quittera le château.");
+          return;
+        }
+        saveExperiencePreferences({
+          ...readExperiencePreferences(),
+          remindersEnabled: true,
+        });
+        setIsServerSubscribed(true);
+        setNotice("Rappels mobiles activés. Le coach surveille ta série.");
+      } catch {
+        setNotice("Impossible d’activer les rappels sur cet appareil.");
+      } finally {
+        setIsPushBusy(false);
+      }
+      return;
+    }
+
     if (!enabled) {
       setIsPushBusy(true);
       try {
@@ -313,7 +375,7 @@ export default function ExperienceSettings({
       ...readExperiencePreferences(),
       reminderTime: value,
     });
-    if (isServerSubscribed) {
+    if (isServerSubscribed && !nativeApp) {
       void syncReminderTime(value);
     }
   }
@@ -393,6 +455,16 @@ export default function ExperienceSettings({
           onChange={updateSound}
         />
 
+        {nativeApp && (
+          <SettingRow
+            icon="📳"
+            title="Vibrations tactiles"
+            description="Déplacement, capture et alerte d’échec."
+            checked={preferences.hapticsEnabled}
+            onChange={updateHaptics}
+          />
+        )}
+
         <SettingRow
           icon="🔥"
           title="Rappel quotidien"
@@ -440,7 +512,7 @@ export default function ExperienceSettings({
               ? "Connecte-toi puis active le rappel pour le recevoir même application fermée."
               : "Mode local : le rappel fonctionne lorsque la PWA est active."}
         </p>
-        {isServerSubscribed && (
+        {isServerSubscribed && !nativeApp && (
           <button
             type="button"
             disabled={isPushBusy}

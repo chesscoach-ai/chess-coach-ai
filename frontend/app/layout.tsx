@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import SiteFooter from "@/components/Layout/SiteFooter";
+import MobileRuntime from "@/components/Mobile/MobileRuntime";
 
 export const metadata: Metadata = {
   title: "Chess Clan — Coach & Battles",
   description:
-    "Joue gratuitement en ligne, rejoins un clan et progresse avec ton mentor d’échecs personnel.",
+    "Joue gratuitement en ligne, rejoins un clan et progresse avec ton coach d’échecs personnel.",
   manifest: "/manifest.webmanifest",
   applicationName: "Chess Clan",
   icons: {
@@ -64,6 +65,7 @@ export default function RootLayout({
       className="h-full antialiased"
     >
       <body className="min-h-full flex flex-col">
+        <MobileRuntime />
         <div className="flex-1">{children}</div>
         <SiteFooter />
       </body>

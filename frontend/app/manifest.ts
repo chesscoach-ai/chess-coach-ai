@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Chess Clan — Coach & Battles",
     short_name: "Chess Clan",
     description:
-      "Joue gratuitement en ligne, rejoins un clan et progresse avec ton mentor d’échecs personnel.",
+      "Joue gratuitement en ligne, rejoins un clan et progresse avec ton coach d’échecs personnel.",
     start_url: "/",
     display: "standalone",
     background_color: "#030712",

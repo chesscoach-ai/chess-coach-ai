@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import type { CurrentUser } from "@/components/Layout/ProductWorkspace";
 import type { AnalysisEntitlement } from "@/lib/billing/types";
+import { isNativeApp } from "@/lib/mobile/platform";
 
 export default function AnalysisPaywall({
   currentUser,
@@ -13,6 +14,7 @@ export default function AnalysisPaywall({
   currentUser: CurrentUser | null;
   entitlement: AnalysisEntitlement;
 }) {
+  const nativeApp = isNativeApp();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [plan, setPlan] = useState<"monthly" | "annual">("annual");
@@ -39,6 +41,12 @@ export default function AnalysisPaywall({
   );
 
   async function redirectToBilling(endpoint: "checkout" | "portal") {
+    if (nativeApp) {
+      setError(
+        "Les achats intégrés seront activés après la création des comptes Apple et Google. Aucun paiement web n’est lancé depuis l’application.",
+      );
+      return;
+    }
     setIsLoading(true);
     setError("");
     try {
@@ -78,7 +86,7 @@ export default function AnalysisPaywall({
             Chess Clan Coach+
           </span>
           <h2 className="mt-5 max-w-2xl text-3xl font-black tracking-tight text-white sm:text-4xl">
-            Le mentor qui transforme tes parties en progrès
+            Le coach qui transforme tes parties en progrès
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-gray-300">
             Comprends les moments décisifs, rejoue tes erreurs et reçois un
@@ -166,7 +174,11 @@ export default function AnalysisPaywall({
           ) : (
             <button
               type="button"
-              disabled={isLoading || !entitlement.billingConfigured}
+              disabled={
+                isLoading ||
+                !entitlement.billingConfigured ||
+                nativeApp
+              }
               onClick={() =>
                 void redirectToBilling(
                   entitlement.canManage ? "portal" : "checkout",
@@ -187,6 +199,13 @@ export default function AnalysisPaywall({
               {entitlement.commercialLaunchEnabled
                 ? "Le paiement est en cours de validation avant son ouverture."
                 : "Les abonnements ne sont pas encore ouverts. Aucun paiement ne peut être déclenché."}
+            </p>
+          )}
+          {currentUser && nativeApp && (
+            <p className="mt-3 text-xs leading-5 text-blue-300">
+              Les achats intégrés Apple et Google sont préparés mais restent
+              volontairement désactivés jusqu’à la création des comptes
+              développeur. Ton accès existant reste synchronisé.
             </p>
           )}
           {error && (

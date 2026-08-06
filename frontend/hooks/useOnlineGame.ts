@@ -89,9 +89,27 @@ export function useOnlineGame(enabled: boolean) {
   useEffect(() => {
     if (!enabled || !game || game.status === "finished") return;
     const timer = window.setInterval(() => {
-      void refresh(game.id, true);
+      if (document.visibilityState === "visible") {
+        void refresh(game.id, true);
+      }
     }, 1_000);
     return () => window.clearInterval(timer);
+  }, [enabled, game, refresh]);
+
+  useEffect(() => {
+    if (!enabled || !game || game.status === "finished") return;
+    const refreshActiveGame = () => void refresh(game.id, true);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") refreshActiveGame();
+    };
+    window.addEventListener("chess-clan:resume", refreshActiveGame);
+    window.addEventListener("chess-clan:network-restored", refreshActiveGame);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.removeEventListener("chess-clan:resume", refreshActiveGame);
+      window.removeEventListener("chess-clan:network-restored", refreshActiveGame);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, [enabled, game, refresh]);
 
   async function create(minutes: number): Promise<void> {

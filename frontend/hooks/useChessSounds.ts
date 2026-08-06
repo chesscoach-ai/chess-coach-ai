@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 
 import { useExperiencePreferences } from "@/hooks/useExperiencePreferences";
+import { playMoveHaptic } from "@/lib/mobile/platform";
 
 type ChessSound = {
   capture?: boolean;
@@ -15,11 +16,14 @@ let audioContext:
   | null = null;
 
 export function useChessSounds() {
-  const { soundsEnabled } =
+  const { soundsEnabled, hapticsEnabled } =
     useExperiencePreferences();
 
   return useCallback(
     (sound: ChessSound = {}) => {
+      if (hapticsEnabled) {
+        void playMoveHaptic(sound);
+      }
       if (
         !soundsEnabled ||
         typeof window === "undefined"
@@ -69,7 +73,7 @@ export function useChessSounds() {
         );
       }
     },
-    [soundsEnabled],
+    [hapticsEnabled, soundsEnabled],
   );
 }
 

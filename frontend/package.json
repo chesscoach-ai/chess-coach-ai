@@ -7,9 +7,24 @@
     "build": "next build",
     "test": "vitest run",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "mobile:sync": "node -r ./scripts/capacitor-windows-shim.cjs ./node_modules/@capacitor/cli/bin/capacitor sync",
+    "mobile:assets": "node ./scripts/generate-native-assets.mjs",
+    "mobile:build:android": "powershell -ExecutionPolicy Bypass -File ./scripts/build-android.ps1",
+    "mobile:install:android": "powershell -ExecutionPolicy Bypass -File ./scripts/install-android.ps1",
+    "mobile:android": "node -r ./scripts/capacitor-windows-shim.cjs ./node_modules/@capacitor/cli/bin/capacitor open android",
+    "mobile:ios": "node -r ./scripts/capacitor-windows-shim.cjs ./node_modules/@capacitor/cli/bin/capacitor open ios",
+    "mobile:doctor": "node -r ./scripts/capacitor-windows-shim.cjs ./node_modules/@capacitor/cli/bin/capacitor doctor"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/network": "^8.0.1",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/push-notifications": "^8.1.2",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
     "bcryptjs": "^3.0.3",
     "chess.js": "^1.4.0",
     "next": "16.2.12",
@@ -23,6 +38,9 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",

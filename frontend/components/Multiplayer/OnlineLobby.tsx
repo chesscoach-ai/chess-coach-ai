@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import type { CurrentUser } from "@/components/Layout/ProductWorkspace";
@@ -48,8 +49,14 @@ export default function OnlineLobby({
   onJoin: (code: string) => Promise<void>;
   onFindMatch: (minutes: number) => Promise<void>;
 }) {
+  const searchParams = useSearchParams();
   const [minutes, setMinutes] = useState(10);
-  const [inviteCode, setInviteCode] = useState("");
+  const [inviteCode, setInviteCode] = useState(() =>
+    (searchParams.get("invite") ?? "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 8),
+  );
 
   if (!currentUser) {
     return (

@@ -395,8 +395,26 @@ function WaitingRoom({
   const [copied, setCopied] = useState(false);
   const isMatchmaking = game.matchType === "matchmaking";
 
-  async function copyCode() {
-    await navigator.clipboard.writeText(game.inviteCode);
+  async function shareInvitation() {
+    const invitationUrl = new URL("/", window.location.origin);
+    invitationUrl.searchParams.set("mode", "multiplayer");
+    invitationUrl.searchParams.set("kind", "friend");
+    invitationUrl.searchParams.set("invite", game.inviteCode);
+    const shareData = {
+      title: "Duel Chess Clan",
+      text: `Rejoins mon duel Chess Clan avec le code ${game.inviteCode}.`,
+      url: invitationUrl.toString(),
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(invitationUrl.toString());
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      await navigator.clipboard.writeText(invitationUrl.toString());
+    }
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1_500);
   }
@@ -433,10 +451,10 @@ function WaitingRoom({
           {!isMatchmaking && (
             <button
               type="button"
-              onClick={() => void copyCode()}
+              onClick={() => void shareInvitation()}
               className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-500"
             >
-              {copied ? "Code copié" : "Copier le code"}
+              {copied ? "Invitation copiée" : "Partager l’invitation"}
             </button>
           )}
           <button

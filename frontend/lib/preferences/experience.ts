@@ -1,5 +1,6 @@
 export type ExperiencePreferences = {
   soundsEnabled: boolean;
+  hapticsEnabled: boolean;
   remindersEnabled: boolean;
   reminderTime: string;
 };
@@ -13,6 +14,7 @@ const STORAGE_KEY =
 export const DEFAULT_EXPERIENCE_PREFERENCES: ExperiencePreferences =
   {
     soundsEnabled: true,
+    hapticsEnabled: true,
     remindersEnabled: false,
     reminderTime: "19:00",
   };
@@ -35,6 +37,8 @@ export function readExperiencePreferences(): ExperiencePreferences {
     return {
       soundsEnabled:
         parsed.soundsEnabled ?? true,
+      hapticsEnabled:
+        parsed.hapticsEnabled ?? true,
       remindersEnabled:
         parsed.remindersEnabled ?? false,
       reminderTime:

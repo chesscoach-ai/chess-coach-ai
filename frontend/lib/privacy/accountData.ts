@@ -224,6 +224,7 @@ export async function deleteAccountData(
     const mutations = [
       "UPDATE community_clans SET owner_id = $2 WHERE owner_id = $1",
       "DELETE FROM push_subscriptions WHERE player_id = $1",
+      "DELETE FROM native_push_tokens WHERE player_id = $1",
       "DELETE FROM progression_exercise_events WHERE player_id = $1",
       "DELETE FROM progression_profiles WHERE player_id = $1",
       "DELETE FROM battle_reward_claims WHERE player_id = $1",

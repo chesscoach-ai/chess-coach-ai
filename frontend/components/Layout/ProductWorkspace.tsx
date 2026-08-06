@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import OnlineGameHistory, {
@@ -32,6 +33,7 @@ export default function ProductWorkspace({
   currentUser: CurrentUser | null;
   analysisEntitlement: AnalysisEntitlement;
 }) {
+  const searchParams = useSearchParams();
   const [mode, setMode] = useState<ProductMode>("analysis");
   const [openedReview, setOpenedReview] =
     useState<OpenedGameReview | null>(
@@ -43,6 +45,25 @@ export default function ProductWorkspace({
     useState("");
   const [requestedMultiplayerKind, setRequestedMultiplayerKind] =
     useState<MultiplayerKind>("launcher");
+
+  useEffect(() => {
+    const requestedMode = searchParams.get("mode");
+    const requestedKind = searchParams.get("kind");
+    const timer = window.setTimeout(() => {
+      if (requestedMode === "multiplayer") setMode("multiplayer");
+      if (
+        requestedKind === "online" ||
+        requestedKind === "friend" ||
+        requestedKind === "ai" ||
+        requestedKind === "local" ||
+        requestedKind === "community"
+      ) {
+        setRequestedMultiplayerKind(requestedKind);
+        setMode("multiplayer");
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [searchParams]);
 
   useEffect(() => {
     if (mode !== "analysis" || !analysisEntitlement.hasAccess) return;
