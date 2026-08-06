@@ -11,6 +11,7 @@ import {
 import { explainPlayedMove } from "@/lib/chess/pedagogy";
 import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
 import { getAiPersona } from "@/lib/ai/opponents";
+import type { LearningProfile } from "@/lib/learning/types";
 
 type MoveReviewCardProps = {
   moveData: PlayedMoveData;
@@ -19,6 +20,7 @@ type MoveReviewCardProps = {
   error: string | null;
   onRetry: () => void;
   coachPersonaId?: AiPersonaId;
+  learningProfile?: LearningProfile | null;
 };
 
 function MoveReviewCard({
@@ -28,6 +30,7 @@ function MoveReviewCard({
   error,
   onRetry,
   coachPersonaId = "balanced",
+  learningProfile = null,
 }: MoveReviewCardProps) {
   return (
     <section className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 shadow-lg">
@@ -83,6 +86,7 @@ function MoveReviewCard({
           <ReviewContent
             review={review}
             coachPersonaId={coachPersonaId}
+            learningProfile={learningProfile}
           />
         )}
 
@@ -160,9 +164,11 @@ function ReviewError({
 function ReviewContent({
   review,
   coachPersonaId,
+  learningProfile,
 }: {
   review: MoveReviewResponse;
   coachPersonaId: AiPersonaId;
+  learningProfile: LearningProfile | null;
 }) {
   const persona = getAiPersona(coachPersonaId);
 
@@ -188,7 +194,7 @@ function ReviewContent({
         title={getCoachReactionTitle(review)}
       >
         <p>
-          {explainPlayedMove(review, coachPersonaId)}
+          {explainPlayedMove(review, coachPersonaId, learningProfile)}
         </p>
       </CoachMentorMessage>
 

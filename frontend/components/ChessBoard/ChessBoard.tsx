@@ -45,6 +45,7 @@ type ChessBoardProps = {
   mode?: "analysis" | "competitive";
   playerColor?: "white" | "black" | null;
   interactionDisabled?: boolean;
+  presentationOnly?: boolean;
 };
 
 type BoardArrow = {
@@ -93,6 +94,7 @@ export default function ChessBoard({
   mode = "analysis",
   playerColor = null,
   interactionDisabled = false,
+  presentationOnly = false,
 }: ChessBoardProps) {
   const [errorMessage, setErrorMessage] =
     useState("");
@@ -434,11 +436,14 @@ export default function ChessBoard({
         </div>
       </div>
 
-      <p className="board-touch-hint">
-        <span aria-hidden="true">☝</span>
-        Touche une pièce pour afficher ses coups, puis touche sa destination.
-      </p>
+      {!presentationOnly && (
+        <p className="board-touch-hint">
+          <span aria-hidden="true">☝</span>
+          Touche une pièce pour afficher ses coups, puis touche sa destination.
+        </p>
+      )}
 
+      {!presentationOnly && (
       <div className="mt-5 rounded-xl bg-gray-900 p-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -536,6 +541,7 @@ export default function ChessBoard({
           </p>
         )}
       </div>
+      )}
     </section>
   );
 }

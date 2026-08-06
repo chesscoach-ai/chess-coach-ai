@@ -18,6 +18,7 @@ import { getAiLevel, getAiPersona } from "@/lib/ai/opponents";
 export type MultiplayerKind =
   | "launcher"
   | "online"
+  | "friend"
   | "ai"
   | "local"
   | "community";
@@ -36,7 +37,9 @@ export default function MultiplayerWorkspace({
   ) => Promise<void>;
 }) {
   const kind = requestedKind;
-  const online = useOnlineGame(Boolean(currentUser) && kind === "online");
+  const online = useOnlineGame(
+    Boolean(currentUser) && (kind === "online" || kind === "friend"),
+  );
 
   function selectKind(nextKind: MultiplayerKind): void {
     onKindChange(nextKind);
@@ -56,12 +59,16 @@ export default function MultiplayerWorkspace({
           currentUser={currentUser}
           onPlay={() => selectKind("launcher")}
         />
-      ) : kind === "online" ? (
+      ) : kind === "online" || kind === "friend" ? (
         <div className="space-y-4">
           {!online.game && (
             <ModeHeader
-              title="Jouer en ligne"
-              description="Match classé ou partie privée avec un ami"
+              title={kind === "friend" ? "Jouer avec un ami" : "Jouer en ligne"}
+              description={
+                kind === "friend"
+                  ? "Crée une invitation ou rejoins un code privé"
+                  : "Match classé contre un joueur proche de ton Elo"
+              }
               onBack={() => selectKind("launcher")}
             />
           )}
@@ -84,6 +91,7 @@ export default function MultiplayerWorkspace({
         ) : (
           <OnlineLobby
             currentUser={currentUser}
+            view={kind === "friend" ? "friend" : "matchmaking"}
             isLoading={online.isLoading}
             error={online.error}
             onCreate={online.create}
@@ -203,8 +211,10 @@ function PlayLauncher({
 }: {
   onSelect: (kind: MultiplayerKind) => void;
 }) {
+  const previewGame = useChessGame();
+
   return (
-    <section className="mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-gray-800 bg-gray-900 shadow-2xl">
+    <section className="mx-auto w-full max-w-7xl overflow-hidden rounded-3xl border border-gray-800 bg-gray-900 shadow-2xl">
       <div className="border-b border-gray-800 bg-gradient-to-r from-blue-950/70 via-gray-900 to-violet-950/50 px-5 py-5 sm:px-7">
         <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">
           Jouer aux échecs
@@ -217,13 +227,25 @@ function PlayLauncher({
         </p>
       </div>
 
-      <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6">
+      <div className="grid items-start gap-5 p-4 sm:p-6 xl:grid-cols-[minmax(560px,720px)_minmax(320px,390px)] xl:justify-center">
+        <div className="min-w-0">
+          <ChessBoard
+            game={previewGame}
+            mode="competitive"
+            interactionDisabled
+            presentationOnly
+          />
+          <p className="mt-3 text-center text-xs text-gray-500">
+            L’échiquier devient interactif dès que ton mode est lancé.
+          </p>
+        </div>
+
+        <div className="grid gap-3">
         <LaunchChoice
           icon="⚡"
           title="Jouer en ligne"
           description="Match classé contre un joueur proche de ton Elo"
           accent="blue"
-          primary
           onClick={() => onSelect("online")}
         />
         <LaunchChoice
@@ -238,7 +260,7 @@ function PlayLauncher({
           title="Jouer avec un ami"
           description="Crée ou saisis un code de partie privée"
           accent="cyan"
-          onClick={() => onSelect("online")}
+          onClick={() => onSelect("friend")}
         />
         <LaunchChoice
           icon="♟"
@@ -247,6 +269,7 @@ function PlayLauncher({
           accent="gray"
           onClick={() => onSelect("local")}
         />
+        </div>
       </div>
     </section>
   );
@@ -257,14 +280,12 @@ function LaunchChoice({
   title,
   description,
   accent,
-  primary = false,
   onClick,
 }: {
   icon: string;
   title: string;
   description: string;
   accent: "blue" | "violet" | "cyan" | "gray";
-  primary?: boolean;
   onClick: () => void;
 }) {
   const accentClasses = {
@@ -279,9 +300,7 @@ function LaunchChoice({
     <button
       type="button"
       onClick={onClick}
-      className={`group flex min-h-28 items-center gap-4 rounded-2xl border p-4 text-left transition active:scale-[0.99] sm:p-5 ${accentClasses} ${
-        primary ? "sm:col-span-2" : ""
-      }`}
+      className={`group flex min-h-24 items-center gap-4 rounded-2xl border p-4 text-left transition active:scale-[0.99] ${accentClasses}`}
     >
       <span
         aria-hidden="true"

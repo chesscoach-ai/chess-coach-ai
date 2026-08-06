@@ -396,6 +396,7 @@ export default function GameWorkspace({
               reviews.isSelectedMoveReviewing
             }
             coachPersonaId={aiOpponent.personaId}
+            learningProfile={learningProfile}
             livePrecision={
               livePrecision
             }
@@ -438,6 +439,7 @@ export default function GameWorkspace({
                 1200) < 1200
             }
             coachPersonaId={aiOpponent.personaId}
+            learningProfile={learningProfile}
             onAnalysisComplete={
               positionAnalysis.handleAnalysisComplete
             }
@@ -467,6 +469,7 @@ export default function GameWorkspace({
                   reviews.selectedMoveReviewError
                 }
                 coachPersonaId={aiOpponent.personaId}
+                learningProfile={learningProfile}
                 onRetry={() => {
                   if (
                     reviews.selectedMoveIndex ===

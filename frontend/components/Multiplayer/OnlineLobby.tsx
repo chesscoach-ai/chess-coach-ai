@@ -33,6 +33,7 @@ const EXTRA_TIME_CONTROLS = [
 
 export default function OnlineLobby({
   currentUser,
+  view = "matchmaking",
   isLoading,
   error,
   onCreate,
@@ -40,6 +41,7 @@ export default function OnlineLobby({
   onFindMatch,
 }: {
   currentUser: CurrentUser | null;
+  view?: "matchmaking" | "friend";
   isLoading: boolean;
   error: string;
   onCreate: (minutes: number) => Promise<void>;
@@ -81,6 +83,31 @@ export default function OnlineLobby({
 
   return (
     <section className="grid gap-5 lg:grid-cols-2">
+      {view === "friend" && (
+        <div className="rounded-2xl border border-blue-900/60 bg-blue-950/20 p-4 lg:col-span-2">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-blue-300">
+            Cadence de la partie privée
+          </p>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {TIME_CONTROLS.map((control) => (
+              <button
+                key={control.minutes}
+                type="button"
+                onClick={() => setMinutes(control.minutes)}
+                className={[
+                  "rounded-xl border px-3 py-2 text-sm font-black transition",
+                  minutes === control.minutes
+                    ? "border-blue-400 bg-blue-600 text-white"
+                    : "border-gray-700 bg-gray-950 text-gray-400 hover:border-gray-500",
+                ].join(" ")}
+              >
+                {control.duration}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {view === "matchmaking" && (
       <div className="overflow-hidden rounded-2xl border border-blue-700/70 bg-gradient-to-br from-blue-950 via-gray-900 to-violet-950 p-6 lg:col-span-2">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div className="max-w-2xl">
@@ -168,6 +195,7 @@ export default function OnlineLobby({
           </div>
         </div>
       </div>
+      )}
 
       <div className="rounded-2xl border border-gray-800 bg-gray-900 p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
@@ -231,6 +259,12 @@ export default function OnlineLobby({
           Rejoindre la partie
         </button>
       </form>
+
+      {view === "friend" && (
+        <p className="rounded-xl border border-blue-900/60 bg-blue-950/20 px-4 py-3 text-center text-xs text-blue-200 lg:col-span-2">
+          Les parties privées n’affectent pas ton Elo. Partage simplement le code avec ton ami.
+        </p>
+      )}
 
       {error && (
         <p

@@ -17,6 +17,8 @@ import {
   type AiPersonaId,
 } from "@/lib/ai/opponents";
 import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
+import { buildPositionCoachInsight } from "@/lib/coach/contextualCoach";
+import type { LearningProfile } from "@/lib/learning/types";
 
 type AnalysisPanelProps = {
   fen: string;
@@ -29,6 +31,7 @@ type AnalysisPanelProps = {
   ) => void;
   coachPersonaId?: AiPersonaId;
   showTermExplanations?: boolean;
+  learningProfile?: LearningProfile | null;
 };
 
 type EvaluationData = Pick<
@@ -172,6 +175,7 @@ export default function AnalysisPanel({
   onLoadingChange,
   coachPersonaId = "balanced",
   showTermExplanations = true,
+  learningProfile = null,
 }: AnalysisPanelProps) {
   const [analysis, setAnalysis] =
     useState<PositionAnalysisResponse | null>(null);
@@ -307,6 +311,7 @@ export default function AnalysisPanel({
           <CoachPositionSummary
             analysis={analysis}
             coachPersonaId={coachPersonaId}
+            learningProfile={learningProfile}
           />
 
           <details className="group rounded-xl border border-gray-800 bg-gray-950/40">
@@ -387,9 +392,11 @@ function PanelHeader({
 function CoachPositionSummary({
   analysis,
   coachPersonaId,
+  learningProfile,
 }: {
   analysis: PositionAnalysisResponse;
   coachPersonaId: AiPersonaId;
+  learningProfile: LearningProfile | null;
 }) {
   const move =
     analysis.best_move_details;
@@ -404,8 +411,7 @@ function CoachPositionSummary({
       <p>{move.beginner_description}</p>
       <p className="mt-2 text-blue-100">
         {getPersonaCoachLead(coachPersonaId)}{" "}
-        {move.strategic_ideas[0] ??
-          move.explanation}
+        {buildPositionCoachInsight({ move, profile: learningProfile })}
       </p>
     </CoachMentorMessage>
   );
@@ -562,7 +568,7 @@ function BestMoveCard({
           </p>
 
           <p className="mt-1 text-sm leading-6 text-gray-300">
-            {getPersonaCoachLead(coachPersonaId)} {move.explanation}
+            {move.explanation}
           </p>
 
           <TermExplanations

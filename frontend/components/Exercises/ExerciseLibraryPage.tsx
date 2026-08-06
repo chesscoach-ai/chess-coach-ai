@@ -302,20 +302,19 @@ export default function ExerciseLibraryPage() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-8 flex items-center justify-between gap-4">
+      <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7">
+        <div className="mb-5 flex items-center justify-between gap-4">
           <div>
             <p className="mb-2 text-sm font-medium uppercase tracking-widest text-emerald-400">
               Coach Chess Clan
             </p>
 
-            <h1 className="text-3xl font-bold">
-              Bibliothèque d’exercices
+            <h1 className="text-2xl font-black sm:text-3xl">
+              Entraînement
             </h1>
 
             <p className="mt-2 text-slate-400">
-              {PGN_EXAMPLES.length} positions légales à résoudre,
-              des finales techniques aux décisions de champions.
+              Une position ciblée maintenant, toute la bibliothèque si tu veux explorer.
             </p>
           </div>
 
@@ -327,17 +326,6 @@ export default function ExerciseLibraryPage() {
           </Link>
         </div>
 
-        <PlacementDiagnostic
-          session={placementSession}
-          result={placementResult}
-          isLoading={loadingExerciseId !== null}
-          onStart={startPlacement}
-          onContinue={() => {
-            if (placementSession) launchPlacement(placementSession);
-          }}
-          onRestart={startPlacement}
-        />
-
         <LearningSkillPath
           path={skillPath}
           dailyPlan={dailyPlan}
@@ -346,6 +334,32 @@ export default function ExerciseLibraryPage() {
           isLoading={loadingExerciseId !== null}
           onStart={startPathExercise}
         />
+
+        <details className="group mb-5 rounded-2xl border border-slate-800 bg-slate-900/70">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-amber-300">
+                Régler mon niveau
+              </p>
+              <p className="mt-0.5 text-sm text-slate-400">
+                Diagnostic rapide en trois positions
+              </p>
+            </div>
+            <span className="text-amber-300 transition group-open:rotate-180">⌄</span>
+          </summary>
+          <div className="border-t border-slate-800 p-3">
+            <PlacementDiagnostic
+              session={placementSession}
+              result={placementResult}
+              isLoading={loadingExerciseId !== null}
+              onStart={startPlacement}
+              onContinue={() => {
+                if (placementSession) launchPlacement(placementSession);
+              }}
+              onRestart={startPlacement}
+            />
+          </div>
+        </details>
 
         {error && (
           <div className="mb-6 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
@@ -359,11 +373,26 @@ export default function ExerciseLibraryPage() {
           </div>
         )}
 
-        <PGNLibraryBrowser
-          onClose={() => router.push("/")}
-          onSelect={handleSelectExercise}
-          loadingExerciseId={loadingExerciseId}
-        />
+        <details className="group overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 sm:px-5">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-blue-300">
+                Explorer la bibliothèque
+              </p>
+              <p className="mt-1 text-sm text-slate-400">
+                {PGN_EXAMPLES.length} positions, parties de champions et finales iconiques
+              </p>
+            </div>
+            <span className="text-blue-300 transition group-open:rotate-180">⌄</span>
+          </summary>
+          <div className="border-t border-slate-800 p-3 sm:p-4">
+            <PGNLibraryBrowser
+              onClose={() => router.push("/")}
+              onSelect={handleSelectExercise}
+              loadingExerciseId={loadingExerciseId}
+            />
+          </div>
+        </details>
       </div>
     </main>
   );

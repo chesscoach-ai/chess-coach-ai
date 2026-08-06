@@ -9,11 +9,13 @@ import {
 import type { AiPersonaId } from "@/lib/ai/opponents";
 import { getAiPersona } from "@/lib/ai/opponents";
 import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
+import type { LearningProfile } from "@/lib/learning/types";
 
 type Props = {
   review: MoveReviewResponse | null;
   isReviewLoading: boolean;
   coachPersonaId?: AiPersonaId;
+  learningProfile?: LearningProfile | null;
   livePrecision?: {
     accuracy: number | null;
     reviewedMoveCount: number;
@@ -26,6 +28,7 @@ export default function LivePositionOverview({
   review,
   isReviewLoading,
   coachPersonaId = "balanced",
+  learningProfile = null,
   livePrecision,
 }: Props) {
   return (
@@ -34,6 +37,7 @@ export default function LivePositionOverview({
         review={review}
         isLoading={isReviewLoading}
         coachPersonaId={coachPersonaId}
+        learningProfile={learningProfile}
       />
 
       <LivePrecisionCard
@@ -62,10 +66,12 @@ function LastMoveSummary({
   review,
   isLoading,
   coachPersonaId,
+  learningProfile,
 }: {
   review: MoveReviewResponse | null;
   isLoading: boolean;
   coachPersonaId: AiPersonaId;
+  learningProfile: LearningProfile | null;
 }) {
   const persona =
     getAiPersona(coachPersonaId);
@@ -115,6 +121,7 @@ function LastMoveSummary({
             {explainPlayedMove(
               review,
               coachPersonaId,
+              learningProfile,
             )}
           </CoachMentorMessage>
         </div>

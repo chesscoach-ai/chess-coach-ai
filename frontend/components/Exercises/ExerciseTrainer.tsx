@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import ExerciseBoard from "@/components/Exercises/ExerciseBoard";
+import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
 
 import {
   clearExerciseSession,
@@ -29,6 +30,8 @@ import {
   recordPlacementAttempt,
   writePlacementSession,
 } from "@/lib/learning/placement";
+import { buildExerciseCoachMessage } from "@/lib/coach/contextualCoach";
+import type { LearningProfile } from "@/lib/learning/types";
 
 function convertMoveToUci(
   move: ExerciseMove,
@@ -41,6 +44,8 @@ function convertMoveToUci(
 export default function ExerciseTrainer() {
   const [session, setSession] =
     useState<ExerciseSession | null>(null);
+  const [learningProfile, setLearningProfile] =
+    useState<LearningProfile | null>(null);
 
   const [visibleHints, setVisibleHints] =
     useState<string[]>([]);
@@ -57,6 +62,25 @@ export default function ExerciseTrainer() {
     }, 0);
 
     return () => window.clearTimeout(loadId);
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch("/api/learning/profile", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const payload = (await response.json()) as {
+          profile?: LearningProfile;
+        };
+        setLearningProfile(payload.profile ?? null);
+      })
+      .catch(() => {
+        // L’exercice reste jouable avec un coaching local sans profil.
+      });
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -337,23 +361,31 @@ export default function ExerciseTrainer() {
   )}:${String(
     session.elapsedTime % 60,
   ).padStart(2, "0")}`;
+  const coachMessage = buildExerciseCoachMessage({
+    profile: learningProfile,
+    exerciseId: session.id,
+    mistakes: session.mistakes,
+    hintsUsed: session.hintsUsed,
+    elapsedTime: session.elapsedTime,
+    status: session.status,
+  });
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-8 text-white sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-gray-950 px-3 py-4 text-white sm:px-5 sm:py-6 lg:px-6">
       <div className="mx-auto max-w-7xl">
-        <header className="mb-8 flex flex-wrap items-start justify-between gap-5">
+        <header className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-800 bg-gray-900/70 px-4 py-3">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-400">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-400">
               {session.champion
                 ? `Dans la peau de ${session.champion}`
                 : "Mode entraînement"}
             </p>
 
-            <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
+            <h1 className="mt-1 text-lg font-black sm:text-xl">
               {session.title}
             </h1>
 
-            <p className="mt-3 max-w-2xl text-gray-400">
+            <p className="mt-1 max-w-2xl text-xs text-gray-400 sm:text-sm">
               {session.description ??
                 "Trouve le meilleur coup dans cette position."}
             </p>
@@ -377,8 +409,8 @@ export default function ExerciseTrainer() {
           </Link>
         </header>
 
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-          <section className="rounded-3xl border border-gray-800 bg-gray-900/50 p-3 shadow-2xl sm:p-5">
+        <div className="grid items-start justify-center gap-5 xl:grid-cols-[minmax(600px,760px)_minmax(300px,360px)]">
+          <section className="min-w-0 rounded-3xl border border-gray-800 bg-gray-900/50 p-2 shadow-2xl sm:p-3">
             <ExerciseBoard
               key={`${session.id}-${boardResetKey}`}
               startFen={session.startFen}
@@ -421,31 +453,25 @@ export default function ExerciseTrainer() {
                 />
               </div>
 
+              <div className="mt-5">
+                <CoachMentorMessage
+                  compact
+                  title={coachMessage.title}
+                >
+                  {coachMessage.message}
+                </CoachMentorMessage>
+              </div>
+
               {session.coachNote && (
-                <div className="mt-5 rounded-2xl border border-violet-800/60 bg-violet-950/25 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wider text-violet-300">
-                    Ton coach
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-violet-100/80">
+                <details className="mt-3 rounded-xl border border-gray-800 bg-gray-950/40">
+                  <summary className="cursor-pointer list-none px-3 py-2 text-xs font-bold text-gray-400">
+                    Contexte de cette position
+                  </summary>
+                  <p className="border-t border-gray-800 px-3 py-2 text-xs leading-5 text-gray-500">
                     {session.coachNote}
                   </p>
-                </div>
+                </details>
               )}
-
-              {!exerciseIsFinished &&
-                session.status !== "incorrect" && (
-                  <div className="mt-5 rounded-2xl border border-blue-900/70 bg-blue-950/30 p-4">
-                    <p className="text-sm font-semibold text-blue-200">
-                      Déplace directement une pièce
-                      sur l’échiquier.
-                    </p>
-
-                    <p className="mt-1 text-sm text-blue-200/70">
-                      Le coup sera vérifié
-                      automatiquement.
-                    </p>
-                  </div>
-                )}
 
               {session.status === "correct" && (
                 <div className="mt-5 rounded-2xl border border-emerald-700 bg-emerald-950/40 p-4">
@@ -533,36 +559,12 @@ export default function ExerciseTrainer() {
               </button>
             </section>
 
-            <section className="grid grid-cols-3 gap-3">
-              <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-                <p className="text-sm text-gray-500">
-                  Erreurs
-                </p>
-
-                <p className="mt-1 text-2xl font-bold">
-                  {session.mistakes}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-                <p className="text-sm text-gray-500">
-                  Indices utilisés
-                </p>
-
-                <p className="mt-1 text-2xl font-bold">
-                  {session.hintsUsed}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
-                <p className="text-sm text-gray-500">
-                  Temps
-                </p>
-
-                <p className="mt-1 text-2xl font-bold">
-                  {formattedTime}
-                </p>
-              </div>
+            <section className="flex items-center justify-around rounded-2xl border border-gray-800 bg-gray-900 px-3 py-3 text-center">
+              <CompactStat label="Erreurs" value={String(session.mistakes)} />
+              <span className="h-8 w-px bg-gray-800" />
+              <CompactStat label="Indices" value={String(session.hintsUsed)} />
+              <span className="h-8 w-px bg-gray-800" />
+              <CompactStat label="Temps" value={formattedTime} />
             </section>
 
             <button
@@ -589,5 +591,16 @@ export default function ExerciseTrainer() {
         </div>
       </div>
     </main>
+  );
+}
+
+function CompactStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-20">
+      <p className="text-base font-black text-white">{value}</p>
+      <p className="text-[10px] font-bold uppercase tracking-wide text-gray-500">
+        {label}
+      </p>
+    </div>
   );
 }
