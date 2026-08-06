@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Chess } from "chess.js";
 
 import ChessBoard from "@/components/ChessBoard";
@@ -9,41 +9,34 @@ import type { CurrentUser } from "@/components/Layout/ProductWorkspace";
 import OnlineLobby from "@/components/Multiplayer/OnlineLobby";
 import OnlineMatch from "@/components/Multiplayer/OnlineMatch";
 import CommunityHub from "@/components/Multiplayer/CommunityHub";
-import BattleRoad from "@/components/Multiplayer/BattleRoad";
 import MultiplayerProfileBar from "@/components/Multiplayer/MultiplayerProfileBar";
-import PlayerStatistics from "@/components/Statistics/PlayerStatistics";
 import { useChessGame } from "@/hooks/useChessGame";
 import { useOnlineGame } from "@/hooks/useOnlineGame";
 import { useAiOpponent } from "@/hooks/useAiOpponent";
 import { getAiLevel, getAiPersona } from "@/lib/ai/opponents";
 
-export type MultiplayerKind = "online" | "ai" | "local" | "community";
+export type MultiplayerKind =
+  | "launcher"
+  | "online"
+  | "ai"
+  | "local"
+  | "community";
 
 export default function MultiplayerWorkspace({
   currentUser,
   requestedKind,
   onKindChange,
-  onGameFocusChange,
   onOpenGameReview,
 }: {
   currentUser: CurrentUser | null;
   requestedKind: MultiplayerKind;
   onKindChange: (kind: MultiplayerKind) => void;
-  onGameFocusChange: (focused: boolean) => void;
   onOpenGameReview: (
     gameId: string,
   ) => Promise<void>;
 }) {
   const kind = requestedKind;
   const online = useOnlineGame(Boolean(currentUser) && kind === "online");
-  const gameFocused =
-    (kind === "online" && Boolean(online.game)) ||
-    kind === "ai" ||
-    kind === "local";
-
-  useEffect(() => {
-    onGameFocusChange(gameFocused);
-  }, [gameFocused, onGameFocusChange]);
 
   function selectKind(nextKind: MultiplayerKind): void {
     onKindChange(nextKind);
@@ -56,45 +49,23 @@ export default function MultiplayerWorkspace({
         onOpenCommunity={() => selectKind("community")}
       />
 
-      <div
-        role="tablist"
-        aria-label="Type de partie multijoueur"
-        className="mx-auto grid max-w-3xl grid-cols-2 rounded-xl border border-gray-800 bg-gray-900 p-1 sm:grid-cols-4"
-      >
-        <KindButton
-          active={kind === "online"}
-          label="Jouer en ligne"
-          onClick={() => selectKind("online")}
-        />
-        <KindButton
-          active={kind === "ai"}
-          label="Défier l’IA"
-          onClick={() => selectKind("ai")}
-        />
-        <KindButton
-          active={kind === "local"}
-          label="Jouer sur cet écran"
-          onClick={() => selectKind("local")}
-        />
-        <KindButton
-          active={kind === "community"}
-          label="Communauté"
-          onClick={() => selectKind("community")}
-        />
-      </div>
-
-      {kind === "online" && !online.game && (
-        <BattleRoad
+      {kind === "launcher" ? (
+        <PlayLauncher onSelect={selectKind} />
+      ) : kind === "community" ? (
+        <CommunityHub
           currentUser={currentUser}
-          refreshKey="lobby-idle"
-          onPlay={() => selectKind("online")}
+          onPlay={() => selectKind("launcher")}
         />
-      )}
-
-      {kind === "community" ? (
-        <CommunityHub currentUser={currentUser} />
       ) : kind === "online" ? (
-        online.game ? (
+        <div className="space-y-4">
+          {!online.game && (
+            <ModeHeader
+              title="Jouer en ligne"
+              description="Match classé ou partie privée avec un ami"
+              onBack={() => selectKind("launcher")}
+            />
+          )}
+          {online.game ? (
           <OnlineMatch
             game={online.game}
             error={online.error}
@@ -119,20 +90,29 @@ export default function MultiplayerWorkspace({
             onJoin={online.join}
             onFindMatch={online.findMatch}
           />
-        )
+        )}
+        </div>
       ) : kind === "ai" ? (
-        <AiMatch />
+        <div className="space-y-4">
+          <ModeHeader
+            title="Défier une IA"
+            description="Choisis son niveau et son style avant le duel"
+            onBack={() => selectKind("launcher")}
+          />
+          <AiMatch />
+        </div>
       ) : (
-        <LocalMatch />
+        <div className="space-y-4">
+          <ModeHeader
+            title="Jouer sur cet écran"
+            description="Deux joueurs, un appareil, aucun classement"
+            onBack={() => selectKind("launcher")}
+          />
+          <LocalMatch />
+        </div>
       )}
 
-      <FairPlayNotice />
-
-      <PlayerStatistics
-        currentUser={currentUser}
-        variant="multiplayer"
-        refreshKey={`${online.game?.id ?? "lobby"}-${online.game?.status ?? "idle"}`}
-      />
+      {kind !== "launcher" && kind !== "community" && <FairPlayNotice />}
     </div>
   );
 }
@@ -218,30 +198,137 @@ function AiMatch() {
   );
 }
 
-function KindButton({
-  active,
-  label,
+function PlayLauncher({
+  onSelect,
+}: {
+  onSelect: (kind: MultiplayerKind) => void;
+}) {
+  return (
+    <section className="mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-gray-800 bg-gray-900 shadow-2xl">
+      <div className="border-b border-gray-800 bg-gradient-to-r from-blue-950/70 via-gray-900 to-violet-950/50 px-5 py-5 sm:px-7">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">
+          Jouer aux échecs
+        </p>
+        <h1 className="mt-1 text-2xl font-black text-white sm:text-3xl">
+          Comment veux-tu jouer ?
+        </h1>
+        <p className="mt-2 text-sm text-gray-400">
+          Choisis un mode et entre dans la partie en quelques secondes.
+        </p>
+      </div>
+
+      <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6">
+        <LaunchChoice
+          icon="⚡"
+          title="Jouer en ligne"
+          description="Match classé contre un joueur proche de ton Elo"
+          accent="blue"
+          primary
+          onClick={() => onSelect("online")}
+        />
+        <LaunchChoice
+          icon="🤖"
+          title="Défier une IA"
+          description="Adversaires du niveau débutant au maître"
+          accent="violet"
+          onClick={() => onSelect("ai")}
+        />
+        <LaunchChoice
+          icon="🤝"
+          title="Jouer avec un ami"
+          description="Crée ou saisis un code de partie privée"
+          accent="cyan"
+          onClick={() => onSelect("online")}
+        />
+        <LaunchChoice
+          icon="♟"
+          title="Jouer sur cet écran"
+          description="Une partie locale à deux sur le même appareil"
+          accent="gray"
+          onClick={() => onSelect("local")}
+        />
+      </div>
+    </section>
+  );
+}
+
+function LaunchChoice({
+  icon,
+  title,
+  description,
+  accent,
+  primary = false,
   onClick,
 }: {
-  active: boolean;
-  label: string;
+  icon: string;
+  title: string;
+  description: string;
+  accent: "blue" | "violet" | "cyan" | "gray";
+  primary?: boolean;
   onClick: () => void;
 }) {
+  const accentClasses = {
+    blue: "border-blue-600 bg-blue-600/15 hover:border-blue-400 hover:bg-blue-600/25",
+    violet:
+      "border-violet-800 bg-violet-950/25 hover:border-violet-500 hover:bg-violet-950/45",
+    cyan: "border-cyan-900 bg-cyan-950/20 hover:border-cyan-600 hover:bg-cyan-950/35",
+    gray: "border-gray-700 bg-gray-950/45 hover:border-gray-500 hover:bg-gray-800",
+  }[accent];
+
   return (
     <button
       type="button"
-      role="tab"
-      aria-selected={active}
       onClick={onClick}
-      className={[
-        "rounded-lg px-3 py-2.5 text-sm font-semibold transition",
-        active
-          ? "bg-blue-600 text-white"
-          : "text-gray-400 hover:bg-gray-800 hover:text-gray-200",
-      ].join(" ")}
+      className={`group flex min-h-28 items-center gap-4 rounded-2xl border p-4 text-left transition active:scale-[0.99] sm:p-5 ${accentClasses} ${
+        primary ? "sm:col-span-2" : ""
+      }`}
     >
-      {label}
+      <span
+        aria-hidden="true"
+        className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gray-950/70 text-2xl shadow-inner"
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-lg font-black text-white">{title}</span>
+        <span className="mt-1 block text-sm leading-5 text-gray-400">
+          {description}
+        </span>
+      </span>
+      <span
+        aria-hidden="true"
+        className="text-xl text-gray-600 transition group-hover:translate-x-1 group-hover:text-white"
+      >
+        →
+      </span>
     </button>
+  );
+}
+
+function ModeHeader({
+  title,
+  description,
+  onBack,
+}: {
+  title: string;
+  description: string;
+  onBack: () => void;
+}) {
+  return (
+    <header className="mx-auto flex max-w-5xl items-center gap-3 rounded-xl border border-gray-800 bg-gray-900/75 px-3 py-2.5">
+      <button
+        type="button"
+        onClick={onBack}
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-gray-700 text-gray-300 transition hover:bg-gray-800 hover:text-white"
+        aria-label="Revenir au choix du mode de jeu"
+      >
+        ←
+      </button>
+      <div className="min-w-0">
+        <h1 className="truncate text-sm font-black text-white">{title}</h1>
+        <p className="truncate text-xs text-gray-500">{description}</p>
+      </div>
+    </header>
   );
 }
 

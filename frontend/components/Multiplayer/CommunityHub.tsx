@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 import type { CurrentUser } from "@/components/Layout/ProductWorkspace";
+import BattleRoad from "@/components/Multiplayer/BattleRoad";
+import DailyJourneyHub from "@/components/Progression/DailyJourneyHub";
+import PlayerStatistics from "@/components/Statistics/PlayerStatistics";
 import { COMMUNITY_AVATARS } from "@/lib/community/avatars";
 import type {
   CommunityClan,
@@ -14,8 +17,10 @@ import type {
 
 export default function CommunityHub({
   currentUser,
+  onPlay,
 }: {
   currentUser: CurrentUser | null;
+  onPlay: () => void;
 }) {
   const [dashboard, setDashboard] = useState<CommunityDashboard | null>(null);
   const [error, setError] = useState("");
@@ -151,6 +156,15 @@ export default function CommunityHub({
         </div>
       </section>
 
+      <section id="community-progress" className="scroll-mt-24 space-y-3">
+        <DailyJourneyHub currentUser={currentUser} />
+        <BattleRoad
+          currentUser={currentUser}
+          refreshKey="community"
+          onPlay={onPlay}
+        />
+      </section>
+
       <div className="grid items-start gap-5 xl:grid-cols-[0.85fr_1.15fr]">
         <FriendsPanel
           friends={dashboard.friends}
@@ -177,6 +191,12 @@ export default function CommunityHub({
       </div>
 
       <LeaguePanel dashboard={dashboard} />
+
+      <PlayerStatistics
+        currentUser={currentUser}
+        variant="multiplayer"
+        refreshKey="community"
+      />
 
       <AvatarCollection
         rating={dashboard.profile.rating}

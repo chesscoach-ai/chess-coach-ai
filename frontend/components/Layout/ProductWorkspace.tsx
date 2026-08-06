@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import OnlineGameHistory, {
   type OpenedGameReview,
@@ -12,9 +12,11 @@ import MultiplayerWorkspace, {
   type MultiplayerKind,
 } from "@/components/Multiplayer/MultiplayerWorkspace";
 import AnalysisPaywall from "@/components/Billing/AnalysisPaywall";
-import DailyJourneyHub from "@/components/Progression/DailyJourneyHub";
 import type { AnalysisEntitlement } from "@/lib/billing/types";
-import { setActiveGameReviewId } from "@/services/api/ApiService";
+import {
+  ApiService,
+  setActiveGameReviewId,
+} from "@/services/api/ApiService";
 
 export type ProductMode = "analysis" | "multiplayer";
 
@@ -40,9 +42,17 @@ export default function ProductWorkspace({
   const [reviewError, setReviewError] =
     useState("");
   const [requestedMultiplayerKind, setRequestedMultiplayerKind] =
-    useState<MultiplayerKind>("online");
-  const [isGameFocused, setIsGameFocused] =
-    useState(false);
+    useState<MultiplayerKind>("launcher");
+
+  useEffect(() => {
+    if (mode !== "analysis" || !analysisEntitlement.hasAccess) return;
+
+    // Réveille Stockfish sans réintroduire le badge technique supprimé de
+    // l'interface. La première analyse peut ensuite démarrer immédiatement.
+    void ApiService.getHealth().catch(() => {
+      // AnalysisPanel garde son bouton de relance et affiche l'erreur utile.
+    });
+  }, [analysisEntitlement.hasAccess, mode]);
 
   function handleReviewReady(
     review: OpenedGameReview,
@@ -51,7 +61,6 @@ export default function ProductWorkspace({
       review.game.id,
     );
     setOpenedReview(review);
-    setIsGameFocused(false);
     setMode("analysis");
     setReviewError("");
   }
@@ -112,27 +121,29 @@ export default function ProductWorkspace({
 
   function selectMobileMode(nextMode: ProductMode): void {
     if (nextMode === "multiplayer") {
-      setRequestedMultiplayerKind("online");
-    } else {
-      setIsGameFocused(false);
+      setRequestedMultiplayerKind("launcher");
     }
     setMode(nextMode);
-    scrollAfterRender("game-board");
+    scrollAfterRender(
+      nextMode === "multiplayer"
+        ? "multiplayer-workspace"
+        : "game-board",
+    );
   }
 
   function openStatistics(): void {
-    scrollAfterRender("statistics");
+    setRequestedMultiplayerKind("community");
+    setMode("multiplayer");
+    scrollAfterRender("community-progress");
   }
 
   function openCommunity(): void {
     setRequestedMultiplayerKind("community");
-    setIsGameFocused(false);
     setMode("multiplayer");
     scrollAfterRender("multiplayer-workspace");
   }
 
   function openHistory(): void {
-    setIsGameFocused(false);
     setMode("analysis");
     scrollAfterRender("game-history");
   }
@@ -147,19 +158,6 @@ export default function ProductWorkspace({
         onStatistics={openStatistics}
         onHistory={openHistory}
       />
-
-      {!isGameFocused && (
-        <DailyJourneyHub
-          currentUser={currentUser}
-          mode={mode}
-          onPlay={() =>
-            selectMobileMode("multiplayer")
-          }
-          onCoach={() =>
-            selectMobileMode("analysis")
-          }
-        />
-      )}
 
       {mode === "analysis" ? (
         <div className="space-y-6">
@@ -220,7 +218,6 @@ export default function ProductWorkspace({
           currentUser={currentUser}
           requestedKind={requestedMultiplayerKind}
           onKindChange={setRequestedMultiplayerKind}
-          onGameFocusChange={setIsGameFocused}
           onOpenGameReview={
             openReviewFromGame
           }

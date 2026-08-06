@@ -51,14 +51,8 @@ const TASKS: Array<{
 
 export default function DailyJourneyHub({
   currentUser,
-  mode,
-  onPlay,
-  onCoach,
 }: {
   currentUser: CurrentUser | null;
-  mode: "analysis" | "multiplayer";
-  onPlay: () => void;
-  onCoach: () => void;
 }) {
   const [ledger, setLedger] =
     useState<JourneyLedger>({});
@@ -172,8 +166,21 @@ export default function DailyJourneyHub({
         );
 
   return (
-    <section className="mb-3 overflow-hidden rounded-2xl border border-blue-900/60 bg-gradient-to-br from-gray-900 via-gray-900 to-blue-950/45 shadow-xl">
-      <div className="grid gap-3 p-3 sm:p-4 lg:grid-cols-[1fr_1.35fr] lg:items-stretch">
+    <section className="overflow-hidden rounded-2xl border border-blue-900/60 bg-gradient-to-br from-gray-900 via-gray-900 to-blue-950/45 shadow-xl">
+      <div className="p-3 sm:p-4">
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-300">
+              Rythme de jeu
+            </p>
+            <h2 className="mt-1 text-base font-black text-white">
+              Ta progression et ta ligue
+            </h2>
+          </div>
+          <span className="text-xs text-gray-500">
+            Mis à jour avec tes parties
+          </span>
+        </div>
         <div className="grid grid-cols-3 gap-2">
           <JourneyMetric
             icon="🔥"
@@ -200,60 +207,6 @@ export default function DailyJourneyHub({
             )}
             accent={summary.league.color}
           />
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            aria-pressed={
-              mode === "multiplayer"
-            }
-            onClick={onPlay}
-            className={`group min-h-28 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 p-4 text-left text-white shadow-lg shadow-blue-950/40 transition hover:from-blue-400 hover:to-blue-600 active:scale-[0.98] ${
-              mode === "multiplayer"
-                ? "ring-2 ring-white/80 ring-offset-2 ring-offset-gray-950"
-                : ""
-            }`}
-          >
-            <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-blue-100">
-              <span className="text-xl" aria-hidden="true">
-                ♞
-              </span>
-              Multijoueur
-            </span>
-            <span className="mt-2 block text-sm font-black sm:text-base">
-              Jouer un match classé
-            </span>
-            <span className="mt-0.5 block text-[11px] text-blue-100">
-              En ligne · adversaire de ton Elo
-            </span>
-          </button>
-
-          <button
-            type="button"
-            aria-pressed={
-              mode === "analysis"
-            }
-            onClick={onCoach}
-            className={`group min-h-28 rounded-2xl border border-violet-700/70 bg-violet-950/45 p-4 text-left text-white transition hover:border-violet-500 hover:bg-violet-950/70 active:scale-[0.98] ${
-              mode === "analysis"
-                ? "ring-2 ring-violet-300 ring-offset-2 ring-offset-gray-950"
-                : ""
-            }`}
-          >
-            <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-violet-200">
-              <span className="text-xl" aria-hidden="true">
-                💡
-              </span>
-              Coach IA
-            </span>
-            <span className="mt-2 block text-sm font-black sm:text-base">
-              Progresser avec le coach
-            </span>
-            <span className="mt-0.5 block text-[11px] text-violet-200/80">
-              Analyse · leçon guidée en 5 min
-            </span>
-          </button>
         </div>
       </div>
 

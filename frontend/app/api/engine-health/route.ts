@@ -1,6 +1,5 @@
 import {
-  getBackendHeaders,
-  getBackendUrl,
+  fetchBackend,
 } from "@/lib/api/backendServer";
 
 export const runtime = "nodejs";
@@ -8,18 +7,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const response = await fetch(
-      `${getBackendUrl()}/health`,
-      {
-        headers: getBackendHeaders({
-          Accept: "application/json",
-        }),
-        cache: "no-store",
-        // Render's free engine instance can take several seconds to wake up.
-        // Keep this request alive so a cold start remains a loading state.
-        signal: AbortSignal.timeout(55_000),
-      },
-    );
+    const response = await fetchBackend("/health", {
+      headers: { Accept: "application/json" },
+    });
 
     if (!response.ok) {
       throw new Error(

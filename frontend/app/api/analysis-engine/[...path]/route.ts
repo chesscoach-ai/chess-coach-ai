@@ -3,8 +3,7 @@ import { getAnalysisEntitlement } from "@/lib/billing/subscriptionStore";
 import { getAuthenticatedPlayer } from "@/lib/multiplayer/playerSession";
 import { canAccessGameReview } from "@/lib/billing/gameReviewStore";
 import {
-  getBackendHeaders,
-  getBackendUrl,
+  fetchBackend,
 } from "@/lib/api/backendServer";
 
 export const runtime = "nodejs";
@@ -43,14 +42,13 @@ export async function POST(
       return Response.json({ detail: "Route d’analyse inconnue." }, { status: 404 });
     }
 
-    const response = await fetch(`${getBackendUrl()}/${endpoint}`, {
+    const response = await fetchBackend(`/${endpoint}`, {
       method: "POST",
-      headers: getBackendHeaders({
+      headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-      }),
+      },
       body: await request.text(),
-      cache: "no-store",
     });
     return new Response(response.body, {
       status: response.status,
