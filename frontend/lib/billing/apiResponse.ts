@@ -15,7 +15,7 @@ const messages: Record<string, string> = {
   INVALID_REQUEST:
     "La formule d’abonnement sélectionnée est invalide.",
   SUBSCRIPTION_REQUIRED:
-    "Un abonnement Analyse est nécessaire pour utiliser cette fonction.",
+    "Un abonnement Coach+ est nécessaire pour utiliser cette fonction.",
   CUSTOMER_NOT_FOUND:
     "Aucun abonnement à gérer n’a été trouvé pour ce compte.",
   INVALID_WEBHOOK: "La signature du paiement est invalide.",

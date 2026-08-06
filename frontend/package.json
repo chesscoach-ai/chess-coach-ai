@@ -11,6 +11,7 @@
     "mobile:sync": "node -r ./scripts/capacitor-windows-shim.cjs ./node_modules/@capacitor/cli/bin/capacitor sync",
     "mobile:assets": "node ./scripts/generate-native-assets.mjs",
     "mobile:build:android": "powershell -ExecutionPolicy Bypass -File ./scripts/build-android.ps1",
+    "mobile:bundle:android": "powershell -ExecutionPolicy Bypass -File ./scripts/build-android-bundle.ps1",
     "mobile:install:android": "powershell -ExecutionPolicy Bypass -File ./scripts/install-android.ps1",
     "mobile:android": "node -r ./scripts/capacitor-windows-shim.cjs ./node_modules/@capacitor/cli/bin/capacitor open android",
     "mobile:ios": "node -r ./scripts/capacitor-windows-shim.cjs ./node_modules/@capacitor/cli/bin/capacitor open ios",

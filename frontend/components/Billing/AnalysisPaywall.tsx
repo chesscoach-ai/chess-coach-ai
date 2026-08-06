@@ -10,9 +10,11 @@ import { isNativeApp } from "@/lib/mobile/platform";
 export default function AnalysisPaywall({
   currentUser,
   entitlement,
+  feature = "analysis",
 }: {
   currentUser: CurrentUser | null;
   entitlement: AnalysisEntitlement;
+  feature?: "analysis" | "exercises";
 }) {
   const nativeApp = isNativeApp();
   const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +41,7 @@ export default function AnalysisPaywall({
         100,
     ),
   );
+  const isExercises = feature === "exercises";
 
   async function redirectToBilling(endpoint: "checkout" | "portal") {
     if (nativeApp) {
@@ -86,11 +89,14 @@ export default function AnalysisPaywall({
             Chess Clan Coach+
           </span>
           <h2 className="mt-5 max-w-2xl text-3xl font-black tracking-tight text-white sm:text-4xl">
-            Le coach qui transforme tes parties en progrès
+            {isExercises
+              ? "Entraîne-toi avec ton coach personnel"
+              : "Le coach qui transforme tes parties en progrès"}
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-gray-300">
-            Comprends les moments décisifs, rejoue tes erreurs et reçois un
-            programme adapté à ton Elo et à tes difficultés récurrentes.
+            {isExercises
+              ? "Coach+ adapte les exercices à ton Elo, à tes parties et à tes habitudes. Le coach t’accompagne sans souffler la réponse."
+              : "Comprends les moments décisifs, rejoue tes erreurs et reçois un programme adapté à ton Elo et à tes difficultés récurrentes."}
           </p>
 
           <ul className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -98,6 +104,7 @@ export default function AnalysisPaywall({
               "Analyse complète et explications sans jargon",
               "Faiblesses suivies d’une partie à l’autre",
               "Moments critiques et meilleurs coups expliqués",
+              "Bibliothèque complète d’exercices accompagnés",
               "Exercices créés depuis tes propres erreurs",
               "Conseils adaptés à ton niveau Elo",
               "Aucune aide activée pendant les parties classées",

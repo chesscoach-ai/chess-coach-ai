@@ -2,10 +2,22 @@ import {
   getBackendHeaders,
   getBackendUrl,
 } from "@/lib/api/backendServer";
+import { billingErrorResponse } from "@/lib/billing/apiResponse";
+import { getAnalysisEntitlement } from "@/lib/billing/subscriptionStore";
+import { getAuthenticatedPlayer } from "@/lib/multiplayer/playerSession";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  try {
+    const player = await getAuthenticatedPlayer();
+    if (!player) throw new Error("AUTH_REQUIRED");
+    const entitlement = await getAnalysisEntitlement(player.id);
+    if (!entitlement.hasAccess) throw new Error("SUBSCRIPTION_REQUIRED");
+  } catch (error) {
+    return billingErrorResponse(error);
+  }
+
   try {
     const response = await fetch(
       `${getBackendUrl()}/api/exercises/analyse-position`,

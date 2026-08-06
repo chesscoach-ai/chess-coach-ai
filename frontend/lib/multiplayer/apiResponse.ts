@@ -23,6 +23,7 @@ const statusByCode: Record<string, number> = {
   REWARD_ALREADY_CLAIMED: 409,
   BANNER_SHARDS_MISSING: 409,
   BANNER_LOCKED: 403,
+  SUBSCRIPTION_REQUIRED: 403,
 };
 
 const messageByCode: Record<string, string> = {
@@ -56,6 +57,8 @@ const messageByCode: Record<string, string> = {
     "Il manque encore quelques éclats pour forger cette bannière.",
   BANNER_LOCKED:
     "Cette bannière doit d’abord être forgée avant de l’équiper.",
+  SUBSCRIPTION_REQUIRED:
+    "Coach+ est nécessaire pour accéder aux exercices accompagnés.",
 };
 
 export function multiplayerErrorResponse(error: unknown): Response {

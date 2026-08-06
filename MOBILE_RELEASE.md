@@ -47,6 +47,20 @@ l’installe puis l’ouvre sur le téléphone USB ou l’émulateur actif. L’
 développement est créé dans
 `frontend/android/app/build/outputs/apk/debug/app-debug.apk`.
 
+## Générer le bundle signé Google Play
+
+La clé d’upload et `frontend/android/keystore-release.properties` sont strictement
+locaux et exclus de Git. Après leur création, lancer depuis `frontend` :
+
+```powershell
+npm.cmd run mobile:bundle:android
+```
+
+Le fichier prêt à importer dans Google Play Console est généré dans
+`frontend/android/app/build/outputs/bundle/release/app-release.aab`. Sauvegarder
+séparément la clé d’upload et ses identifiants : sans cette sauvegarde, les
+prochaines mises à jour ne pourront plus être signées avec la même clé d’upload.
+
 iOS nécessite macOS et Xcode :
 
 ```bash

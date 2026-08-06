@@ -270,7 +270,13 @@ export default function ProductWorkspace({
         />
       ) : mode === "exercises" ? (
         <div id="exercise-workspace" className="scroll-mt-20">
-          {exerciseView === "library" ? (
+          {!analysisEntitlement.hasAccess ? (
+            <AnalysisPaywall
+              currentUser={currentUser}
+              entitlement={analysisEntitlement}
+              feature="exercises"
+            />
+          ) : exerciseView === "library" ? (
             <ExerciseLibraryPage
               embedded
               onExit={() => selectMobileMode("multiplayer")}
