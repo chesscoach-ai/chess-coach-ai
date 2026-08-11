@@ -4,12 +4,20 @@ services:
     runtime: docker
     rootDir: backend
     region: frankfurt
-    plan: free
+    plan: standard
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
       - key: BACKEND_API_SECRET
         generateValue: true
+      - key: STOCKFISH_POOL_SIZE
+        value: "2"
+      - key: STOCKFISH_MAX_QUEUE_SIZE
+        value: "8"
+      - key: STOCKFISH_THREADS
+        value: "1"
+      - key: STOCKFISH_HASH_MB
+        value: "32"
 
   - type: web
     name: chess-coach-web

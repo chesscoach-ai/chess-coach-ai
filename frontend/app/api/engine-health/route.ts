@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const response = await fetchBackend("/health", {
+    const response = await fetchBackend("/ready", {
       headers: { Accept: "application/json" },
     });
 

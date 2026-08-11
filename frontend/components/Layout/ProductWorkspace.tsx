@@ -84,8 +84,7 @@ export default function ProductWorkspace({
   useEffect(() => {
     if (mode !== "analysis" || !analysisEntitlement.hasAccess) return;
 
-    // Réveille Stockfish sans réintroduire le badge technique supprimé de
-    // l'interface. La première analyse peut ensuite démarrer immédiatement.
+    // Vérifie la readiness sans déclencher une analyse coûteuse.
     void ApiService.getHealth().catch(() => {
       // AnalysisPanel garde son bouton de relance et affiche l'erreur utile.
     });
