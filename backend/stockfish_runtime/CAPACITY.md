@@ -1,5 +1,9 @@
 # Capacite controlee - Phase 0.5
 
+> Statut Phase 0.5b : validation locale terminee, validation sur instance
+> Standard reportee jusqu'a la beta publique. Aucun service payant ne doit
+> etre active pendant le developpement prive.
+
 ## Environnement de test
 
 - Local : AMD Ryzen 7 8840HS, 16 processeurs logiques, 32 Go de RAM.
@@ -61,6 +65,19 @@ un travail de basse priorite avant d'etre proposee a grande echelle.
 - pool 2 ; Threads 1 ; Hash 32 Mo par moteur ;
 - file maximale 8, puis rejet rapide en 503 ;
 - cible prudente : 3 analyses interactives/s et 6 a 8 analyses simultanees.
+
+Configuration candidate a conserver dans les variables d'environnement lors
+de la future validation payante :
+
+```text
+STOCKFISH_POOL_SIZE=2
+STOCKFISH_THREADS=1
+STOCKFISH_HASH_MB=32
+STOCKFISH_MAX_QUEUE_SIZE=8
+```
+
+Elle n'est volontairement pas activee dans le Blueprint Free actuel, qui
+reste en pool 1 afin de respecter sa limite de 512 Mo.
 
 Pour 1 000 inscrits, cette configuration convient si 1 a 2 % analysent au
 meme instant. Les analyses completes doivent rester differees ou limitees.

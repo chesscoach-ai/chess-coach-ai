@@ -4,16 +4,16 @@ services:
     runtime: docker
     rootDir: backend
     region: frankfurt
-    plan: standard
+    plan: free
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
       - key: BACKEND_API_SECRET
         generateValue: true
       - key: STOCKFISH_POOL_SIZE
-        value: "2"
+        value: "1"
       - key: STOCKFISH_MAX_QUEUE_SIZE
-        value: "8"
+        value: "6"
       - key: STOCKFISH_THREADS
         value: "1"
       - key: STOCKFISH_HASH_MB
