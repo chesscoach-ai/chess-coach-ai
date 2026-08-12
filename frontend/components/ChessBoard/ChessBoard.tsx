@@ -485,7 +485,7 @@ export default function ChessBoard({
 
             {suggestedMove && (
                 <p className="mt-1 text-sm font-medium text-blue-400">
-                  Idée du Coach IA :{" "}
+                  Idée de Nox :{" "}
                   {suggestedMove.from}
                   {" → "}
                   {suggestedMove.to}

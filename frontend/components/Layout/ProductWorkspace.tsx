@@ -352,7 +352,7 @@ function MobileDock({
           }`}
         >
           <DockIcon path="M9 18h6m-5 3h4m3-12a5 5 0 1 0-10 0c0 2 1 3.5 2.5 4.5V15h5v-1.5C16 12 17 11 17 9Z" />
-          Coach
+          Nox
         </button>
         <button
           type="button"

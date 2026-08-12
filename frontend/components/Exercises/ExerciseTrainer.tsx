@@ -7,7 +7,7 @@ import {
 } from "react";
 
 import ExerciseBoard from "@/components/Exercises/ExerciseBoard";
-import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
+import NoxShell from "@/components/Nox/NoxShell";
 
 import {
   clearExerciseSession,
@@ -467,12 +467,17 @@ export default function ExerciseTrainer({
               </div>
 
               <div className="mt-5">
-                <CoachMentorMessage
-                  compact
-                  title={coachMessage.title}
-                >
-                  {coachMessage.message}
-                </CoachMentorMessage>
+                <NoxShell
+                  context={{
+                    contextKey: `${session.id}:${session.currentPly ?? 0}:${session.status}`,
+                    mode: "exercise",
+                    exerciseStatus: session.status,
+                    primaryMessage: coachMessage.message,
+                    exerciseHint:
+                      visibleHints[visibleHints.length - 1] ?? null,
+                  }}
+                  showQuickActions={false}
+                />
               </div>
 
               {session.coachNote && (

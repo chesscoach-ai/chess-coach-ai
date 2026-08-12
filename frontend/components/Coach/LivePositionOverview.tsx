@@ -2,18 +2,21 @@
 
 import type {
   MoveReviewResponse,
+  PositionAnalysisResponse,
 } from "@/services/api/ApiService";
 import {
   explainPlayedMove,
 } from "@/lib/chess/pedagogy";
 import type { AiPersonaId } from "@/lib/ai/opponents";
-import { getAiPersona } from "@/lib/ai/opponents";
-import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
+import NoxShell from "@/components/Nox/NoxShell";
 import type { LearningProfile } from "@/lib/learning/types";
 
 type Props = {
   review: MoveReviewResponse | null;
   isReviewLoading: boolean;
+  positionKey: string;
+  positionAnalysis?: PositionAnalysisResponse | null;
+  onShowMove?: (move: string) => void;
   coachPersonaId?: AiPersonaId;
   learningProfile?: LearningProfile | null;
   livePrecision?: {
@@ -27,6 +30,9 @@ type Props = {
 export default function LivePositionOverview({
   review,
   isReviewLoading,
+  positionKey,
+  positionAnalysis = null,
+  onShowMove,
   coachPersonaId = "balanced",
   learningProfile = null,
   livePrecision,
@@ -36,6 +42,9 @@ export default function LivePositionOverview({
       <LastMoveSummary
         review={review}
         isLoading={isReviewLoading}
+        positionKey={positionKey}
+        positionAnalysis={positionAnalysis}
+        onShowMove={onShowMove}
         coachPersonaId={coachPersonaId}
         learningProfile={learningProfile}
       />
@@ -65,75 +74,35 @@ export default function LivePositionOverview({
 function LastMoveSummary({
   review,
   isLoading,
+  positionKey,
+  positionAnalysis,
+  onShowMove,
   coachPersonaId,
   learningProfile,
 }: {
   review: MoveReviewResponse | null;
   isLoading: boolean;
+  positionKey: string;
+  positionAnalysis: PositionAnalysisResponse | null;
+  onShowMove?: (move: string) => void;
   coachPersonaId: AiPersonaId;
   learningProfile: LearningProfile | null;
 }) {
-  const persona =
-    getAiPersona(coachPersonaId);
+  const primaryMessage = review
+    ? explainPlayedMove(review, coachPersonaId, learningProfile)
+    : positionAnalysis?.best_move_details.beginner_description ?? null;
   return (
-    <section className="rounded-2xl border border-gray-800 bg-gray-900 p-4 shadow-lg">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-            Conversation avec ton coach
-          </p>
-
-          <h3 className="mt-1 text-base font-bold text-white">
-            Ce que ton dernier coup raconte
-          </h3>
-        </div>
-
-        {review && (
-          <StatusBadge
-            label={review.classification_label}
-            classification={
-              review.classification
-            }
-          />
-        )}
-      </div>
-
-      {isLoading && (
-        <div className="mt-4 flex items-center gap-3 rounded-xl border border-blue-900/60 bg-blue-950/20 p-4">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-900 border-t-blue-300" />
-          <p className="text-sm text-blue-200">
-            Ton coach vérifie les conséquences…
-          </p>
-        </div>
-      )}
-
-      {!isLoading && review && (
-        <div className="mt-4">
-          <CoachMentorMessage
-            compact
-            name={persona.name}
-            title={
-              review.is_best_move
-                ? "Exactement ce qu’il fallait."
-                : `Je classe ce coup : ${review.classification_label.toLocaleLowerCase("fr")}.`
-            }
-          >
-            {explainPlayedMove(
-              review,
-              coachPersonaId,
-              learningProfile,
-            )}
-          </CoachMentorMessage>
-        </div>
-      )}
-
-      {!isLoading && !review && (
-        <p className="mt-4 text-sm leading-6 text-gray-500">
-          Joue un coup ou sélectionne un coup analysé : ton coach
-          viendra te dire ce qu’il faut retenir.
-        </p>
-      )}
-    </section>
+    <NoxShell
+      context={{
+        contextKey: `${positionKey}:${review?.played_move ?? "position"}`,
+        mode: "analysis",
+        isThinking: isLoading,
+        review,
+        analysis: positionAnalysis,
+        primaryMessage,
+      }}
+      onShowMove={onShowMove}
+    />
   );
 }
 
@@ -227,33 +196,4 @@ function LivePrecisionCard({
     </section>
   );
 }
-
-function StatusBadge({
-  label,
-  classification,
-}: {
-  label: string;
-  classification: string;
-}) {
-  const classes =
-    classification === "best" ||
-    classification === "excellent"
-      ? "border-emerald-800 bg-emerald-950/35 text-emerald-300"
-      : classification === "good"
-        ? "border-blue-800 bg-blue-950/35 text-blue-300"
-        : classification === "inaccuracy"
-          ? "border-amber-800 bg-amber-950/35 text-amber-300"
-          : classification === "mistake"
-            ? "border-orange-800 bg-orange-950/35 text-orange-300"
-            : "border-red-800 bg-red-950/35 text-red-300";
-
-  return (
-    <span
-      className={`rounded-full border px-3 py-1 text-xs font-bold ${classes}`}
-    >
-      {label}
-    </span>
-  );
-}
-
 

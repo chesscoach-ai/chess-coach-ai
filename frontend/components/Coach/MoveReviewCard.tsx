@@ -10,7 +10,6 @@ import {
 } from "@/lib/ai/opponents";
 import { explainPlayedMove } from "@/lib/chess/pedagogy";
 import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
-import { getAiPersona } from "@/lib/ai/opponents";
 import type { LearningProfile } from "@/lib/learning/types";
 
 type MoveReviewCardProps = {
@@ -170,8 +169,6 @@ function ReviewContent({
   coachPersonaId: AiPersonaId;
   learningProfile: LearningProfile | null;
 }) {
-  const persona = getAiPersona(coachPersonaId);
-
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -190,7 +187,7 @@ function ReviewContent({
 
       <CoachMentorMessage
         compact
-        name={persona.name}
+        name="Nox"
         title={getCoachReactionTitle(review)}
       >
         <p>

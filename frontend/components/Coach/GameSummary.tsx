@@ -751,7 +751,7 @@ function buildCoachSummary(
   }
 
   if (accuracy >= 90) {
-    return "Très bonne partie : tes décisions sont cohérentes et ton plan résiste très bien à l’analyse du Coach IA.";
+    return "Très bonne partie : tes décisions sont cohérentes et ton plan résiste très bien à l’analyse de Nox.";
   }
 
   return "La partie est solide dans l’ensemble. Étudie les variantes proposées pour comprendre pourquoi certains coups étaient légèrement meilleurs.";

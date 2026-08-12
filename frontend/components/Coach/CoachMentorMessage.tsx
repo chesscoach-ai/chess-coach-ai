@@ -2,8 +2,8 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 
 export default function CoachMentorMessage({
-  name = "Sire Tempo",
-  eyebrow = "Ton Coach IA",
+  name = "Nox",
+  eyebrow = "Compagnon Knightly",
   title,
   children,
   compact = false,
@@ -26,7 +26,7 @@ export default function CoachMentorMessage({
           ].join(" ")}
         >
           <Image
-            src="/avatars/iron-squire.webp"
+            src="/brand/nox-squire.svg"
             alt={`${name}, coach chevalier`}
             fill
             sizes={compact ? "48px" : "80px"}

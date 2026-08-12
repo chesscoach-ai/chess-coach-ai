@@ -55,7 +55,7 @@ export default function WorkspaceMenu({
           }`}
         >
           <span aria-hidden="true">💡</span>
-          Coach IA
+          Nox — Analyse
         </button>
         <button
           type="button"

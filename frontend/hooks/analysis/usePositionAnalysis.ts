@@ -81,6 +81,26 @@ export function usePositionAnalysis(
     [],
   );
 
+  const selectSuggestedUci = useCallback(
+    (move: string): void => {
+      const normalized = move.trim().toLowerCase();
+      if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(normalized)) {
+        return;
+      }
+
+      const nextMove = {
+        from: normalized.slice(0, 2) as Square,
+        to: normalized.slice(2, 4) as Square,
+      };
+      setSuggestedMove((current) =>
+        current?.from === nextMove.from && current.to === nextMove.to
+          ? null
+          : nextMove,
+      );
+    },
+    [],
+  );
+
   const clearPositionAnalysis =
     useCallback((): void => {
       setSuggestedMove(null);
@@ -95,6 +115,7 @@ export function usePositionAnalysis(
     isCurrentPositionAnalyzing,
     suggestedMove,
     selectSuggestedMove,
+    selectSuggestedUci,
     handleAnalysisComplete,
     setIsCurrentPositionAnalyzing,
     clearPositionAnalysis,

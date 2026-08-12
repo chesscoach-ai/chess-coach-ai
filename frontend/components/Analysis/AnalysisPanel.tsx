@@ -405,7 +405,7 @@ function PanelHeader({
     <div className="mb-4 flex items-start justify-between gap-4">
       <div>
         <h2 className="text-lg font-semibold text-white">
-          Analyse du Coach IA
+          Analyse avec Nox
         </h2>
 
         <p className="mt-1 text-sm leading-6 text-gray-400">
@@ -416,9 +416,9 @@ function PanelHeader({
           {requestState === "queued"
             ? "Position reçue, analyse imminente…"
             : requestState === "calculating"
-              ? "Le coach calcule…"
+              ? "Nox vérifie la position…"
               : requestState === "unavailable"
-                ? "Coach momentanément indisponible"
+                ? "Analyse momentanément indisponible"
                 : requestState === "ready"
                   ? "Conseil à jour"
                   : "Prêt"}
@@ -447,12 +447,9 @@ function CoachPositionSummary({
 }) {
   const move =
     analysis.best_move_details;
-  const persona =
-    getAiPersona(coachPersonaId);
-
   return (
     <CoachMentorMessage
-      name={persona.name}
+      name="Nox"
       title={`Mon choix : le ${move.moved_piece} joue ${move.move_san}`}
     >
       <p>{move.beginner_description}</p>

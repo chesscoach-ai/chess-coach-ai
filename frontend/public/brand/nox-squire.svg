@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title description">
+  <title id="title">Nox, écuyer de Knightly</title>
+  <desc id="description">Portrait provisoire d'un jeune chevalier bleu et argent</desc>
+  <defs>
+    <linearGradient id="cape" x1="32" y1="22" x2="131" y2="145" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#172554"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="52" y1="28" x2="112" y2="115" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f8fafc"/>
+      <stop offset="0.55" stop-color="#bfdbfe"/>
+      <stop offset="1" stop-color="#64748b"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="74" fill="#0f172a" stroke="#6366f1" stroke-width="5"/>
+  <path d="M30 142c7-31 24-47 50-47s43 16 50 47" fill="url(#cape)"/>
+  <path d="M48 92V61c0-25 14-42 32-42s32 17 32 42v31l-15 17H63z" fill="url(#steel)" stroke="#e0e7ff" stroke-width="3"/>
+  <path d="M48 63h64v18H48z" fill="#1e293b"/>
+  <path d="M58 68h44" stroke="#93c5fd" stroke-width="5" stroke-linecap="round"/>
+  <path d="M80 19v-9M65 24l-6-9M95 24l6-9" stroke="#a5b4fc" stroke-width="4" stroke-linecap="round"/>
+  <path d="M66 92c3 7 8 11 14 11s11-4 14-11" fill="none" stroke="#475569" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="65" cy="70" r="3" fill="#f8fafc"/>
+  <circle cx="95" cy="70" r="3" fill="#f8fafc"/>
+  <path d="M54 115l26 19 26-19" fill="none" stroke="#c7d2fe" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="80" cy="132" r="7" fill="#818cf8" stroke="#e0e7ff" stroke-width="2"/>
+</svg>

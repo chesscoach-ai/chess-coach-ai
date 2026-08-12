@@ -384,22 +384,30 @@ export default function GameWorkspace({
         </div>
 
         <aside className="min-w-0 space-y-4 xl:sticky xl:top-24">
-          <AiOpponentPanel
-            opponent={aiOpponent}
-            context="analysis"
-          />
           <LivePositionOverview
             review={
               reviews.selectedMoveReview
             }
             isReviewLoading={
-              reviews.isSelectedMoveReviewing
+              reviews.isSelectedMoveReviewing ||
+              positionAnalysis.isCurrentPositionAnalyzing
+            }
+            positionKey={game.fen}
+            positionAnalysis={
+              positionAnalysis.currentPositionAnalysis
+            }
+            onShowMove={
+              positionAnalysis.selectSuggestedUci
             }
             coachPersonaId={aiOpponent.personaId}
             learningProfile={learningProfile}
             livePrecision={
               livePrecision
             }
+          />
+          <AiOpponentPanel
+            opponent={aiOpponent}
+            context="analysis"
           />
         </aside>
       </section>
@@ -414,7 +422,7 @@ export default function GameWorkspace({
             Bilan de partie en ligne
           </p>
           <p className="mt-1 text-sm text-gray-300">
-            Le Coach IA relit automatiquement chaque coup. Utilise la liste
+            Nox relit automatiquement chaque coup. Utilise la liste
             des coups pour parcourir ses verdicts, tes moments forts et les
             décisions à retravailler.
           </p>
