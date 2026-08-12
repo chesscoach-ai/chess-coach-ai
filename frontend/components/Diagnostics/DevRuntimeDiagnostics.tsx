@@ -80,6 +80,18 @@ export default function DevRuntimeDiagnostics({
     payload.metrics,
     "l2_read_duration_ms",
   );
+  const noxMetrics =
+    payload.noxAi?.metrics &&
+    typeof payload.noxAi.metrics === "object"
+      ? (payload.noxAi.metrics as Record<string, unknown>)
+      : null;
+  const noxCache =
+    payload.noxAi?.cache && typeof payload.noxAi.cache === "object"
+      ? (payload.noxAi.cache as Record<string, unknown>)
+      : null;
+  const noxRecentErrors = Array.isArray(noxMetrics?.recent_errors)
+    ? noxMetrics.recent_errors.join(", ") || "aucune"
+    : "aucune";
 
   const cards = [
         ["API frontend", payload.frontend.status],
@@ -161,6 +173,38 @@ export default function DevRuntimeDiagnostics({
           "Appels évités (debounce)",
           String(frontendAnalysis?.debounceAvoided ?? 0),
         ],
+        [
+          "Nox AI activée",
+          payload.noxAi?.ai_enabled === true ? "oui" : "non",
+        ],
+        [
+          "OpenAI configuré",
+          payload.noxAi?.openai_configured === true ? "oui" : "non",
+        ],
+        ["Provider Nox", textValue(payload.noxAi, "active_provider")],
+        ["Modèle Nox", textValue(payload.noxAi, "model")],
+        ["Prompt Nox", textValue(payload.noxAi, "prompt_version")],
+        ["Appels Nox", textValue(noxMetrics, "requests_total", "0")],
+        ["Appels IA", textValue(noxMetrics, "ai_requests", "0")],
+        ["Succès IA", textValue(noxMetrics, "ai_success", "0")],
+        ["Fallbacks Nox", textValue(noxMetrics, "fallbacks", "0")],
+        ["Cache hits Nox", textValue(noxMetrics, "cache_hits", "0")],
+        ["Cache Nox", textValue(noxCache, "backend", "aucun")],
+        ["Tokens entrée", textValue(noxMetrics, "input_tokens", "0")],
+        ["Tokens sortie", textValue(noxMetrics, "output_tokens", "0")],
+        [
+          "Latence Nox moyenne",
+          `${numberValue(noxMetrics, "average_latency_ms").toFixed(0)} ms`,
+        ],
+        [
+          "Coût Nox estimé",
+          `${numberValue(noxMetrics, "estimated_cost").toFixed(6)}`,
+        ],
+        [
+          "Validations rejetées",
+          textValue(noxMetrics, "validation_failures", "0"),
+        ],
+        ["Erreurs Nox récentes", noxRecentErrors],
       ];
 
   return (

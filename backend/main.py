@@ -31,6 +31,8 @@ from routes.move_review import (
     review_move,
     router as move_review_router,
 )
+from routes.nox import router as nox_router
+from nox_intelligence.service import default_nox_service
 from stockfish_runtime.engine_pool import default_engine_pool
 from stockfish_runtime.service import default_analysis_service
 
@@ -69,11 +71,13 @@ app.add_middleware(
 app.include_router(analysis_router)
 app.include_router(exercises_router)
 app.include_router(move_review_router)
+app.include_router(nox_router)
 
 
 def shutdown_stockfish_engine() -> None:
     default_engine_pool.shutdown()
     default_analysis_service.cache_backend.close()
+    default_nox_service.close()
 
 
 def warmup_stockfish_engines() -> None:
@@ -140,6 +144,13 @@ def runtime_database() -> dict[str, str | bool | None]:
     """Expose uniquement l'état non sensible du schéma au diagnostic."""
 
     return read_migration_status().as_dict()
+
+
+@app.get("/runtime/nox-ai")
+def runtime_nox_ai() -> dict[str, object]:
+    """Expose la configuration non sensible et les métriques de Nox."""
+
+    return default_nox_service.diagnostic()
 
 
 # ============================================================

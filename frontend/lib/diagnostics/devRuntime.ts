@@ -30,12 +30,18 @@ async function readBackend(path: string): Promise<BackendResult> {
 }
 
 export async function collectDevRuntimeDiagnostics(): Promise<DevRuntimeDiagnosticPayload> {
-  const [readiness, runtimeMetrics, runtimeCache, runtimeDatabase] =
-    await Promise.all([
+  const [
+    readiness,
+    runtimeMetrics,
+    runtimeCache,
+    runtimeDatabase,
+    runtimeNoxAi,
+  ] = await Promise.all([
     readBackend("/ready"),
     readBackend("/runtime/metrics"),
     readBackend("/runtime/cache"),
     readBackend("/runtime/database"),
+    readBackend("/runtime/nox-ai"),
   ]);
 
   return {
@@ -78,5 +84,6 @@ export async function collectDevRuntimeDiagnostics(): Promise<DevRuntimeDiagnost
           : null,
     },
     cache: runtimeCache.data,
+    noxAi: runtimeNoxAi.data,
   };
 }

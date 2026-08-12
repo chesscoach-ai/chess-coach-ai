@@ -8,7 +8,12 @@ import {
 
 export const runtime = "nodejs";
 
-const allowedPaths = new Set(["analysis", "move-review", "coach/explain"]);
+const allowedPaths = new Set([
+  "analysis",
+  "move-review",
+  "coach/explain",
+  "nox/respond",
+]);
 
 export async function POST(
   request: Request,

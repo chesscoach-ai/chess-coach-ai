@@ -20,4 +20,5 @@ export type DevRuntimeDiagnosticPayload = {
     cacheTablePresent: boolean | null;
   };
   cache: Record<string, unknown> | null;
+  noxAi: Record<string, unknown> | null;
 };

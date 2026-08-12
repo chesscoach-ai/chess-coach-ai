@@ -1,15 +1,21 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { deterministicNoxProvider } from "@/lib/nox/deterministicNoxProvider";
+import {
+  buildServerNoxContext,
+  isNoxAiEligible,
+} from "@/lib/nox/noxContextBuilder";
 import type {
   NoxContext,
   NoxProvider,
   NoxQuickAction,
+  NoxReply,
   NoxState,
 } from "@/lib/nox/types";
+import { NoxService } from "@/services/api/NoxService";
 
 const QUICK_ACTIONS: Array<{
   id: NoxQuickAction;
@@ -72,10 +78,72 @@ export default function NoxShell({
       ? selection.action
       : null;
 
-  const reply = useMemo(
+  const deterministicReply = useMemo(
     () => provider.getReply(context, activeAction),
     [activeAction, context, provider],
   );
+  const serverContext = useMemo(
+    () => buildServerNoxContext(context, activeAction),
+    [activeAction, context],
+  );
+  const intelligenceKey = `${context.contextKey}:${activeAction ?? "reaction"}`;
+  const reviewClassification = context.review?.classification ?? null;
+  const reviewClassificationLabel =
+    context.review?.classification_label ?? null;
+  const remoteEligible =
+    provider === deterministicNoxProvider &&
+    serverContext !== null &&
+    isNoxAiEligible(context, activeAction);
+  const [remoteReply, setRemoteReply] = useState<{
+    key: string;
+    reply: NoxReply;
+    source: "deterministic" | "openai" | "cache";
+  } | null>(null);
+
+  useEffect(() => {
+    if (!remoteEligible || !serverContext) {
+      return;
+    }
+    const controller = new AbortController();
+    void NoxService.respond(serverContext, controller.signal)
+      .then((result) => {
+        setRemoteReply({
+          key: intelligenceKey,
+          source: result.source,
+          reply: {
+            state: result.response.state,
+            title: result.response.title,
+            message: result.response.message,
+            classification: reviewClassification,
+            classificationLabel: reviewClassificationLabel,
+            suggestedMove: result.response.referenced_move_uci,
+            lesson: result.response.lesson,
+            conceptLabel: result.response.concept?.label ?? null,
+            followUp: result.response.follow_up,
+          },
+        });
+      })
+      .catch(() => {
+        setRemoteReply({
+          key: intelligenceKey,
+          source: "deterministic",
+          reply: deterministicReply,
+        });
+      });
+    return () => controller.abort();
+  }, [
+    deterministicReply,
+    intelligenceKey,
+    remoteEligible,
+    reviewClassification,
+    reviewClassificationLabel,
+    serverContext,
+  ]);
+
+  const hasCurrentRemoteReply = remoteReply?.key === intelligenceKey;
+  const reply = hasCurrentRemoteReply
+    ? remoteReply.reply
+    : deterministicReply;
   const appearance = STATE_STYLES[reply.state];
 
   function handleAction(action: NoxQuickAction): void {
@@ -90,6 +158,7 @@ export default function NoxShell({
     <section
       data-testid="nox-shell"
       data-state={reply.state}
+      data-source={hasCurrentRemoteReply ? remoteReply.source : "local"}
       aria-label="Nox, compagnon d’échecs"
       className={`overflow-hidden rounded-2xl border bg-gradient-to-br from-indigo-950/55 via-gray-900 to-gray-950 shadow-xl ${appearance.border}`}
     >
@@ -143,6 +212,21 @@ export default function NoxShell({
             <p className="mt-1 text-sm leading-6 text-gray-300">
               {reply.message}
             </p>
+            {reply.lesson && (
+              <p className="mt-2 rounded-lg border border-white/5 bg-black/15 px-3 py-2 text-xs leading-5 text-indigo-100">
+                {reply.conceptLabel && (
+                  <span className="mr-2 font-black text-indigo-300">
+                    {reply.conceptLabel}
+                  </span>
+                )}
+                {reply.lesson}
+              </p>
+            )}
+            {reply.followUp && (
+              <p className="mt-2 text-xs font-medium text-gray-400">
+                {reply.followUp}
+              </p>
+            )}
           </div>
         </div>
       </div>
