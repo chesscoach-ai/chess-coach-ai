@@ -7,7 +7,7 @@ import {
 } from "@/lib/commercial/config";
 
 export const metadata: Metadata = {
-  title: "Conditions d’abonnement | Chess Clan",
+  title: "Conditions d’abonnement | Knightly",
 };
 
 export default function SalesTermsPage() {
@@ -28,14 +28,14 @@ export default function SalesTermsPage() {
     >
       <LegalSection title="Offre et prix">
         <p>
-          Coach+ est proposé à {monthlyPrice} TTC par mois ou {annualPrice} TTC
+          Knightly+ est proposé à {monthlyPrice} TTC par mois ou {annualPrice} TTC
           par an. Le multijoueur reste gratuit et aucune formule payante
           n’accorde d’avantage pendant une partie classée.
         </p>
       </LegalSection>
       <LegalSection title="Essai gratuit">
         <p>
-          Chaque compte peut activer une seule période d’essai Coach+ de 30
+          Chaque compte peut activer une seule période d’essai Knightly+ de 30
           jours. Elle ne demande aucun moyen de paiement et ne se transforme
           pas automatiquement en abonnement payant. Une empreinte technique du
           compte est conservée afin d’éviter le renouvellement abusif de

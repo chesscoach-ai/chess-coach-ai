@@ -72,16 +72,16 @@ Sans `DATABASE_URL`, les parties de développement sont conservées dans
 `.data/multiplayer.json`. En production, les tables PostgreSQL nécessaires sont
 créées automatiquement.
 
-## Abonnement Coach+
+## Abonnement Knightly+
 
-L’espace Analyse est réservé aux abonnés Coach+ à `2,99 EUR` par mois ou
+L’espace Analyse est actuellement configuré pour les abonnés Knightly+ à `2,99 EUR` par mois ou
 `24,99 EUR` par an. Le multijoueur reste gratuit. Le
 verrouillage est vérifié dans la page et dans le proxy serveur qui protège les
 appels à Stockfish.
 
 Dans Stripe :
 
-1. créez un produit « Chess Clan Coach+ » ;
+1. créez un produit « Knightly+ » ;
 2. ajoutez un tarif récurrent de `2,99 EUR`, facturé chaque mois ;
 3. ajoutez un tarif récurrent de `24,99 EUR`, facturé chaque année ;
 4. copiez leurs identifiants dans `STRIPE_PRICE_ID` et

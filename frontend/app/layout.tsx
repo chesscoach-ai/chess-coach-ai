@@ -4,22 +4,21 @@ import SiteFooter from "@/components/Layout/SiteFooter";
 import MobileRuntime from "@/components/Mobile/MobileRuntime";
 
 export const metadata: Metadata = {
-  title: "Chess Clan — Coach & Battles",
+  metadataBase: new URL(
+    process.env.AUTH_URL?.startsWith("http")
+      ? process.env.AUTH_URL
+      : "http://localhost:3000",
+  ),
+  title: "Knightly — AI Chess Companion",
   description:
-    "Joue gratuitement en ligne, rejoins un clan et progresse avec ton coach d’échecs personnel.",
+    "Joue aux échecs, comprends tes coups et progresse avec un accompagnement adapté à ton niveau.",
   manifest: "/manifest.webmanifest",
-  applicationName: "Chess Clan",
+  applicationName: "Knightly",
   icons: {
     icon: [
       {
-        url: "/brand/app-icon-192.png",
-        sizes: "192x192",
-        type: "image/png",
-      },
-      {
-        url: "/brand/app-icon-512.png",
-        sizes: "512x512",
-        type: "image/png",
+        url: "/brand/knightly-mark.svg",
+        type: "image/svg+xml",
       },
     ],
     apple: "/brand/apple-touch-icon.png",
@@ -27,7 +26,23 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Chess Clan",
+    title: "Knightly",
+  },
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    siteName: "Knightly",
+    title: "Knightly — AI Chess Companion",
+    description:
+      "Joue aux échecs, comprends tes coups et progresse à chaque partie.",
+    images: [
+      {
+        url: "/brand/app-icon-512.png",
+        width: 512,
+        height: 512,
+        alt: "Knightly — AI Chess Companion",
+      },
+    ],
   },
   formatDetection: {
     telephone: false,

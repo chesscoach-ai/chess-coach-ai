@@ -710,7 +710,7 @@ async function showReminderIfDue(
   const registration =
     await navigator.serviceWorker.ready;
   await registration.showNotification(
-    "Chess Clan · Ta mission t’attend",
+    "Knightly · Ta mission t’attend",
     {
       body: getReminderMessage(now),
       icon: "/favicon.ico",

@@ -51,4 +51,4 @@ if (-not (Test-Path -LiteralPath $bundlePath)) {
   throw "Le bundle Android n'a pas été généré."
 }
 
-Write-Host "Android App Bundle Chess Clan signé : $bundlePath"
+Write-Host "Android App Bundle Knightly signé : $bundlePath"

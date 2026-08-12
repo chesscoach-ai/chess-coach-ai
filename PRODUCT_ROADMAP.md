@@ -1,5 +1,8 @@
 # Chess Coach AI — feuille de route produit
 
+> **Document historique.** Depuis la Phase 1.0, `KNIGHTLY_BIBLE.md` et
+> `KNIGHTLY_PRD.md` prévalent pour les décisions produit et la roadmap active.
+
 ## Promesse
 
 Transformer chaque partie en une leçon courte, compréhensible et immédiatement

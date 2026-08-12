@@ -13,7 +13,7 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(
       payload.title ||
-        "Chess Coach · À toi de jouer",
+        "Knightly · À toi de jouer",
       {
         body:
           payload.body ||

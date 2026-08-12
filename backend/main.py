@@ -36,7 +36,7 @@ from stockfish_runtime.service import default_analysis_service
 
 
 app = FastAPI(
-    title="Chess Coach AI API",
+    title="Knightly API",
     version="0.9.0",
 )
 logger = logging.getLogger("chess_coach.api")
@@ -92,7 +92,7 @@ app.router.add_event_handler("shutdown", shutdown_stockfish_engine)
 @app.get("/")
 def root() -> dict[str, str]:
     return {
-        "message": "Chess Coach AI API fonctionne.",
+        "message": "Knightly API fonctionne.",
         "status": "online",
     }
 

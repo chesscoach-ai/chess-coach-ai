@@ -1,4 +1,4 @@
-# Chess Clan mobile — préparation iOS et Android
+# Knightly mobile — préparation iOS et Android
 
 ## État actuel
 
@@ -131,10 +131,11 @@ s’accorder elle-même un abonnement.
 
 ## Identifiants réservés
 
-- nom : `Chess Clan` ;
+- nom affiché : `Knightly` ;
 - Android application ID : `com.chessclan.app` ;
 - iOS bundle ID : `com.chessclan.app` ;
 - schéma de lien profond : `chessclan`.
 
-Ces identifiants ne doivent plus être modifiés après la création des fiches de
-store sans plan de migration.
+Les identifiants techniques historiques sont volontairement conservés pendant
+le rebranding. Ils ne doivent être modifiés qu’avec un plan de migration avant
+la création définitive des fiches de store.

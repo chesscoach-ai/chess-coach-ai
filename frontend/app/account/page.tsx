@@ -6,7 +6,7 @@ import { auth } from "@/auth";
 import { getAnalysisEntitlement } from "@/lib/billing/subscriptionStore";
 
 export const metadata: Metadata = {
-  title: "Mes données | Chess Clan",
+  title: "Mes données | Knightly",
 };
 
 export default async function AccountPage() {
@@ -20,7 +20,7 @@ export default async function AccountPage() {
           href="/"
           className="text-sm font-semibold text-blue-300"
         >
-          ← Retour à Chess Clan
+          ← Retour à Knightly
         </Link>
         <h1 className="mt-6 text-3xl font-black">
           Mon compte et mes données
@@ -42,13 +42,13 @@ export default async function AccountPage() {
             {entitlement.status === "lifetime" && (
               <section className="rounded-2xl border border-emerald-800 bg-emerald-950/25 p-6">
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">
-                  Chess Clan Coach+
+                  Knightly+
                 </p>
                 <h2 className="mt-2 text-xl font-bold text-white">
                   Accès à vie activé
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-gray-300">
-                  Toutes les fonctions d’analyse et d’entraînement Coach+ sont
+                  Toutes les fonctions d’analyse et d’entraînement Knightly+ sont
                   débloquées sur ce compte, sans renouvellement ni paiement.
                 </p>
               </section>
@@ -56,7 +56,7 @@ export default async function AccountPage() {
             {entitlement.status === "trialing" && entitlement.trialEndsAt && (
               <section className="rounded-2xl border border-blue-800 bg-blue-950/25 p-6">
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">
-                  Essai Chess Clan Coach+
+                  Essai Knightly+
                 </p>
                 <h2 className="mt-2 text-xl font-bold text-white">
                   Toutes les fonctions sont débloquées

@@ -1071,7 +1071,7 @@ function buildGamePgn(
       ? "Partie classée en ligne"
       : "Partie privée en ligne",
   );
-  chess.setHeader("Site", "Chess Clan");
+  chess.setHeader("Site", "Knightly");
   chess.setHeader(
     "Date",
     game.createdAt.slice(0, 10).replaceAll("-", "."),

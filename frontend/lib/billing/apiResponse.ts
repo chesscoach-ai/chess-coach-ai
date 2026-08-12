@@ -11,11 +11,11 @@ const messages: Record<string, string> = {
   BILLING_NOT_CONFIGURED:
     "Le paiement sera disponible dès que Stripe aura été configuré.",
   BILLING_PRICE_INVALID:
-    "Les tarifs Stripe doivent correspondre aux offres Coach+ configurées.",
+    "Les tarifs Stripe doivent correspondre aux offres Knightly+ configurées.",
   INVALID_REQUEST:
     "La formule d’abonnement sélectionnée est invalide.",
   SUBSCRIPTION_REQUIRED:
-    "Un abonnement Coach+ est nécessaire pour utiliser cette fonction.",
+    "Un abonnement Knightly+ est nécessaire pour utiliser cette fonction.",
   CUSTOMER_NOT_FOUND:
     "Aucun abonnement à gérer n’a été trouvé pour ce compte.",
   INVALID_WEBHOOK: "La signature du paiement est invalide.",

@@ -42,4 +42,4 @@ try {
 }
 
 $apkPath = Join-Path $frontendRoot "android\app\build\outputs\apk\debug\app-debug.apk"
-Write-Host "APK Chess Clan prêt : $apkPath"
+Write-Host "APK Knightly prêt : $apkPath"

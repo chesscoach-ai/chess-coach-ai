@@ -401,8 +401,8 @@ function WaitingRoom({
     invitationUrl.searchParams.set("kind", "friend");
     invitationUrl.searchParams.set("invite", game.inviteCode);
     const shareData = {
-      title: "Duel Chess Clan",
-      text: `Rejoins mon duel Chess Clan avec le code ${game.inviteCode}.`,
+      title: "Duel Knightly",
+      text: `Rejoins mon duel Knightly avec le code ${game.inviteCode}.`,
       url: invitationUrl.toString(),
     };
     try {

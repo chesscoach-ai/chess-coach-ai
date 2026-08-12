@@ -332,7 +332,7 @@ export default function ExerciseLibraryPage({
         <div className="mb-5 flex items-center justify-between gap-4">
           <div>
             <p className="mb-2 text-sm font-medium uppercase tracking-widest text-emerald-400">
-              Coach Chess Clan
+              Coach Knightly
             </p>
 
             <h1 className="text-2xl font-black sm:text-3xl">

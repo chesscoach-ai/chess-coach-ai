@@ -42,7 +42,7 @@ const messageByCode: Record<string, string> = {
   INVALID_REQUEST: "Les informations envoyées sont invalides.",
   GAME_NOT_FINISHED: "Le bilan est disponible uniquement après la fin de la partie.",
   REVIEW_LIMIT_REACHED:
-    "Tes trois bilans gratuits ont été utilisés. Coach+ à 2,99 € par mois débloque les bilans illimités.",
+    "Tes trois bilans gratuits ont été utilisés. Knightly+ débloque les bilans illimités.",
   PUSH_NOT_CONFIGURED:
     "Les notifications mobiles ne sont pas encore configurées sur ce serveur.",
   PUSH_SUBSCRIPTION_REQUIRED:
@@ -58,7 +58,7 @@ const messageByCode: Record<string, string> = {
   BANNER_LOCKED:
     "Cette bannière doit d’abord être forgée avant de l’équiper.",
   SUBSCRIPTION_REQUIRED:
-    "Coach+ est nécessaire pour accéder aux exercices accompagnés.",
+    "Knightly+ est nécessaire pour accéder aux exercices accompagnés.",
 };
 
 export function multiplayerErrorResponse(error: unknown): Response {

@@ -27,7 +27,7 @@ export default function CoachMentorMessage({
         >
           <Image
             src="/avatars/iron-squire.webp"
-            alt={`${name}, mentor chevalier`}
+            alt={`${name}, coach chevalier`}
             fill
             sizes={compact ? "48px" : "80px"}
             className="object-cover"

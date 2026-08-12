@@ -80,7 +80,7 @@ function LastMoveSummary({
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-            Conversation avec ton mentor
+            Conversation avec ton coach
           </p>
 
           <h3 className="mt-1 text-base font-bold text-white">
@@ -129,7 +129,7 @@ function LastMoveSummary({
 
       {!isLoading && !review && (
         <p className="mt-4 text-sm leading-6 text-gray-500">
-          Joue un coup ou sélectionne un coup analysé : ton mentor
+          Joue un coup ou sélectionne un coup analysé : ton coach
           viendra te dire ce qu’il faut retenir.
         </p>
       )}

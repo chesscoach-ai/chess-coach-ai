@@ -86,7 +86,7 @@ export default function AnalysisPaywall({
       <div className="grid gap-8 p-6 md:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)] md:p-9">
         <div>
           <span className="inline-flex rounded-full border border-blue-700 bg-blue-950/50 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-blue-300">
-            Chess Clan Coach+
+            Knightly+
           </span>
           <h2 className="mt-5 max-w-2xl text-3xl font-black tracking-tight text-white sm:text-4xl">
             {isExercises
@@ -95,7 +95,7 @@ export default function AnalysisPaywall({
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-gray-300">
             {isExercises
-              ? "Coach+ adapte les exercices à ton Elo, à tes parties et à tes habitudes. Le coach t’accompagne sans souffler la réponse."
+              ? "Knightly+ adapte les exercices à ton Elo, à tes parties et à tes habitudes. Le coach t’accompagne sans souffler la réponse."
               : "Comprends les moments décisifs, rejoue tes erreurs et reçois un programme adapté à ton Elo et à tes difficultés récurrentes."}
           </p>
 
@@ -124,7 +124,7 @@ export default function AnalysisPaywall({
           <p className="text-sm font-semibold text-blue-300">Choisis ton rythme</p>
           <div
             role="radiogroup"
-            aria-label="Formule Coach+"
+            aria-label="Formule Knightly+"
             className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-gray-950/60 p-1"
           >
             <button
@@ -197,7 +197,7 @@ export default function AnalysisPaywall({
                 ? "Ouverture…"
                 : entitlement.canManage
                   ? "Gérer mon abonnement"
-                  : `Choisir Coach+ ${plan === "annual" ? "annuel" : "mensuel"}`}
+                  : `Choisir Knightly+ ${plan === "annual" ? "annuel" : "mensuel"}`}
             </button>
           )}
 

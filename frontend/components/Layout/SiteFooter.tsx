@@ -13,7 +13,7 @@ export default function SiteFooter() {
     <footer className="border-t border-gray-800 bg-gray-950 px-4 py-6 text-gray-500">
       <div className="mx-auto flex max-w-6xl flex-col gap-4 text-xs sm:flex-row sm:items-center sm:justify-between">
         <p>
-          © {new Date().getFullYear()} Chess Clan · Les échecs,
+          © {new Date().getFullYear()} Knightly · Les échecs,
           sérieusement… sans se prendre trop au sérieux.
         </p>
         <nav

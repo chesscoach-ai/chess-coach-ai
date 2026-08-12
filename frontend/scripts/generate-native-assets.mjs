@@ -3,7 +3,8 @@ import path from "node:path";
 import sharp from "sharp";
 
 const root = process.cwd();
-const source = path.join(root, "public", "brand", "app-icon-1024.png");
+const brandRoot = path.join(root, "public", "brand");
+const source = path.join(brandRoot, "knightly-mark.svg");
 const androidRoot = path.join(root, "android", "app", "src", "main", "res");
 const densities = {
   mdpi: 48,
@@ -12,6 +13,14 @@ const densities = {
   xxhdpi: 144,
   xxxhdpi: 192,
 };
+
+await Promise.all([
+  sharp(source).resize(64, 64).png().toFile(path.join(brandRoot, "knightly-mark-64.png")),
+  sharp(source).resize(192, 192).png().toFile(path.join(brandRoot, "app-icon-192.png")),
+  sharp(source).resize(512, 512).png().toFile(path.join(brandRoot, "app-icon-512.png")),
+  sharp(source).resize(1024, 1024).png().toFile(path.join(brandRoot, "app-icon-1024.png")),
+  sharp(source).resize(180, 180).png().toFile(path.join(brandRoot, "apple-touch-icon.png")),
+]);
 
 for (const [density, size] of Object.entries(densities)) {
   const directory = path.join(androidRoot, `mipmap-${density}`);
@@ -42,4 +51,4 @@ await sharp(source)
     ),
   );
 
-console.log("Icônes natives Chess Clan générées.");
+console.log("Icônes natives Knightly générées.");

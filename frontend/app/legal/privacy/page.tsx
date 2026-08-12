@@ -4,7 +4,7 @@ import { LegalPage, LegalSection } from "@/components/Legal/LegalPage";
 import { getLegalIdentity } from "@/lib/commercial/config";
 
 export const metadata: Metadata = {
-  title: "Confidentialité | Chess Clan",
+  title: "Confidentialité | Knightly",
 };
 
 export default function PrivacyPage() {
@@ -22,7 +22,7 @@ export default function PrivacyPage() {
           personnaliser les conseils du coach.
         </p>
         <p>
-          Les données d’abonnement sont traitées avec Stripe. Chess Clan
+          Les données d’abonnement sont traitées avec Stripe. Knightly
           ne stocke pas les numéros complets de carte bancaire.
         </p>
       </LegalSection>

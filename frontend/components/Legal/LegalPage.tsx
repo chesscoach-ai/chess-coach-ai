@@ -20,7 +20,7 @@ export function LegalPage({
           href="/"
           className="text-sm font-semibold text-blue-300 hover:text-blue-200"
         >
-          ← Retour à Chess Clan
+          ← Retour à Knightly
         </Link>
         {!identity.documentsReviewed && (
           <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-4 text-sm text-amber-200">

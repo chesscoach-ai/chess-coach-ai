@@ -4,7 +4,7 @@ import { LegalPage, LegalSection } from "@/components/Legal/LegalPage";
 import { getLegalIdentity } from "@/lib/commercial/config";
 
 export const metadata: Metadata = {
-  title: "Mentions légales | Chess Clan",
+  title: "Mentions légales | Knightly",
 };
 
 export default function LegalNoticePage() {

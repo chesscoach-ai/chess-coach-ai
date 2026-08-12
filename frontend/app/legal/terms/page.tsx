@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { LegalPage, LegalSection } from "@/components/Legal/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Conditions d’utilisation | Chess Clan",
+  title: "Conditions d’utilisation | Knightly",
 };
 
 export default function TermsPage() {

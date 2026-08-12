@@ -219,7 +219,7 @@ export async function sendTestPush(
     if (
       await sendPush(record, {
         title:
-          "Chess Clan · Liaison royale établie",
+          "Knightly · Liaison royale établie",
         body: `${player.name}, le pigeon messager fonctionne. Aucun roi n’a été dérangé pendant ce test.`,
         tag: "push-test",
         url: "/",
@@ -270,7 +270,7 @@ export async function dispatchDuePushes(
     const delivered = await sendPush(
       record,
       {
-        title: `Chess Clan · ${record.playerName}, ta série t’observe`,
+        title: `Knightly · ${record.playerName}, ta série t’observe`,
         body: getReminderMessage(now),
         tag: `daily-coach-${local.date}`,
         url: "/?focus=daily-mission",
