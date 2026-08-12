@@ -262,6 +262,26 @@ def test_openai_provider_uses_structured_parse_without_retry(tmp_path):
     assert "email" not in calls[0]["input"]
 
 
+def test_openai_provider_can_fix_reasoning_effort_for_benchmark(tmp_path):
+    calls = []
+
+    class Responses:
+        def parse(self, **kwargs):
+            calls.append(kwargs)
+            return SimpleNamespace(
+                output_parsed=valid_response(),
+                usage=SimpleNamespace(input_tokens=12, output_tokens=7),
+            )
+
+    provider = OpenAINoxProvider(
+        config(tmp_path, enabled=True, api_key="test"),
+        client=SimpleNamespace(responses=Responses()),
+        reasoning_effort="none",
+    )
+    provider.generate(context())
+    assert calls[0]["reasoning"] == {"effort": "none"}
+
+
 def test_no_openai_secret_can_be_exposed_by_frontend():
     frontend = Path(__file__).resolve().parents[2] / "frontend"
     source_roots = [

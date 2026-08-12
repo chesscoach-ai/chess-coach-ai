@@ -1,163 +1,74 @@
-"""Banc Nox de 30 cas, hors ligne par défaut.
-
-Sans ``--live``, il évalue uniquement la policy et le fallback déterministe.
-Un appel réel exige simultanément ``--live``, ``RUN_NOX_LIVE_TESTS=true``,
-``NOX_AI_ENABLED=true`` et ``OPENAI_API_KEY``.
-"""
+"""Prépare ou exécute, sous triple verrou, le benchmark Nox Luna/Terra."""
 
 from argparse import ArgumentParser
-from dataclasses import replace
 import json
 import os
 from pathlib import Path
 import sys
-from time import perf_counter
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from nox_intelligence.config import NoxAiConfig
-from nox_intelligence.models import NoxContext
-from nox_intelligence.providers import (
-    DeterministicNoxProvider,
-    OpenAINoxProvider,
+from nox_intelligence.benchmark import (
+    BENCHMARK_MODELS,
+    execute_benchmark,
+    preflight_estimate,
+    write_markdown_report,
 )
-from nox_intelligence.policy import NoxAiPolicy
+from nox_intelligence.config import NoxAiConfig
 
 
-SCENARIOS = [
-    ("opening_center", "excellent", "center_control", "reaction"),
-    ("good_development", "good", "minor_piece_development", "reaction"),
-    ("inaccuracy", "inaccuracy", "piece_coordination", "missed"),
-    ("mistake", "mistake", "king_safety", "missed"),
-    ("blunder", "blunder", "material_change", "why"),
-    ("capture", "good", "material_change", "why"),
-    ("check", "excellent", "forcing_check", "why"),
-    ("checkmate", "excellent", "forcing_check", "why"),
-    ("castle", "good", "king_safety", "plan"),
-    ("promotion", "excellent", "promotion", "plan"),
-]
-
-
-def build_cases() -> list[tuple[str, NoxContext]]:
-    cases: list[tuple[str, NoxContext]] = []
-    for level in ("beginner", "intermediate", "advanced"):
-        for name, classification, heuristic, question in SCENARIOS:
-            special = name
-            facts = {
-                "capture": special == "capture",
-                "check": special in {"check", "checkmate"},
-                "checkmate": special == "checkmate",
-                "castle": special == "castle",
-                "promotion": special == "promotion",
-            }
-            cases.append(
-                (
-                    f"{level}:{name}",
-                    NoxContext.model_validate(
-                        {
-                            "language": "fr",
-                            "player_level": level,
-                            "interaction": {
-                                "depth": "reaction"
-                                if question == "reaction"
-                                else "explanation",
-                                "question": question,
-                            },
-                            "position": {"side_to_move": "white"},
-                            "played_move": {
-                                "uci": "e2e4",
-                                "san": "e4",
-                                "piece": "pion",
-                                "piece_color": "white",
-                                "from_square": "e2",
-                                "to_square": "e4",
-                            },
-                            "classification": {
-                                "code": classification,
-                                "evaluation_loss": 0.0
-                                if classification in {"excellent", "good"}
-                                else 1.5,
-                            },
-                            "best_move": {
-                                "uci": "e2e4",
-                                "san": "e4",
-                                "piece": "pion",
-                                "piece_color": "white",
-                                "from_square": "e2",
-                                "to_square": "e4",
-                            },
-                            "evaluation": {
-                                "before": 0.3,
-                                "after": 0.3,
-                                "type": "centipawn",
-                            },
-                            "facts": facts,
-                            "heuristics": [
-                                {"id": heuristic, "source": "deterministic_rules"}
-                            ],
-                        }
-                    ),
-                )
-            )
-    return cases
+def execution_allowed(config: NoxAiConfig, execute: bool) -> tuple[bool, list[str]]:
+    missing: list[str] = []
+    if not execute:
+        missing.append("--execute")
+    if os.getenv("RUN_NOX_LIVE_TESTS", "").casefold() != "true":
+        missing.append("RUN_NOX_LIVE_TESTS=true")
+    if os.getenv("NOX_BENCHMARK_APPROVED", "").casefold() != "true":
+        missing.append("NOX_BENCHMARK_APPROVED=true")
+    if not config.enabled:
+        missing.append("NOX_AI_ENABLED=true")
+    if not config.openai_configured:
+        missing.append("OPENAI_API_KEY")
+    return not missing, missing
 
 
 def main() -> None:
     parser = ArgumentParser()
-    parser.add_argument("--models", nargs="*", default=[])
-    parser.add_argument("--live", action="store_true")
-    parser.add_argument("--output", type=Path)
-    args = parser.parse_args()
-    config = NoxAiConfig.from_env()
-    live_allowed = (
-        args.live
-        and os.getenv("RUN_NOX_LIVE_TESTS", "").casefold() == "true"
-        and config.enabled
-        and config.openai_configured
+    parser.add_argument("--execute", action="store_true")
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path(".data/nox-model-benchmark.json"),
     )
-    if args.live and not live_allowed:
-        raise SystemExit(
-            "Live benchmark refused: enable RUN_NOX_LIVE_TESTS, "
-            "NOX_AI_ENABLED and OPENAI_API_KEY explicitly."
-        )
+    parser.add_argument(
+        "--report",
+        type=Path,
+        default=Path(".data/nox-model-benchmark.md"),
+    )
+    args = parser.parse_args()
 
-    models = args.models or [config.model]
-    results = []
-    policy = NoxAiPolicy()
-    for model in models:
-        model_config = replace(config, model=model)
-        provider = (
-            OpenAINoxProvider(model_config)
-            if live_allowed
-            else DeterministicNoxProvider()
+    estimate = preflight_estimate()
+    if not args.execute:
+        print(json.dumps(estimate, ensure_ascii=False, indent=2))
+        return
+
+    config = NoxAiConfig.from_env()
+    allowed, missing = execution_allowed(config, args.execute)
+    if not allowed:
+        raise SystemExit(
+            "Paid benchmark refused. Missing explicit locks: " + ", ".join(missing)
         )
-        for case_id, context in build_cases():
-            started = perf_counter()
-            generated = provider.generate(context)
-            latency_ms = (perf_counter() - started) * 1000
-            results.append(
-                {
-                    "case_id": case_id,
-                    "model": model if live_allowed else "deterministic",
-                    "policy": policy.decide(context),
-                    "latency_ms": round(latency_ms, 2),
-                    "input_tokens": generated.usage.input_tokens,
-                    "output_tokens": generated.usage.output_tokens,
-                    "scores": {
-                        "factuality": None,
-                        "pedagogy": None,
-                        "personality": None,
-                        "concision": None,
-                        "beginner_accessibility": None,
-                    },
-                    "response": generated.response.model_dump(mode="json"),
-                }
-            )
-    payload = json.dumps(results, ensure_ascii=False, indent=2)
-    if args.output:
-        args.output.write_text(payload, encoding="utf-8")
-    else:
-        print(payload)
+    if tuple(BENCHMARK_MODELS) != ("gpt-5.6-luna", "gpt-5.6-terra"):
+        raise SystemExit("Benchmark model allowlist was modified")
+
+    payload = execute_benchmark(config)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.report.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    write_markdown_report(payload, args.report)
+    print(f"Benchmark saved to {args.output} and {args.report}")
 
 
 if __name__ == "__main__":

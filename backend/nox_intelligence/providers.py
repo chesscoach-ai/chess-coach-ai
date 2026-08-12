@@ -138,8 +138,10 @@ class OpenAINoxProvider:
         config: NoxAiConfig,
         *,
         client: OpenAI | None = None,
+        reasoning_effort: str | None = None,
     ) -> None:
         self.config = config
+        self.reasoning_effort = reasoning_effort
         if client is not None:
             self.client = client
         elif config.api_key:
@@ -148,7 +150,7 @@ class OpenAINoxProvider:
             raise ValueError("OPENAI_API_KEY is not configured")
 
     def generate(self, context: NoxContext) -> GeneratedNoxResponse:
-        api_response = self.client.responses.parse(
+        request = dict(
             model=self.config.model,
             instructions=(
                 f"{NOX_INSTRUCTIONS}\nVersion du prompt: "
@@ -164,6 +166,9 @@ class OpenAINoxProvider:
             store=False,
             timeout=self.config.timeout_seconds,
         )
+        if self.reasoning_effort is not None:
+            request["reasoning"] = {"effort": self.reasoning_effort}
+        api_response = self.client.responses.parse(**request)
         parsed = api_response.output_parsed
         if parsed is None:
             raise ValueError("OpenAI returned no structured NoxResponse")
