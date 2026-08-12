@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { DevRuntimeDiagnosticPayload } from "@/types/devRuntimeDiagnostics";
+import {
+  readFrontendAnalysisDiagnostic,
+  type FrontendAnalysisDiagnostic,
+} from "@/services/api/analysisDiagnostics";
 
 function numberValue(
   source: Record<string, unknown> | null,
@@ -32,6 +36,15 @@ export default function DevRuntimeDiagnostics({
     useState<DevRuntimeDiagnosticPayload>(initialPayload);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [frontendAnalysis, setFrontendAnalysis] =
+    useState<FrontendAnalysisDiagnostic | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setFrontendAnalysis(readFrontendAnalysisDiagnostic());
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   async function refresh() {
     setLoading(true);
@@ -44,6 +57,7 @@ export default function DevRuntimeDiagnostics({
         throw new Error(`Diagnostic indisponible (${response.status}).`);
       }
       setPayload((await response.json()) as DevRuntimeDiagnosticPayload);
+      setFrontendAnalysis(readFrontendAnalysisDiagnostic());
     } catch (refreshError) {
       setError(
         refreshError instanceof Error
@@ -61,6 +75,11 @@ export default function DevRuntimeDiagnostics({
     "total_request_duration_ms",
   );
   const averageDuration = analyses > 0 ? totalDuration / analyses : 0;
+  const l2Reads = numberValue(payload.metrics, "l2_cache_reads");
+  const l2ReadDuration = numberValue(
+    payload.metrics,
+    "l2_read_duration_ms",
+  );
 
   const cards = [
         ["API frontend", payload.frontend.status],
@@ -71,14 +90,77 @@ export default function DevRuntimeDiagnostics({
         ["Disponibles", textValue(payload.metrics, "engines_idle", "0")],
         ["File actuelle", textValue(payload.metrics, "queue_size", "0")],
         ["Analyses totales", String(analyses)],
-        ["L1 cache hits", textValue(payload.metrics, "cache_hits", "0")],
+        ["L1 cache hits", textValue(payload.metrics, "l1_cache_hits", "0")],
+        ["L2 cache hits", textValue(payload.metrics, "l2_cache_hits", "0")],
         ["Cache misses", textValue(payload.metrics, "cache_misses", "0")],
+        ["Entrées L2", textValue(payload.cache, "entries", "0")],
+        ["Backend L2", textValue(payload.cache, "backend", "aucun")],
+        [
+          "Lecture L2 moyenne",
+          `${(l2Reads > 0 ? l2ReadDuration / l2Reads : 0).toFixed(1)} ms`,
+        ],
+        [
+          "Erreurs L2",
+          String(
+            numberValue(payload.metrics, "l2_read_failures") +
+              numberValue(payload.metrics, "l2_write_failures"),
+          ),
+        ],
+        [
+          "Payloads invalides",
+          textValue(payload.metrics, "l2_invalid_payloads", "0"),
+        ],
+        [
+          "Évictions L2",
+          textValue(payload.metrics, "l2_cache_evictions", "0"),
+        ],
         ["Temps moyen", `${averageDuration.toFixed(0)} ms`],
         ["Timeouts", textValue(payload.metrics, "timeouts", "0")],
         ["Crashes", textValue(payload.metrics, "engine_crashes", "0")],
         ["Restarts", textValue(payload.metrics, "restarts", "0")],
         ["Base", `${payload.database.type} · ${payload.database.status}`],
-        ["Cache L2", payload.cache.l2],
+        [
+          "DATABASE_URL",
+          payload.database.urlDetected ? "détectée" : "non requise en local",
+        ],
+        ["Migrations", payload.database.migrationStatus],
+        [
+          "Version schéma",
+          payload.database.currentVersion ?? "mode local",
+        ],
+        ["Révision attendue", payload.database.headVersion ?? "—"],
+        [
+          "Table cache PG",
+          payload.database.cacheTablePresent === null
+            ? "non applicable"
+            : payload.database.cacheTablePresent
+              ? "présente"
+              : "absente",
+        ],
+        ["Dernier endpoint", frontendAnalysis?.endpoint ?? "—"],
+        ["État frontend", frontendAnalysis?.state ?? "idle"],
+        [
+          "Durée frontend",
+          frontendAnalysis?.durationMs === null || !frontendAnalysis
+            ? "—"
+            : `${frontendAnalysis.durationMs} ms`,
+        ],
+        [
+          "Code HTTP frontend",
+          frontendAnalysis?.httpStatus === null || !frontendAnalysis
+            ? "—"
+            : String(frontendAnalysis.httpStatus),
+        ],
+        ["Erreurs frontend", String(frontendAnalysis?.recentErrors ?? 0)],
+        ["Requêtes frontend", String(frontendAnalysis?.totalRequests ?? 0)],
+        [
+          "Requêtes annulées",
+          String(frontendAnalysis?.cancelledRequests ?? 0),
+        ],
+        [
+          "Appels évités (debounce)",
+          String(frontendAnalysis?.debounceAvoided ?? 0),
+        ],
       ];
 
   return (

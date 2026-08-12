@@ -14,6 +14,7 @@ import type {
   MoveReviewResponse,
 } from "@/services/api/ApiService";
 import {
+  AnalysisApiError,
   ApiService,
 } from "@/services/api/ApiService";
 import {
@@ -75,6 +76,8 @@ export function useMoveReviews(
     useRef(0);
   const gameAnalysisIdRef =
     useRef(0);
+  const reviewAbortRef = useRef<AbortController | null>(null);
+  const gameAnalysisAbortRef = useRef<AbortController | null>(null);
 
   /*
    * Synchronise immédiatement les données
@@ -146,6 +149,9 @@ export function useMoveReviews(
 
         reviewRequestIdRef.current =
           requestId;
+        reviewAbortRef.current?.abort();
+        const controller = new AbortController();
+        reviewAbortRef.current = controller;
 
         setReviewingMoveIndex(
           moveIndex,
@@ -164,13 +170,14 @@ export function useMoveReviews(
 
         try {
           const review =
-            await ApiService.reviewMove({
-              fen_before:
-                moveData.fenBefore,
-              played_move:
-                moveData.playedMove,
-              depth: 15,
-            });
+            await ApiService.reviewMove(
+              {
+                fen_before: moveData.fenBefore,
+                played_move: moveData.playedMove,
+                depth: 15,
+              },
+              { signal: controller.signal },
+            );
 
           if (
             requestId !==
@@ -193,6 +200,12 @@ export function useMoveReviews(
             return;
           }
 
+          if (
+            error instanceof AnalysisApiError &&
+            error.kind === "cancelled"
+          ) {
+            return;
+          }
           const message =
             error instanceof Error
               ? error.message
@@ -248,6 +261,9 @@ export function useMoveReviews(
 
       gameAnalysisIdRef.current =
         analysisId;
+      gameAnalysisAbortRef.current?.abort();
+      const controller = new AbortController();
+      gameAnalysisAbortRef.current = controller;
 
       reviewRequestIdRef.current += 1;
       setIsAnalyzingGame(true);
@@ -294,6 +310,7 @@ export function useMoveReviews(
                     move.uci,
                   depth: 15,
                 },
+                { signal: controller.signal },
               );
 
             if (
@@ -329,6 +346,12 @@ export function useMoveReviews(
               return;
             }
 
+            if (
+              error instanceof AnalysisApiError &&
+              error.kind === "cancelled"
+            ) {
+              return;
+            }
             const message =
               error instanceof Error
                 ? error.message
@@ -447,6 +470,8 @@ export function useMoveReviews(
 
   const cancelAnalysis =
     useCallback((): void => {
+      reviewAbortRef.current?.abort();
+      gameAnalysisAbortRef.current?.abort();
       gameAnalysisIdRef.current += 1;
       reviewRequestIdRef.current += 1;
       setReviewingMoveIndex(null);

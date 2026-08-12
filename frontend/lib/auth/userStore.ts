@@ -4,8 +4,12 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { hash } from "bcryptjs";
-import { Pool } from "pg";
+import type { Pool } from "pg";
 import { recordLegalAcceptance } from "@/lib/legal/acceptanceStore";
+import {
+  ensureDatabaseMigrations,
+  getPostgresPool,
+} from "@/lib/database/postgres";
 
 export type StoredUser = {
   id: string;
@@ -21,29 +25,9 @@ let pool: Pool | null = null;
 let databaseReady: Promise<void> | null = null;
 
 function getPool(): Pool | null {
-  if (!process.env.DATABASE_URL) {
-    return null;
-  }
-
-  pool ??= new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl:
-      process.env.NODE_ENV === "production"
-        ? { rejectUnauthorized: false }
-        : undefined,
-  });
-
-  databaseReady ??= pool
-    .query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id UUID PRIMARY KEY,
-        name VARCHAR(80) NOT NULL,
-        email VARCHAR(320) UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `)
-    .then(() => undefined);
+  pool ??= getPostgresPool();
+  if (!pool) return null;
+  databaseReady ??= ensureDatabaseMigrations(pool);
 
   return pool;
 }

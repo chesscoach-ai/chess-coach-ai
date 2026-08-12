@@ -9,7 +9,18 @@ from time import perf_counter
 class RuntimeMetricsSnapshot:
     total_analyses: int
     cache_hits: int
+    l1_cache_hits: int
+    l2_cache_hits: int
     cache_misses: int
+    l2_cache_reads: int
+    l2_cache_writes: int
+    l2_read_failures: int
+    l2_write_failures: int
+    l2_invalid_payloads: int
+    l2_cleanup_count: int
+    l2_cache_evictions: int
+    l2_read_duration_ms: float
+    l2_write_duration_ms: float
     waiting_requests: int
     max_waiting_requests: int
     queue_wait_duration_ms: float
@@ -48,7 +59,18 @@ class RuntimeMetrics:
             self._values: dict[str, int | float] = {
                 "total_analyses": 0,
                 "cache_hits": 0,
+                "l1_cache_hits": 0,
+                "l2_cache_hits": 0,
                 "cache_misses": 0,
+                "l2_cache_reads": 0,
+                "l2_cache_writes": 0,
+                "l2_read_failures": 0,
+                "l2_write_failures": 0,
+                "l2_invalid_payloads": 0,
+                "l2_cleanup_count": 0,
+                "l2_cache_evictions": 0,
+                "l2_read_duration_ms": 0.0,
+                "l2_write_duration_ms": 0.0,
                 "waiting_requests": 0,
                 "max_waiting_requests": 0,
                 "queue_wait_duration_ms": 0.0,

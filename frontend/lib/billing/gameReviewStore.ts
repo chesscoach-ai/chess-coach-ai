@@ -6,7 +6,11 @@ import {
   writeFile,
 } from "node:fs/promises";
 import path from "node:path";
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import {
+  ensureDatabaseMigrations,
+  getPostgresPool,
+} from "@/lib/database/postgres";
 
 const FREE_REVIEW_LIMIT = 3;
 const dataDirectory = path.join(
@@ -42,31 +46,9 @@ let localQueue: Promise<unknown> =
   Promise.resolve();
 
 function getPool(): Pool | null {
-  if (!process.env.DATABASE_URL) {
-    return null;
-  }
-
-  pool ??= new Pool({
-    connectionString:
-      process.env.DATABASE_URL,
-    ssl:
-      process.env.NODE_ENV ===
-      "production"
-        ? {
-            rejectUnauthorized: false,
-          }
-        : undefined,
-  });
-
-  databaseReady ??= pool
-    .query(`
-      CREATE TABLE IF NOT EXISTS game_review_usage (
-        user_id TEXT PRIMARY KEY,
-        game_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `)
-    .then(() => undefined);
+  pool ??= getPostgresPool();
+  if (!pool) return null;
+  databaseReady ??= ensureDatabaseMigrations(pool);
 
   return pool;
 }

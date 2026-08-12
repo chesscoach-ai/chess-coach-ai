@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000}"]
+CMD ["sh", "-c", "if [ -n \"${DATABASE_URL:-}\" ] && ! alembic upgrade head; then echo 'database_migration_failed: backend started in degraded mode' >&2; fi; exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000}"]

@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from database.migrations import read_migration_status
 from routes.analysis import (
     AnalysisRequest,
     AnalysisResponse,
@@ -31,6 +32,7 @@ from routes.move_review import (
     router as move_review_router,
 )
 from stockfish_runtime.engine_pool import default_engine_pool
+from stockfish_runtime.service import default_analysis_service
 
 
 app = FastAPI(
@@ -71,6 +73,7 @@ app.include_router(move_review_router)
 
 def shutdown_stockfish_engine() -> None:
     default_engine_pool.shutdown()
+    default_analysis_service.cache_backend.close()
 
 
 def warmup_stockfish_engines() -> None:
@@ -123,6 +126,20 @@ def runtime_metrics() -> dict[str, int | float]:
     """Expose les compteurs techniques au benchmark authentifie."""
 
     return default_engine_pool.metrics.snapshot().as_dict()
+
+
+@app.get("/runtime/cache")
+def runtime_cache() -> dict[str, str | bool | int | None]:
+    """Expose l'état du cache aux outils de diagnostic authentifiés."""
+
+    return default_analysis_service.cache_status()
+
+
+@app.get("/runtime/database")
+def runtime_database() -> dict[str, str | bool | None]:
+    """Expose uniquement l'état non sensible du schéma au diagnostic."""
+
+    return read_migration_status().as_dict()
 
 
 # ============================================================

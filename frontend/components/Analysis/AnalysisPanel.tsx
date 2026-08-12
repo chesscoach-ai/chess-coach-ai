@@ -10,8 +10,15 @@ import {
 } from "react";
 import {
   ApiService,
+  AnalysisApiError,
+  type AnalysisRequestState,
   type PositionAnalysisResponse,
 } from "@/services/api/ApiService";
+import {
+  recordAnalysisDebounced,
+  recordAnalysisQueued,
+} from "@/services/api/analysisDiagnostics";
+import { scheduleAnalysis } from "@/services/api/analysisScheduler";
 import {
   getAiPersona,
   type AiPersonaId,
@@ -181,11 +188,14 @@ export default function AnalysisPanel({
     useState<PositionAnalysisResponse | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [requestState, setRequestState] =
+    useState<AnalysisRequestState>("idle");
 
   const [errorMessage, setErrorMessage] =
     useState<string | null>(null);
 
   const requestIdRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const whiteAdvantagePercentage = useMemo(() => {
     if (!analysis) {
@@ -204,19 +214,28 @@ export default function AnalysisPanel({
     const requestId =
       requestIdRef.current + 1;
     requestIdRef.current = requestId;
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     setIsLoading(true);
     onLoadingChange?.(true);
     setErrorMessage(null);
 
     try {
-      const result = await ApiService.analysePosition({
-        fen,
-        // The conversational panel displays one recommendation. Asking
-        // Stockfish for extra hidden lines only delays the useful answer.
-        depth: 12,
-        multipv: 1,
-      });
+      const result = await ApiService.analysePosition(
+        {
+          fen,
+          // Le panneau affiche une recommandation : les variantes cachées
+          // retarderaient inutilement la réponse utile.
+          depth: 12,
+          multipv: 1,
+        },
+        {
+          signal: controller.signal,
+          onStateChange: setRequestState,
+        },
+      );
 
       if (
         requestId !==
@@ -237,6 +256,12 @@ export default function AnalysisPanel({
 
       setAnalysis(null);
 
+      if (
+        error instanceof AnalysisApiError &&
+        error.kind === "cancelled"
+      ) {
+        return;
+      }
       if (error instanceof Error) {
         setErrorMessage(error.message);
       } else {
@@ -260,12 +285,20 @@ export default function AnalysisPanel({
       return;
     }
 
-    const timer = window.setTimeout(() => {
-      void handleAnalysis();
-    }, 180);
+    recordAnalysisQueued("/api/analysis-engine/analysis");
+    const queueTimer = window.setTimeout(() => {
+      setRequestState("queued");
+    }, 0);
+    const cancelScheduledAnalysis = scheduleAnalysis(
+      () => void handleAnalysis(),
+      180,
+      recordAnalysisDebounced,
+    );
 
     return () => {
-      window.clearTimeout(timer);
+      window.clearTimeout(queueTimer);
+      cancelScheduledAnalysis();
+      abortControllerRef.current?.abort();
       requestIdRef.current += 1;
     };
   }, [fen, autoAnalyse, handleAnalysis]);
@@ -274,6 +307,7 @@ export default function AnalysisPanel({
     <section className="rounded-2xl border border-gray-800 bg-gray-900 p-5 shadow-lg">
       <PanelHeader
         isLoading={isLoading}
+        requestState={requestState}
         onRefresh={() => {
           void handleAnalysis();
         }}
@@ -360,9 +394,11 @@ export default function AnalysisPanel({
 
 function PanelHeader({
   isLoading,
+  requestState,
   onRefresh,
 }: {
   isLoading: boolean;
+  requestState: AnalysisRequestState;
   onRefresh: () => void;
 }) {
   return (
@@ -375,6 +411,17 @@ function PanelHeader({
         <p className="mt-1 text-sm leading-6 text-gray-400">
           Un verdict, une explication et un plan concret. Le moteur reste
           discrètement en coulisses.
+        </p>
+        <p className="mt-1 text-xs text-gray-500">
+          {requestState === "queued"
+            ? "Position reçue, analyse imminente…"
+            : requestState === "calculating"
+              ? "Le coach calcule…"
+              : requestState === "unavailable"
+                ? "Coach momentanément indisponible"
+                : requestState === "ready"
+                  ? "Conseil à jour"
+                  : "Prêt"}
         </p>
       </div>
       <button

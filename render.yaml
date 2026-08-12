@@ -10,6 +10,10 @@ services:
     envVars:
       - key: BACKEND_API_SECRET
         generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chess-coach-db
+          property: connectionString
       - key: STOCKFISH_POOL_SIZE
         value: "1"
       - key: STOCKFISH_MAX_QUEUE_SIZE
@@ -18,6 +22,12 @@ services:
         value: "1"
       - key: STOCKFISH_HASH_MB
         value: "32"
+      - key: CACHE_NAMESPACE_VERSION
+        value: "1"
+      - key: STOCKFISH_CACHE_ENGINE_VERSION
+        value: "17"
+      - key: STOCKFISH_ANALYSIS_PROFILE_VERSION
+        value: "standard-v1"
 
   - type: web
     name: chess-coach-web

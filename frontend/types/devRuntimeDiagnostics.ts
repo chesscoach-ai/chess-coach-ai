@@ -13,9 +13,11 @@ export type DevRuntimeDiagnosticPayload = {
   database: {
     status: string;
     type: string;
+    urlDetected: boolean;
+    migrationStatus: string;
+    currentVersion: string | null;
+    headVersion: string | null;
+    cacheTablePresent: boolean | null;
   };
-  cache: {
-    l1: string;
-    l2: string;
-  };
+  cache: Record<string, unknown> | null;
 };

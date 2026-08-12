@@ -9,17 +9,10 @@ import type {
   PreferredColor,
 } from "@/lib/ai/opponents";
 import type { ChessGameController } from "@/hooks/useChessGame";
-
-type AiMoveResponse = {
-  move: {
-    from: Square;
-    to: Square;
-    san: string;
-    promotion: string | null;
-  };
-  opponent: string;
-  estimatedElo: number;
-};
+import {
+  AnalysisApiError,
+  ApiService,
+} from "@/services/api/ApiService";
 
 export function useAiOpponent(
   game: ChessGameController,
@@ -53,27 +46,26 @@ export function useAiOpponent(
       setIsThinking(true);
       setError("");
       try {
-        const response = await fetch("/api/ai-move", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fen: game.fen, levelId, personaId }),
+        const payload = await ApiService.requestAiMove(
+          { fen: game.fen, levelId, personaId },
+          {
           signal: controller.signal,
-        });
-        const payload = (await response.json()) as
-          | AiMoveResponse
-          | { message?: string };
-        if (!response.ok || !("move" in payload)) {
-          throw new Error(
-            "message" in payload && payload.message
-              ? payload.message
-              : "L’adversaire IA ne peut pas jouer.",
+          },
+        );
+        if (!controller.signal.aborted) {
+          moveRef.current(
+            payload.move.from as Square,
+            payload.move.to as Square,
           );
         }
-        if (!controller.signal.aborted) {
-          moveRef.current(payload.move.from, payload.move.to);
-        }
       } catch (requestError) {
-        if (!controller.signal.aborted) {
+        if (
+          !controller.signal.aborted &&
+          !(
+            requestError instanceof AnalysisApiError &&
+            requestError.kind === "cancelled"
+          )
+        ) {
           requestedFenRef.current = "";
           setError(
             requestError instanceof Error

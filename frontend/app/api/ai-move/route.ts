@@ -12,8 +12,8 @@ import {
 import { selectAiMove } from "@/lib/ai/selectMove";
 import type { PositionAnalysisResponse } from "@/services/api/ApiService";
 import {
+  fetchBackend,
   getBackendHeaders,
-  getBackendUrl,
 } from "@/lib/api/backendServer";
 
 export const runtime = "nodejs";
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     }
 
     const level = getAiLevel(parsed.data.levelId);
-    const response = await fetch(`${getBackendUrl()}/analysis`, {
+    const response = await fetchBackend("/analysis", {
       method: "POST",
       headers: getBackendHeaders({
         Accept: "application/json",

@@ -5,11 +5,14 @@
 
 backend/__pycache__/
 backend/**/*.pyc
+backend/.pytest_cache/
 backend/.venv/
 backend/engines/*.exe
+backend/.data/
 
 frontend/node_modules/
 frontend/.next/
 frontend/.data/
 frontend/.env.local
 frontend/*.tsbuildinfo
+frontend/android/.idea/

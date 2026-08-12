@@ -30,9 +30,12 @@ async function readBackend(path: string): Promise<BackendResult> {
 }
 
 export async function collectDevRuntimeDiagnostics(): Promise<DevRuntimeDiagnosticPayload> {
-  const [readiness, runtimeMetrics] = await Promise.all([
+  const [readiness, runtimeMetrics, runtimeCache, runtimeDatabase] =
+    await Promise.all([
     readBackend("/ready"),
     readBackend("/runtime/metrics"),
+    readBackend("/runtime/cache"),
+    readBackend("/runtime/database"),
   ]);
 
   return {
@@ -48,12 +51,32 @@ export async function collectDevRuntimeDiagnostics(): Promise<DevRuntimeDiagnost
     stockfish: readiness.data,
     metrics: runtimeMetrics.data,
     database: {
-      status: process.env.DATABASE_URL ? "configured" : "local-mode",
-      type: process.env.DATABASE_URL ? "PostgreSQL" : "fichiers locaux",
+      status:
+        typeof runtimeDatabase.data?.status === "string"
+          ? runtimeDatabase.data.status
+          : "indisponible",
+      type:
+        typeof runtimeDatabase.data?.backend === "string"
+          ? runtimeDatabase.data.backend
+          : "inconnu",
+      urlDetected: runtimeDatabase.data?.database_url_detected === true,
+      migrationStatus:
+        typeof runtimeDatabase.data?.status === "string"
+          ? runtimeDatabase.data.status
+          : "indisponible",
+      currentVersion:
+        typeof runtimeDatabase.data?.current_version === "string"
+          ? runtimeDatabase.data.current_version
+          : null,
+      headVersion:
+        typeof runtimeDatabase.data?.head_version === "string"
+          ? runtimeDatabase.data.head_version
+          : null,
+      cacheTablePresent:
+        typeof runtimeDatabase.data?.cache_table_present === "boolean"
+          ? runtimeDatabase.data.cache_table_present
+          : null,
     },
-    cache: {
-      l1: "mémoire du processus",
-      l2: "non instrumenté",
-    },
+    cache: runtimeCache.data,
   };
 }

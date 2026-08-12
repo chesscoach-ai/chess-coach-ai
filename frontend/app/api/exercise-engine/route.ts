@@ -1,6 +1,6 @@
 import {
+  fetchBackend,
   getBackendHeaders,
-  getBackendUrl,
 } from "@/lib/api/backendServer";
 import { billingErrorResponse } from "@/lib/billing/apiResponse";
 import { getAnalysisEntitlement } from "@/lib/billing/subscriptionStore";
@@ -19,8 +19,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const response = await fetch(
-      `${getBackendUrl()}/api/exercises/analyse-position`,
+    const response = await fetchBackend(
+      "/api/exercises/analyse-position",
       {
         method: "POST",
         headers: getBackendHeaders({
