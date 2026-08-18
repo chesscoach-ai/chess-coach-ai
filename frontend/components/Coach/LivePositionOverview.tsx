@@ -12,6 +12,7 @@ import NoxShell from "@/components/Nox/NoxShell";
 import NoxNotebook from "@/components/Nox/NoxNotebook";
 import type { LearningProfile } from "@/lib/learning/types";
 import type { NoxMemoryEnvelope } from "@/lib/nox/memoryTypes";
+import type { NoxProgressionSnapshot } from "@/lib/nox/progressionTypes";
 
 type Props = {
   review: MoveReviewResponse | null;
@@ -25,6 +26,7 @@ type Props = {
   learningProfile?: LearningProfile | null;
   noxMemory?: NoxMemoryEnvelope | null;
   noxMemoryLoading?: boolean;
+  noxProgression?: NoxProgressionSnapshot | null;
   onResetNoxMemory?: () => Promise<boolean>;
   livePrecision?: {
     accuracy: number | null;
@@ -46,6 +48,7 @@ export default function LivePositionOverview({
   learningProfile = null,
   noxMemory = null,
   noxMemoryLoading = false,
+  noxProgression = null,
   onResetNoxMemory = async () => false,
   livePrecision,
 }: Props) {
@@ -62,12 +65,14 @@ export default function LivePositionOverview({
         coachPersonaId={coachPersonaId}
         learningProfile={learningProfile}
         noxMemory={noxMemory}
+        noxProgression={noxProgression}
       />
 
       <NoxNotebook
         memory={noxMemory}
         loading={noxMemoryLoading}
         onReset={onResetNoxMemory}
+        progression={noxProgression}
       />
 
       <LivePrecisionCard
@@ -103,6 +108,7 @@ function LastMoveSummary({
   coachPersonaId,
   learningProfile,
   noxMemory,
+  noxProgression,
 }: {
   review: MoveReviewResponse | null;
   isLoading: boolean;
@@ -114,6 +120,7 @@ function LastMoveSummary({
   coachPersonaId: AiPersonaId;
   learningProfile: LearningProfile | null;
   noxMemory: NoxMemoryEnvelope | null;
+  noxProgression: NoxProgressionSnapshot | null;
 }) {
   const primaryMessage = review
     ? explainPlayedMove(review, coachPersonaId, learningProfile)
@@ -128,6 +135,7 @@ function LastMoveSummary({
         analysis: positionAnalysis,
         primaryMessage,
         memory: noxMemory?.summary ?? null,
+        progression: noxProgression,
       }}
       onShowMove={onShowMove}
       onHighlightSquares={onHighlightSquares}

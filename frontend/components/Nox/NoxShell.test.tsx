@@ -57,6 +57,17 @@ describe("NoxShell", () => {
     expect(markup).not.toContain("Pourquoi ce coup ?");
   });
 
+  it("affiche discrètement le rang et la progression pédagogique", () => {
+    const markup = renderToStaticMarkup(<NoxShell context={{ contextKey: "rank", mode: "analysis", progression: {
+      rank: "young-knight", rankLabel: "Jeune Chevalier", nextRank: "knight", nextRankLabel: "Chevalier",
+      growthScore: 52, progressPercent: 31, sources: [], remaining: [], conceptsObserved: [], eventsCounted: 4,
+      eventsIgnored: 0, lastRankChange: null, milestones: [], persistent: true, recentlyEvolved: false, preview: false,
+    } }} />);
+    expect(markup).toContain("Jeune Chevalier");
+    expect(markup).toContain("31% vers Chevalier");
+    expect(markup).toContain("Progression de Nox : 31 %");
+  });
+
   it("n’appelle aucun service OpenAI ou endpoint distant", () => {
     const source = readFileSync(
       new URL("./NoxShell.tsx", import.meta.url),

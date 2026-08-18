@@ -17,6 +17,13 @@ type LocalMemoryData = {
   events: Record<string, LearningEvent>;
 };
 
+export type NoxMemoryEvidence = {
+  profile: NoxMemoryProfile;
+  events: LearningEvent[];
+};
+
+const runtimeDeduplication = { counted: 0, ignored: 0 };
+
 export type NoxMemoryDiagnostics = {
   profiles: number;
   learningEvents: number;
@@ -82,6 +89,40 @@ export async function getNoxMemory(
   return envelope(result.rows[0]?.profile ?? createNoxMemoryProfile(), true);
 }
 
+export async function getNoxMemoryEvidence(
+  player: AuthenticatedPlayer | null,
+): Promise<NoxMemoryEvidence> {
+  if (!player) return { profile: createNoxMemoryProfile(), events: [] };
+  const database = getPostgresPool();
+  if (!database) {
+    const data = await readLocal();
+    return {
+      profile: data.profiles[player.id] ?? createNoxMemoryProfile(),
+      events: Object.entries(data.events)
+        .filter(([key]) => key.startsWith(`${player.id}:`))
+        .map(([, event]) => event),
+    };
+  }
+  await ensureDatabaseMigrations(database);
+  const [profileResult, eventsResult] = await Promise.all([
+    database.query<{ profile: NoxMemoryProfile }>("SELECT profile FROM nox_profiles WHERE user_id = $1 LIMIT 1", [player.id]),
+    database.query<LearningEvent & { occurredat: Date }>(
+      `SELECT id, event_type AS type, concept_id AS "conceptId", outcome,
+              source_id AS "sourceId", occurred_at AS "occurredAt"
+       FROM nox_learning_events WHERE user_id = $1 ORDER BY occurred_at ASC`,
+      [player.id],
+    ),
+  ]);
+  return {
+    profile: profileResult.rows[0]?.profile ?? createNoxMemoryProfile(),
+    events: eventsResult.rows.map((event) => ({ ...event, occurredAt: new Date(event.occurredAt).toISOString() })),
+  };
+}
+
+export function getNoxMemoryRuntimeStats() {
+  return { ...runtimeDeduplication };
+}
+
 export async function recordNoxLearningEvents(
   player: AuthenticatedPlayer,
   events: LearningEvent[],
@@ -92,8 +133,12 @@ export async function recordNoxLearningEvents(
       let profile = data.profiles[player.id] ?? createNoxMemoryProfile();
       for (const event of events) {
         const key = `${player.id}:${event.sourceId}`;
-        if (data.events[key]) continue;
+        if (data.events[key]) {
+          runtimeDeduplication.ignored += 1;
+          continue;
+        }
         data.events[key] = event;
+        runtimeDeduplication.counted += 1;
         profile = applyLearningEvent(profile, event);
       }
       data.profiles[player.id] = profile;
@@ -120,7 +165,12 @@ export async function recordNoxLearningEvents(
          RETURNING id`,
         [event.id, player.id, event.type, event.conceptId, event.outcome, event.sourceId, event.occurredAt],
       );
-      if (inserted.rowCount === 1) profile = applyLearningEvent(profile, event);
+      if (inserted.rowCount === 1) {
+        runtimeDeduplication.counted += 1;
+        profile = applyLearningEvent(profile, event);
+      } else {
+        runtimeDeduplication.ignored += 1;
+      }
     }
     await client.query(
       `INSERT INTO nox_profiles (user_id, profile, updated_at)
@@ -212,4 +262,3 @@ function diagnosticsFromLocal(data: LocalMemoryData): NoxMemoryDiagnostics {
     persistence: "local-json",
   };
 }
-

@@ -2,7 +2,7 @@ import "server-only";
 
 import { Pool } from "pg";
 
-export const REQUIRED_DATABASE_REVISION = "0003_nox_pedagogical_memory";
+export const REQUIRED_DATABASE_REVISION = "0004_nox_progression";
 
 let sharedPool: Pool | null = null;
 let migrationCheck: Promise<void> | null = null;

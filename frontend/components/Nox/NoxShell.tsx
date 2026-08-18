@@ -20,6 +20,7 @@ import type {
   NoxReply,
   NoxState,
 } from "@/lib/nox/types";
+import { NOX_RANK_ASSETS } from "@/lib/nox/rankAssets";
 
 const STATE_STYLES: Record<
   NoxState,
@@ -103,6 +104,18 @@ export default function NoxShell({
   const reply = currentSession?.currentReply ?? reaction;
   const displayState: NoxState = focused ? "listening" : reply.state;
   const appearance = STATE_STYLES[displayState];
+  const progression = context.progression;
+  const rankAsset = NOX_RANK_ASSETS[progression?.rank ?? "squire"];
+  const [showEvolution, setShowEvolution] = useState(false);
+
+  useEffect(() => {
+    if (!progression?.recentlyEvolved || progression.rank === "squire") return;
+    const key = `knightly:nox-evolution:${progression.rank}:${progression.lastRankChange ?? "preview"}`;
+    if (window.sessionStorage.getItem(key)) return;
+    window.sessionStorage.setItem(key, "seen");
+    const timer = window.setTimeout(() => setShowEvolution(true), 0);
+    return () => window.clearTimeout(timer);
+  }, [progression?.lastRankChange, progression?.rank, progression?.recentlyEvolved]);
 
   useEffect(() => {
     onClearVisual?.();
@@ -165,9 +178,9 @@ export default function NoxShell({
     >
       <div className="flex items-start gap-3 p-3 sm:p-4">
         <div className="shrink-0 text-center">
-          <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-indigo-500/60 bg-slate-950 shadow-[0_0_24px_rgba(99,102,241,0.24)] sm:h-16 sm:w-16">
+          <div className={`relative h-12 w-12 overflow-hidden rounded-2xl border bg-slate-950 shadow-[0_0_24px_rgba(99,102,241,0.24)] sm:h-16 sm:w-16 ${rankAsset.accent}`}>
             <Image
-              src="/brand/nox-squire.svg"
+              src={rankAsset.avatar}
               alt="Nox, jeune écuyer et compagnon d’échecs"
               fill
               sizes="64px"
@@ -176,7 +189,7 @@ export default function NoxShell({
             />
           </div>
           <p className="mt-1 text-[9px] font-black uppercase tracking-[0.12em] text-indigo-300">
-            Écuyer
+            {progression?.rankLabel ?? "Écuyer"} <span aria-hidden="true">{rankAsset.emblem}</span>
           </p>
         </div>
 
@@ -209,8 +222,31 @@ export default function NoxShell({
               {reply.message}
             </p>
           </div>
+          {progression && (
+            <div className="mt-2" aria-label={`Progression de Nox : ${progression.progressPercent} %`}>
+              <div className="h-1 overflow-hidden rounded-full bg-gray-800">
+                <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-cyan-300 transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${progression.progressPercent}%` }} />
+              </div>
+              <p className="mt-1 text-[10px] text-gray-500">
+                {progression.nextRankLabel ? `${progression.progressPercent}% vers ${progression.nextRankLabel}` : "Dernier rang narratif atteint"}
+                {progression.preview ? " · aperçu DEV" : ""}
+              </p>
+            </div>
+          )}
         </div>
       </div>
+
+      {showEvolution && progression && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/80 p-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Évolution de Nox">
+          <div className="max-w-sm rounded-3xl border border-indigo-400/70 bg-gradient-to-br from-indigo-950 to-slate-950 p-7 text-center shadow-2xl motion-safe:animate-pulse motion-reduce:animate-none">
+            <p className="text-4xl" aria-hidden="true">{rankAsset.emblem}</p>
+            <h2 className="mt-3 text-2xl font-black text-white">Nox évolue !</h2>
+            <p className="mt-3 text-indigo-100">Grâce à tout ce que nous avons appris ensemble, Nox devient <strong>{progression.rankLabel}</strong>.</p>
+            <p className="mt-3 text-sm text-indigo-300">« Regarde mon armure ! On commence à former une sacrée équipe. »</p>
+            <button type="button" onClick={() => setShowEvolution(false)} className="mt-5 rounded-xl bg-indigo-500 px-5 py-3 font-black text-white hover:bg-indigo-400">Continuer ensemble</button>
+          </div>
+        </div>
+      )}
 
       <div className={`${isExpanded ? "block" : "hidden"} border-t border-white/5 px-3 py-3 sm:block sm:px-4`}>
         {showQuickActions && quickActions.length > 0 && (

@@ -7,6 +7,9 @@ import {
   readFrontendAnalysisDiagnostic,
   type FrontendAnalysisDiagnostic,
 } from "@/services/api/analysisDiagnostics";
+import { NOX_RANK_IDS, type NoxRankId } from "@/lib/nox/progressionTypes";
+import { NOX_RANKS } from "@/lib/nox/progressionRules";
+import { NOX_PREVIEW_STORAGE_KEY } from "@/hooks/useNoxProgression";
 
 function numberValue(
   source: Record<string, unknown> | null,
@@ -212,6 +215,13 @@ export default function DevRuntimeDiagnostics({
         ["Faiblesses probables", String(payload.noxMemory.weaknesses)],
         ["Souvenirs marquants", String(payload.noxMemory.milestones)],
         ["Persistance mémoire", payload.noxMemory.persistence],
+        ["Rang Nox", payload.noxProgression.rank],
+        ["Nox Growth Score", String(payload.noxProgression.growthScore)],
+        ["Vers le rang suivant", `${payload.noxProgression.progressPercent}%`],
+        ["Sources Nox", payload.noxProgression.sources.join(" · ") || "aucune"],
+        ["Dernière évolution", payload.noxProgression.lastRankChange ?? "jamais"],
+        ["Événements comptés", String(payload.noxProgression.eventsCounted)],
+        ["Événements ignorés", String(payload.noxProgression.eventsIgnored)],
       ];
 
   return (
@@ -244,6 +254,19 @@ export default function DevRuntimeDiagnostics({
           {error}
         </p>
       )}
+
+      <div className="mt-5 rounded-2xl border border-violet-900/70 bg-violet-950/20 p-4">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-violet-300">Aperçu des rangs · DEV uniquement</p>
+        <p className="mt-1 text-xs text-gray-400">L’aperçu reste local à ce navigateur et ne modifie aucune progression réelle.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {NOX_RANK_IDS.map((rank) => (
+            <button key={rank} type="button" onClick={() => { window.localStorage.setItem(NOX_PREVIEW_STORAGE_KEY, rank); window.location.assign("/?mode=analysis"); }} className="rounded-lg border border-violet-800 px-3 py-2 text-xs font-bold text-violet-200 hover:bg-violet-900/40">
+              {NOX_RANKS[rank as NoxRankId].label}
+            </button>
+          ))}
+          <button type="button" onClick={() => { window.localStorage.removeItem(NOX_PREVIEW_STORAGE_KEY); window.location.assign("/?mode=analysis"); }} className="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold text-gray-300">Progression réelle</button>
+        </div>
+      </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map(([label, value]) => (

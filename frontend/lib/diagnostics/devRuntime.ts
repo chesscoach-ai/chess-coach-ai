@@ -3,6 +3,8 @@ import "server-only";
 import { fetchBackend } from "@/lib/api/backendServer";
 import type { DevRuntimeDiagnosticPayload } from "@/types/devRuntimeDiagnostics";
 import { getNoxMemoryDiagnostics } from "@/lib/nox/memoryStore";
+import type { AuthenticatedPlayer } from "@/lib/multiplayer/playerSession";
+import { getNoxProgression } from "@/lib/nox/progressionStore";
 
 type BackendResult = {
   ok: boolean;
@@ -30,7 +32,7 @@ async function readBackend(path: string): Promise<BackendResult> {
   }
 }
 
-export async function collectDevRuntimeDiagnostics(): Promise<DevRuntimeDiagnosticPayload> {
+export async function collectDevRuntimeDiagnostics(player: AuthenticatedPlayer | null = null): Promise<DevRuntimeDiagnosticPayload> {
   const [
     readiness,
     runtimeMetrics,
@@ -38,6 +40,7 @@ export async function collectDevRuntimeDiagnostics(): Promise<DevRuntimeDiagnost
     runtimeDatabase,
     runtimeNoxAi,
     noxMemory,
+    noxProgression,
   ] = await Promise.all([
     readBackend("/ready"),
     readBackend("/runtime/metrics"),
@@ -45,6 +48,7 @@ export async function collectDevRuntimeDiagnostics(): Promise<DevRuntimeDiagnost
     readBackend("/runtime/database"),
     readBackend("/runtime/nox-ai"),
     getNoxMemoryDiagnostics(),
+    getNoxProgression(player),
   ]);
 
   return {
@@ -89,5 +93,14 @@ export async function collectDevRuntimeDiagnostics(): Promise<DevRuntimeDiagnost
     cache: runtimeCache.data,
     noxAi: runtimeNoxAi.data,
     noxMemory,
+    noxProgression: {
+      rank: noxProgression.rankLabel,
+      growthScore: noxProgression.growthScore,
+      progressPercent: noxProgression.progressPercent,
+      sources: noxProgression.sources,
+      lastRankChange: noxProgression.lastRankChange,
+      eventsCounted: noxProgression.eventsCounted,
+      eventsIgnored: noxProgression.eventsIgnored,
+    },
   };
 }

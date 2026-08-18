@@ -61,6 +61,7 @@ class AlembicMigrationTests(unittest.TestCase):
                 "game_review_usage",
                 "nox_profiles",
                 "nox_learning_events",
+                "nox_progression",
             }.issubset(self.table_names())
         )
         with closing(sqlite3.connect(self.database_path)) as connection:

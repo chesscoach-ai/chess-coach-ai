@@ -4,6 +4,7 @@ import type {
   MoveReviewResponse,
 } from "@/services/api/ApiService";
 import type { NoxMemorySummary } from "@/lib/nox/memoryTypes";
+import type { NoxProgressionSnapshot } from "@/lib/nox/progressionTypes";
 
 export type NoxState =
   | "idle"
@@ -37,6 +38,7 @@ export type NoxContext = {
   primaryMessage?: string | null;
   exerciseHint?: string | null;
   memory?: NoxMemorySummary | null;
+  progression?: NoxProgressionSnapshot | null;
 };
 
 export type NoxReply = {

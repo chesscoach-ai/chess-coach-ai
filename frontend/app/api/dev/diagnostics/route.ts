@@ -1,4 +1,5 @@
 import { collectDevRuntimeDiagnostics } from "@/lib/diagnostics/devRuntime";
+import { getAuthenticatedPlayer } from "@/lib/multiplayer/playerSession";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,7 +10,7 @@ export async function GET() {
   }
 
   return Response.json(
-    await collectDevRuntimeDiagnostics(),
+    await collectDevRuntimeDiagnostics(await getAuthenticatedPlayer()),
     {
       headers: {
         "Cache-Control": "no-store, max-age=0",

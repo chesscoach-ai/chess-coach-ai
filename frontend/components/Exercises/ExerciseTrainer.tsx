@@ -32,6 +32,7 @@ import {
 import { buildExerciseCoachMessage } from "@/lib/coach/contextualCoach";
 import type { LearningProfile } from "@/lib/learning/types";
 import { useNoxMemory } from "@/hooks/useNoxMemory";
+import { useNoxProgression } from "@/hooks/useNoxProgression";
 
 function convertMoveToUci(
   move: ExerciseMove,
@@ -53,7 +54,9 @@ export default function ExerciseTrainer({
   const [learningProfile, setLearningProfile] =
     useState<LearningProfile | null>(null);
   const noxMemory = useNoxMemory();
+  const noxProgression = useNoxProgression();
   const refreshNoxMemory = noxMemory.refresh;
+  const refreshNoxProgression = noxProgression.refresh;
 
   const [visibleHints, setVisibleHints] =
     useState<string[]>([]);
@@ -176,13 +179,13 @@ export default function ExerciseTrainer({
       },
     )
       .then((response) => {
-        if (response.ok) return refreshNoxMemory();
+        if (response.ok) return Promise.all([refreshNoxMemory(), refreshNoxProgression()]).then(() => undefined);
       })
       .catch(() => {
         // La progression locale reste disponible hors ligne.
         // La synchronisation classée reprendra à la prochaine session.
       });
-  }, [refreshNoxMemory, session]);
+  }, [refreshNoxMemory, refreshNoxProgression, session]);
 
   function handleMovePlayed(
     move: ExerciseMove,
@@ -483,6 +486,7 @@ export default function ExerciseTrainer({
                     exerciseHint:
                       visibleHints[visibleHints.length - 1] ?? null,
                     memory: noxMemory.memory?.summary ?? null,
+                    progression: noxProgression.progression,
                   }}
                   showQuickActions={false}
                 />

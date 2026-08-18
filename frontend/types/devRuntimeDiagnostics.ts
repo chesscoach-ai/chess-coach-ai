@@ -30,4 +30,13 @@ export type DevRuntimeDiagnosticPayload = {
     milestones: number;
     persistence: "postgresql" | "local-json";
   };
+  noxProgression: {
+    rank: string;
+    growthScore: number;
+    progressPercent: number;
+    sources: string[];
+    lastRankChange: string | null;
+    eventsCounted: number;
+    eventsIgnored: number;
+  };
 };

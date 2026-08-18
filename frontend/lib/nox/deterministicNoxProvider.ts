@@ -25,13 +25,28 @@ const PIECE_ROLES: Record<string, string> = {
 
 export const deterministicNoxProvider: NoxProvider = {
   getReply(context, action = null, question = "") {
-    return addRelevantMemory(
+    return addRelevantProgression(addRelevantMemory(
       getDeterministicNoxReply(context, action, question),
       context,
       action,
-    );
+    ), context);
   },
 };
+
+function addRelevantProgression(reply: NoxReply, context: NoxContext): NoxReply {
+  const progression = context.progression;
+  if (!progression) return reply;
+  if (progression.recentlyEvolved && progression.rank !== "squire") {
+    return { ...reply, message: `${reply.message} On l’a fait : je suis maintenant ${progression.rankLabel}. Je grandis avec tes progrès sur l’échiquier.` };
+  }
+  if (progression.nextRank && progression.progressPercent >= 80) {
+    return { ...reply, message: `${reply.message} Encore quelques notions à consolider et mon prochain rang sera à portée de patte.` };
+  }
+  if (progression.sources.length && context.exerciseStatus === "correct") {
+    return { ...reply, message: `${reply.message} Je sens que je progresse avec toi.` };
+  }
+  return reply;
+}
 
 function addRelevantMemory(
   reply: NoxReply,
