@@ -71,6 +71,7 @@ export async function exportAccountData(
     noxMemory,
     noxLearningEvents,
     noxProgression,
+    noxMissions,
   ] = await Promise.all([
     optionalRows(
       database,
@@ -149,6 +150,11 @@ export async function exportAccountData(
       `SELECT to_jsonb(t) AS record FROM nox_progression t WHERE user_id = $1`,
       [playerId],
     ),
+    optionalRows(
+      database,
+      `SELECT mission AS record FROM nox_missions WHERE user_id = $1 ORDER BY updated_at DESC`,
+      [playerId],
+    ),
   ]);
 
   const scrubbedGames = games.map((record) => {
@@ -177,6 +183,7 @@ export async function exportAccountData(
     noxMemory: noxMemory[0] ?? null,
     noxLearningEvents,
     noxProgression: noxProgression[0] ?? null,
+    noxMissions,
   };
 }
 
@@ -263,6 +270,7 @@ export async function deleteAccountData(
       "DELETE FROM nox_learning_events WHERE user_id = $1",
       "DELETE FROM nox_profiles WHERE user_id = $1",
       "DELETE FROM nox_progression WHERE user_id = $1",
+      "DELETE FROM nox_missions WHERE user_id = $1",
       "DELETE FROM game_review_usage WHERE user_id = $1",
       "DELETE FROM community_friendships WHERE player_a = $1 OR player_b = $1",
       "DELETE FROM community_clan_members WHERE player_id = $1",

@@ -13,6 +13,7 @@ import NoxNotebook from "@/components/Nox/NoxNotebook";
 import type { LearningProfile } from "@/lib/learning/types";
 import type { NoxMemoryEnvelope } from "@/lib/nox/memoryTypes";
 import type { NoxProgressionSnapshot } from "@/lib/nox/progressionTypes";
+import type { NoxMission } from "@/lib/nox/missionTypes";
 
 type Props = {
   review: MoveReviewResponse | null;
@@ -27,6 +28,7 @@ type Props = {
   noxMemory?: NoxMemoryEnvelope | null;
   noxMemoryLoading?: boolean;
   noxProgression?: NoxProgressionSnapshot | null;
+  noxMission?: NoxMission | null;
   onResetNoxMemory?: () => Promise<boolean>;
   livePrecision?: {
     accuracy: number | null;
@@ -49,6 +51,7 @@ export default function LivePositionOverview({
   noxMemory = null,
   noxMemoryLoading = false,
   noxProgression = null,
+  noxMission = null,
   onResetNoxMemory = async () => false,
   livePrecision,
 }: Props) {
@@ -66,6 +69,7 @@ export default function LivePositionOverview({
         learningProfile={learningProfile}
         noxMemory={noxMemory}
         noxProgression={noxProgression}
+        noxMission={noxMission}
       />
 
       <NoxNotebook
@@ -109,6 +113,7 @@ function LastMoveSummary({
   learningProfile,
   noxMemory,
   noxProgression,
+  noxMission,
 }: {
   review: MoveReviewResponse | null;
   isLoading: boolean;
@@ -121,6 +126,7 @@ function LastMoveSummary({
   learningProfile: LearningProfile | null;
   noxMemory: NoxMemoryEnvelope | null;
   noxProgression: NoxProgressionSnapshot | null;
+  noxMission: NoxMission | null;
 }) {
   const primaryMessage = review
     ? explainPlayedMove(review, coachPersonaId, learningProfile)
@@ -136,6 +142,7 @@ function LastMoveSummary({
         primaryMessage,
         memory: noxMemory?.summary ?? null,
         progression: noxProgression,
+        mission: noxMission,
       }}
       onShowMove={onShowMove}
       onHighlightSquares={onHighlightSquares}

@@ -10,6 +10,7 @@ import {
 import { NOX_RANK_IDS, type NoxRankId } from "@/lib/nox/progressionTypes";
 import { NOX_RANKS } from "@/lib/nox/progressionRules";
 import { NOX_PREVIEW_STORAGE_KEY } from "@/hooks/useNoxProgression";
+import { NOX_CONCEPT_IDS } from "@/lib/nox/memoryTypes";
 
 function numberValue(
   source: Record<string, unknown> | null,
@@ -70,6 +71,28 @@ export default function DevRuntimeDiagnostics({
     } finally {
       setLoading(false);
     }
+  }
+
+  async function simulateKingSafetyWeakness() {
+    setError("");
+    const runId = Date.now();
+    for (let index = 0; index < 3; index += 1) {
+      const response = await fetch("/api/nox/memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "move_review",
+          conceptId: "king_safety",
+          outcome: "failure",
+          sourceId: `dev:king-safety:${runId}:${index}`,
+        }),
+      });
+      if (!response.ok) {
+        setError("Connecte-toi pour simuler une faiblesse pédagogique.");
+        return;
+      }
+    }
+    await refresh();
   }
 
   const analyses = numberValue(payload?.metrics ?? null, "total_analyses");
@@ -222,6 +245,16 @@ export default function DevRuntimeDiagnostics({
         ["Dernière évolution", payload.noxProgression.lastRankChange ?? "jamais"],
         ["Événements comptés", String(payload.noxProgression.eventsCounted)],
         ["Événements ignorés", String(payload.noxProgression.eventsIgnored)],
+        ["Mission Nox active", payload.noxMission.active],
+        ["Concept mission", payload.noxMission.concept],
+        ["Raison mission", payload.noxMission.reason],
+        ["Difficulté mission", payload.noxMission.difficulty],
+        ["Positions mission", String(payload.noxMission.exercises)],
+        ["Progression mission", payload.noxMission.progress],
+        ["Statut mission", payload.noxMission.status],
+        ["Événements mission", String(payload.noxMission.eventsProduced)],
+        ["Événements mission ignorés", String(payload.noxMission.eventsIgnored)],
+        ["Prochaine éligibilité", payload.noxMission.nextEligibility],
       ];
 
   return (
@@ -266,6 +299,13 @@ export default function DevRuntimeDiagnostics({
           ))}
           <button type="button" onClick={() => { window.localStorage.removeItem(NOX_PREVIEW_STORAGE_KEY); window.location.assign("/?mode=analysis"); }} className="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold text-gray-300">Progression réelle</button>
         </div>
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-indigo-900/70 bg-indigo-950/20 p-4">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-300">Mission personnalisée · DEV uniquement</p>
+        <p className="mt-1 text-xs text-gray-400">Génère une mission contrôlée depuis un concept sans inventer de position.</p>
+        <button type="button" onClick={() => void simulateKingSafetyWeakness()} className="mt-3 rounded-lg border border-amber-800 px-3 py-2 text-xs font-bold text-amber-200 hover:bg-amber-950/40">Simuler 3 erreurs · sécurité du roi</button>
+        <div className="mt-3 flex flex-wrap gap-2">{NOX_CONCEPT_IDS.map((conceptId) => <button key={conceptId} type="button" onClick={async () => { const response = await fetch("/api/nox/missions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "dev_generate", conceptId }) }); if (response.ok) window.location.assign("/?focus=daily-mission"); else setError("Connecte-toi pour générer une mission DEV persistante."); }} className="rounded-lg border border-indigo-800 px-3 py-2 text-xs font-bold text-indigo-200 hover:bg-indigo-900/40">{conceptId}</button>)}<button type="button" disabled={payload.noxMission.active === "aucune"} onClick={async () => { const response = await fetch("/api/nox/missions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "dev_complete", missionId: payload.noxMission.active }) }); if (response.ok) await refresh(); else setError("Impossible de terminer cette mission DEV."); }} className="rounded-lg border border-emerald-800 px-3 py-2 text-xs font-bold text-emerald-200 disabled:opacity-40">Terminer la mission active</button></div>
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

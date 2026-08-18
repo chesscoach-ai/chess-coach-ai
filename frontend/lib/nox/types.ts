@@ -5,6 +5,7 @@ import type {
 } from "@/services/api/ApiService";
 import type { NoxMemorySummary } from "@/lib/nox/memoryTypes";
 import type { NoxProgressionSnapshot } from "@/lib/nox/progressionTypes";
+import type { NoxMission } from "@/lib/nox/missionTypes";
 
 export type NoxState =
   | "idle"
@@ -39,6 +40,7 @@ export type NoxContext = {
   exerciseHint?: string | null;
   memory?: NoxMemorySummary | null;
   progression?: NoxProgressionSnapshot | null;
+  mission?: NoxMission | null;
 };
 
 export type NoxReply = {

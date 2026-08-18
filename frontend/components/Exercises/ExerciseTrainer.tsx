@@ -161,18 +161,23 @@ export default function ExerciseTrainer({
       }
     }
     void fetch(
-      "/api/progression/exercises",
+      session.missionId ? "/api/nox/missions" : "/api/progression/exercises",
       {
         method: "POST",
         headers: {
           "Content-Type":
             "application/json",
         },
-        body: JSON.stringify({
-          exerciseId:
-            session.sourceExampleId,
-          elapsedTime:
-            session.elapsedTime,
+        body: JSON.stringify(session.missionId ? {
+          action: "result",
+          missionId: session.missionId,
+          exerciseId: session.sourceExampleId,
+          success: session.mistakes === 0,
+          mistakes: session.mistakes,
+          hintsUsed: session.hintsUsed,
+        } : {
+          exerciseId: session.sourceExampleId,
+          elapsedTime: session.elapsedTime,
           mistakes: session.mistakes,
           hintsUsed: session.hintsUsed,
         }),
@@ -412,6 +417,12 @@ export default function ExerciseTrainer({
               {session.description ??
                 "Trouve le meilleur coup dans cette position."}
             </p>
+
+            {session.missionId && (
+              <p className="mt-2 text-xs font-black uppercase tracking-[0.14em] text-indigo-300">
+                Mission de Nox · Position {session.missionStep} / {session.missionTotal}
+              </p>
+            )}
 
             {session.decisionNumber &&
               session.decisionCount && (

@@ -39,6 +39,7 @@ import {
   type SyncedExerciseProgress,
 } from "@/lib/progression/exerciseProgress";
 import { buildDailyTrainingPlan } from "@/lib/pgnDailyTrainingPlan";
+import DailyCoachMission from "@/components/Coach/DailyCoachMission";
 
 export default function ExerciseLibraryPage({
   embedded = false,
@@ -361,6 +362,8 @@ export default function ExerciseLibraryPage({
           </Link>
           )}
         </div>
+
+        <div className="mb-5"><DailyCoachMission profile={learningProfile} /></div>
 
         <LearningSkillPath
           path={skillPath}

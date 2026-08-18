@@ -39,4 +39,16 @@ export type DevRuntimeDiagnosticPayload = {
     eventsCounted: number;
     eventsIgnored: number;
   };
+  noxMission: {
+    active: string;
+    concept: string;
+    reason: string;
+    difficulty: string;
+    exercises: number;
+    progress: string;
+    status: string;
+    eventsProduced: number;
+    eventsIgnored: number;
+    nextEligibility: string;
+  };
 };

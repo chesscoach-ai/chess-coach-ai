@@ -233,6 +233,20 @@ export default function NoxShell({
               </p>
             </div>
           )}
+          {context.mission && (
+            <a
+              href="#daily-coach"
+              className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-violet-800/60 bg-violet-950/30 px-3 py-2 text-xs transition hover:border-violet-500"
+            >
+              <span className="min-w-0">
+                <span className="block font-black text-violet-200">Mission de Nox</span>
+                <span className="block truncate text-gray-400">{context.mission.conceptLabel} · {context.mission.estimatedMinutes} min</span>
+              </span>
+              <span className="shrink-0 font-black text-violet-300">
+                {context.mission.status === "completed" ? "Terminée ✓" : `${context.mission.currentStep}/${context.mission.exerciseIds.length} →`}
+              </span>
+            </a>
+          )}
         </div>
       </div>
 

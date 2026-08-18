@@ -37,6 +37,10 @@ export interface ExerciseSession {
   returnHref?: string;
   returnLabel?: string;
   placementDifficulty?: "débutant" | "intermédiaire" | "avancé";
+  missionId?: string;
+  missionStep?: number;
+  missionTotal?: number;
+  missionConceptId?: string;
 
   playerColor: ExerciseColor;
   hints: string[];

@@ -5,6 +5,7 @@ import type { DevRuntimeDiagnosticPayload } from "@/types/devRuntimeDiagnostics"
 import { getNoxMemoryDiagnostics } from "@/lib/nox/memoryStore";
 import type { AuthenticatedPlayer } from "@/lib/multiplayer/playerSession";
 import { getNoxProgression } from "@/lib/nox/progressionStore";
+import { getNoxMissionDiagnostics } from "@/lib/nox/missionStore";
 
 type BackendResult = {
   ok: boolean;
@@ -41,6 +42,7 @@ export async function collectDevRuntimeDiagnostics(player: AuthenticatedPlayer |
     runtimeNoxAi,
     noxMemory,
     noxProgression,
+    noxMission,
   ] = await Promise.all([
     readBackend("/ready"),
     readBackend("/runtime/metrics"),
@@ -49,6 +51,7 @@ export async function collectDevRuntimeDiagnostics(player: AuthenticatedPlayer |
     readBackend("/runtime/nox-ai"),
     getNoxMemoryDiagnostics(),
     getNoxProgression(player),
+    getNoxMissionDiagnostics(player),
   ]);
 
   return {
@@ -102,5 +105,6 @@ export async function collectDevRuntimeDiagnostics(player: AuthenticatedPlayer |
       eventsCounted: noxProgression.eventsCounted,
       eventsIgnored: noxProgression.eventsIgnored,
     },
+    noxMission,
   };
 }

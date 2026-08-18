@@ -38,6 +38,7 @@ import {
 import { useLearningProfile } from "@/hooks/useLearningProfile";
 import { useNoxMemory } from "@/hooks/useNoxMemory";
 import { useNoxProgression } from "@/hooks/useNoxProgression";
+import { useNoxMission } from "@/hooks/useNoxMission";
 import { useAiOpponent } from "@/hooks/useAiOpponent";
 import {
   setActiveGameReviewId,
@@ -77,6 +78,7 @@ export default function GameWorkspace({
   const isGameOver = useMemo(() => new Chess(game.fen).isGameOver(), [game.fen]);
   const noxMemory = useNoxMemory();
   const noxProgression = useNoxProgression();
+  const noxMission = useNoxMission();
   const refreshNoxMemory = noxMemory.refresh;
   const refreshNoxProgression = noxProgression.refresh;
   const handleProfileRecorded = useCallback(() => {
@@ -420,6 +422,7 @@ export default function GameWorkspace({
             noxMemory={noxMemory.memory}
             noxMemoryLoading={noxMemory.loading}
             noxProgression={noxProgression.progression}
+            noxMission={noxMission.mission}
             onResetNoxMemory={noxMemory.reset}
             livePrecision={
               livePrecision
