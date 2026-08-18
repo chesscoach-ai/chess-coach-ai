@@ -2,6 +2,7 @@ import "server-only";
 
 import { fetchBackend } from "@/lib/api/backendServer";
 import type { DevRuntimeDiagnosticPayload } from "@/types/devRuntimeDiagnostics";
+import { getNoxMemoryDiagnostics } from "@/lib/nox/memoryStore";
 
 type BackendResult = {
   ok: boolean;
@@ -36,12 +37,14 @@ export async function collectDevRuntimeDiagnostics(): Promise<DevRuntimeDiagnost
     runtimeCache,
     runtimeDatabase,
     runtimeNoxAi,
+    noxMemory,
   ] = await Promise.all([
     readBackend("/ready"),
     readBackend("/runtime/metrics"),
     readBackend("/runtime/cache"),
     readBackend("/runtime/database"),
     readBackend("/runtime/nox-ai"),
+    getNoxMemoryDiagnostics(),
   ]);
 
   return {
@@ -85,5 +88,6 @@ export async function collectDevRuntimeDiagnostics(): Promise<DevRuntimeDiagnost
     },
     cache: runtimeCache.data,
     noxAi: runtimeNoxAi.data,
+    noxMemory,
   };
 }

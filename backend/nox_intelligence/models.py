@@ -78,6 +78,14 @@ class NoxHeuristic(ContractModel):
     source: Literal["deterministic_rules"] = "deterministic_rules"
 
 
+class NoxMemorySummary(ContractModel):
+    strengths: tuple[str, ...] = Field(default=(), max_length=5)
+    weaknesses: tuple[str, ...] = Field(default=(), max_length=5)
+    learning: tuple[str, ...] = Field(default=(), max_length=5)
+    improving: tuple[str, ...] = Field(default=(), max_length=5)
+    goal: str | None = Field(default=None, max_length=80)
+
+
 class NoxContext(ContractModel):
     schema_version: Literal["1.0"] = NOX_CONTEXT_SCHEMA_VERSION
     language: Literal["fr"] = "fr"
@@ -90,6 +98,7 @@ class NoxContext(ContractModel):
     evaluation: NoxEvaluation | None = None
     facts: NoxFacts = NoxFacts()
     heuristics: tuple[NoxHeuristic, ...] = Field(default=(), max_length=8)
+    memory: NoxMemorySummary | None = None
 
 
 class NoxConcept(ContractModel):

@@ -9,7 +9,9 @@ import {
 } from "@/lib/chess/pedagogy";
 import type { AiPersonaId } from "@/lib/ai/opponents";
 import NoxShell from "@/components/Nox/NoxShell";
+import NoxNotebook from "@/components/Nox/NoxNotebook";
 import type { LearningProfile } from "@/lib/learning/types";
+import type { NoxMemoryEnvelope } from "@/lib/nox/memoryTypes";
 
 type Props = {
   review: MoveReviewResponse | null;
@@ -21,6 +23,9 @@ type Props = {
   onClearVisual?: () => void;
   coachPersonaId?: AiPersonaId;
   learningProfile?: LearningProfile | null;
+  noxMemory?: NoxMemoryEnvelope | null;
+  noxMemoryLoading?: boolean;
+  onResetNoxMemory?: () => Promise<boolean>;
   livePrecision?: {
     accuracy: number | null;
     reviewedMoveCount: number;
@@ -39,6 +44,9 @@ export default function LivePositionOverview({
   onClearVisual,
   coachPersonaId = "balanced",
   learningProfile = null,
+  noxMemory = null,
+  noxMemoryLoading = false,
+  onResetNoxMemory = async () => false,
   livePrecision,
 }: Props) {
   return (
@@ -53,6 +61,13 @@ export default function LivePositionOverview({
         onClearVisual={onClearVisual}
         coachPersonaId={coachPersonaId}
         learningProfile={learningProfile}
+        noxMemory={noxMemory}
+      />
+
+      <NoxNotebook
+        memory={noxMemory}
+        loading={noxMemoryLoading}
+        onReset={onResetNoxMemory}
       />
 
       <LivePrecisionCard
@@ -87,6 +102,7 @@ function LastMoveSummary({
   onClearVisual,
   coachPersonaId,
   learningProfile,
+  noxMemory,
 }: {
   review: MoveReviewResponse | null;
   isLoading: boolean;
@@ -97,6 +113,7 @@ function LastMoveSummary({
   onClearVisual?: () => void;
   coachPersonaId: AiPersonaId;
   learningProfile: LearningProfile | null;
+  noxMemory: NoxMemoryEnvelope | null;
 }) {
   const primaryMessage = review
     ? explainPlayedMove(review, coachPersonaId, learningProfile)
@@ -110,6 +127,7 @@ function LastMoveSummary({
         review,
         analysis: positionAnalysis,
         primaryMessage,
+        memory: noxMemory?.summary ?? null,
       }}
       onShowMove={onShowMove}
       onHighlightSquares={onHighlightSquares}

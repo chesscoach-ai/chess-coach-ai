@@ -62,4 +62,23 @@ describe("NoxContext builder", () => {
       ),
     ).toBe(false);
   });
+
+  it("transmet seulement un résumé compact de la mémoire", () => {
+    const result = buildServerNoxContext(
+      {
+        ...context,
+        memory: {
+          strengths: ["development"],
+          weaknesses: ["king_safety"],
+          learning: ["forks"],
+          improving: [],
+          goal: "king_safety",
+        },
+      },
+      "why",
+    );
+    expect(result?.memory?.weaknesses).toEqual(["king_safety"]);
+    expect(JSON.stringify(result)).not.toContain("observations");
+    expect(JSON.stringify(result)).not.toContain("milestones");
+  });
 });

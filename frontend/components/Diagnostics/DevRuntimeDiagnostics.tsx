@@ -205,6 +205,13 @@ export default function DevRuntimeDiagnostics({
           textValue(noxMetrics, "validation_failures", "0"),
         ],
         ["Erreurs Nox récentes", noxRecentErrors],
+        ["Profils mémoire Nox", String(payload.noxMemory.profiles)],
+        ["Événements pédagogiques", String(payload.noxMemory.learningEvents)],
+        ["Concepts suivis", String(payload.noxMemory.conceptsTracked)],
+        ["Forces confirmées", String(payload.noxMemory.strengths)],
+        ["Faiblesses probables", String(payload.noxMemory.weaknesses)],
+        ["Souvenirs marquants", String(payload.noxMemory.milestones)],
+        ["Persistance mémoire", payload.noxMemory.persistence],
       ];
 
   return (

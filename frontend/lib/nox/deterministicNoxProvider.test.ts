@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getDeterministicNoxReply } from "@/lib/nox/deterministicNoxProvider";
+import { deterministicNoxProvider, getDeterministicNoxReply } from "@/lib/nox/deterministicNoxProvider";
 import type { NoxContext } from "@/lib/nox/types";
 import type {
   MoveReviewResponse,
@@ -202,5 +202,21 @@ describe("DeterministicNoxProvider", () => {
     expect(reply.message).toContain("g1");
     expect(reply.message).toContain("f3");
     expect(reply.message).toContain("Cf3");
+  });
+
+  it("référence une amélioration mémorisée seulement dans un échange utile", () => {
+    const context = baseContext({
+      review: createReview(),
+      analysis: createAnalysis(),
+      memory: {
+        strengths: [],
+        weaknesses: [],
+        learning: [],
+        improving: ["forks"],
+        goal: "forks",
+      },
+    });
+    expect(deterministicNoxProvider.getReply(context).message).not.toContain("Tu te souviens");
+    expect(deterministicNoxProvider.getReply(context, "why").message).toContain("Tu te souviens");
   });
 });

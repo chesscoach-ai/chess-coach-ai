@@ -2,7 +2,7 @@ import "server-only";
 
 import { Pool } from "pg";
 
-export const REQUIRED_DATABASE_REVISION = "0002_core_identity_billing";
+export const REQUIRED_DATABASE_REVISION = "0003_nox_pedagogical_memory";
 
 let sharedPool: Pool | null = null;
 let migrationCheck: Promise<void> | null = null;

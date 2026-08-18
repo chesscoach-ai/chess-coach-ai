@@ -117,6 +117,7 @@ export function buildServerNoxContext(
       id: HEURISTIC_IDS[idea] ?? "other",
       source: "deterministic_rules" as const,
       })),
+    ...(context.memory ? { memory: context.memory } : {}),
   };
 }
 

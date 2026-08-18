@@ -1,9 +1,12 @@
 import { z } from "zod";
+import { createHash } from "node:crypto";
 
 import { billingErrorResponse } from "@/lib/billing/apiResponse";
 import { getAnalysisEntitlement } from "@/lib/billing/subscriptionStore";
 import { recordLearningSession } from "@/lib/learning/profileStore";
 import { getAuthenticatedPlayer } from "@/lib/multiplayer/playerSession";
+import { learningSessionEvents } from "@/lib/nox/memoryEvents";
+import { recordNoxLearningEvents } from "@/lib/nox/memoryStore";
 
 export const runtime = "nodejs";
 
@@ -42,9 +45,17 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    return Response.json({
-      profile: await recordLearningSession(player, parsed.data),
-    });
+    const sessionFingerprint = createHash("sha256")
+      .update(parsed.data.moves.join(" "))
+      .digest("hex");
+    const [profile, memory] = await Promise.all([
+      recordLearningSession(player, parsed.data),
+      recordNoxLearningEvents(
+        player,
+        learningSessionEvents(parsed.data, sessionFingerprint),
+      ),
+    ]);
+    return Response.json({ profile, memory });
   } catch (error) {
     return billingErrorResponse(error);
   }

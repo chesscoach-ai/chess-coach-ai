@@ -68,6 +68,8 @@ export async function exportAccountData(
     progression,
     exercises,
     rewards,
+    noxMemory,
+    noxLearningEvents,
   ] = await Promise.all([
     optionalRows(
       database,
@@ -123,6 +125,24 @@ export async function exportAccountData(
        WHERE player_id = $1`,
       [playerId],
     ),
+    optionalRows(
+      database,
+      `SELECT profile AS record FROM nox_profiles WHERE user_id = $1`,
+      [playerId],
+    ),
+    optionalRows(
+      database,
+      `SELECT jsonb_build_object(
+         'type', event_type,
+         'conceptId', concept_id,
+         'outcome', outcome,
+         'occurredAt', occurred_at
+       ) AS record
+       FROM nox_learning_events
+       WHERE user_id = $1
+       ORDER BY occurred_at DESC`,
+      [playerId],
+    ),
   ]);
 
   const scrubbedGames = games.map((record) => {
@@ -148,6 +168,8 @@ export async function exportAccountData(
     progression: progression[0] ?? null,
     exerciseEvents: exercises,
     rewards: rewards[0] ?? null,
+    noxMemory: noxMemory[0] ?? null,
+    noxLearningEvents,
   };
 }
 
@@ -231,6 +253,8 @@ export async function deleteAccountData(
       "DELETE FROM battle_reward_profiles WHERE player_id = $1",
       "DELETE FROM learning_placements WHERE player_id = $1",
       "DELETE FROM learning_profiles WHERE user_id = $1",
+      "DELETE FROM nox_learning_events WHERE user_id = $1",
+      "DELETE FROM nox_profiles WHERE user_id = $1",
       "DELETE FROM game_review_usage WHERE user_id = $1",
       "DELETE FROM community_friendships WHERE player_a = $1 OR player_b = $1",
       "DELETE FROM community_clan_members WHERE player_id = $1",

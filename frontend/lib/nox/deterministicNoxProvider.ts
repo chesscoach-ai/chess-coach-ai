@@ -4,6 +4,7 @@ import type {
   NoxProvider,
   NoxReply,
 } from "@/lib/nox/types";
+import { NOX_CONCEPT_LABELS } from "@/lib/nox/memoryRules";
 
 const EMPTY_REPLY: NoxReply = {
   state: "idle",
@@ -24,9 +25,47 @@ const PIECE_ROLES: Record<string, string> = {
 
 export const deterministicNoxProvider: NoxProvider = {
   getReply(context, action = null, question = "") {
-    return getDeterministicNoxReply(context, action, question);
+    return addRelevantMemory(
+      getDeterministicNoxReply(context, action, question),
+      context,
+      action,
+    );
   },
 };
+
+function addRelevantMemory(
+  reply: NoxReply,
+  context: NoxContext,
+  action: NoxIntent | null,
+): NoxReply {
+  const memory = context.memory;
+  if (!memory) return reply;
+  const improving = memory.improving[0];
+  if (
+    improving &&
+    (context.exerciseStatus === "correct" || action === "why" || action === "missed")
+  ) {
+    return {
+      ...reply,
+      message: `${reply.message} Tu te souviens ? On avait travaillé à ${NOX_CONCEPT_LABELS[improving]}. Cette fois, tu progresses vraiment.`,
+    };
+  }
+  const weakness = memory.weaknesses[0];
+  if (weakness && (action === "why" || action === "missed" || action === "plan")) {
+    return {
+      ...reply,
+      message: `${reply.message} Ce point est revenu récemment : ${NOX_CONCEPT_LABELS[weakness]}. On va en faire un réflexe, sans te coller une étiquette.`,
+    };
+  }
+  const strength = memory.strengths[0];
+  if (strength && action === "why") {
+    return {
+      ...reply,
+      message: `${reply.message} C’est aussi un domaine où tu deviens régulier : ${NOX_CONCEPT_LABELS[strength]}.`,
+    };
+  }
+  return reply;
+}
 
 export function getDeterministicNoxReply(
   context: NoxContext,

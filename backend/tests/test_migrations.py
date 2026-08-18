@@ -59,6 +59,8 @@ class AlembicMigrationTests(unittest.TestCase):
                 "billing_subscriptions",
                 "analysis_trial_claims",
                 "game_review_usage",
+                "nox_profiles",
+                "nox_learning_events",
             }.issubset(self.table_names())
         )
         with closing(sqlite3.connect(self.database_path)) as connection:
@@ -187,6 +189,11 @@ class AlembicMigrationTests(unittest.TestCase):
             / "lib"
             / "billing"
             / "gameReviewStore.ts",
+            BACKEND_DIRECTORY.parent
+            / "frontend"
+            / "lib"
+            / "nox"
+            / "memoryStore.ts",
         )
         for source in adopted_sources:
             with self.subTest(source=source.name):

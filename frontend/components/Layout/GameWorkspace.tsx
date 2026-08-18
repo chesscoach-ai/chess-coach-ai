@@ -36,6 +36,7 @@ import {
   useChessGame,
 } from "@/hooks/useChessGame";
 import { useLearningProfile } from "@/hooks/useLearningProfile";
+import { useNoxMemory } from "@/hooks/useNoxMemory";
 import { useAiOpponent } from "@/hooks/useAiOpponent";
 import {
   setActiveGameReviewId,
@@ -73,9 +74,12 @@ export default function GameWorkspace({
   const reviews =
     useMoveReviews(game);
   const isGameOver = useMemo(() => new Chess(game.fen).isGameOver(), [game.fen]);
+  const noxMemory = useNoxMemory();
+  const refreshNoxMemory = noxMemory.refresh;
   const handleProfileRecorded = useCallback(() => {
     setRecordImportedGame(false);
-  }, []);
+    void refreshNoxMemory();
+  }, [refreshNoxMemory]);
   const learningProfile = useLearningProfile({
     moves: game.moves,
     moveReviews: reviews.moveReviews,
@@ -409,6 +413,9 @@ export default function GameWorkspace({
             onClearVisual={clearNoxVisual}
             coachPersonaId={aiOpponent.personaId}
             learningProfile={learningProfile}
+            noxMemory={noxMemory.memory}
+            noxMemoryLoading={noxMemory.loading}
+            onResetNoxMemory={noxMemory.reset}
             livePrecision={
               livePrecision
             }

@@ -14,6 +14,7 @@ import MoveEffects, {
   useMoveAnimation,
 } from "@/components/ChessBoard/MoveEffects";
 import { useTapToMove } from "@/components/ChessBoard/useTapToMove";
+import { CapturedRow, getCapturedPieces } from "@/components/ChessBoard/CapturedPieces";
 import { useChessSounds } from "@/hooks/useChessSounds";
 import { getCheckmateAside } from "@/lib/content/playfulVoice";
 import type {
@@ -191,6 +192,10 @@ export default function OnlineMatch({
     return true;
   }
 
+  const captured = getCapturedPieces(displayedFen);
+  const topCapturer = game.youAre === "white" ? "black" : "white";
+  const bottomCapturer = game.youAre;
+
   return (
     <section className="space-y-5">
       {game.status === "waiting" && (
@@ -199,6 +204,7 @@ export default function OnlineMatch({
 
       <div className="grid items-start justify-center gap-6 xl:grid-cols-[minmax(620px,760px)_minmax(320px,380px)]">
         <div className="w-full max-w-[min(760px,78vh)] space-y-3">
+          <CapturedRow capturer={topCapturer} pieces={captured[topCapturer]} align="start" />
           <div className="board-presentation">
             <div className="chess-board-live overflow-hidden rounded-2xl shadow-2xl">
               <Chessboard
@@ -227,6 +233,7 @@ export default function OnlineMatch({
               />
             </div>
           </div>
+          <CapturedRow capturer={bottomCapturer} pieces={captured[bottomCapturer]} align="end" />
           <p className="board-touch-hint">
             <span aria-hidden="true">☝</span>
             Touche une pièce, puis sa destination.

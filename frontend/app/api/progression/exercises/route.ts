@@ -11,6 +11,9 @@ import {
   listVerifiedExerciseProgress,
   recordVerifiedExercise,
 } from "@/lib/progression/progressionStore";
+import { exerciseLearningEvent } from "@/lib/nox/memoryEvents";
+import { recordNoxLearningEvents } from "@/lib/nox/memoryStore";
+import { getLocalDateKey } from "@/lib/progression/journey";
 
 export const runtime = "nodejs";
 
@@ -80,10 +83,18 @@ export async function POST(
       );
     }
 
-    await recordVerifiedExercise(
-      player,
-      parsed.data,
-    );
+    const exercise = PGN_EXAMPLES.find((item) => item.id === parsed.data.exerciseId)!;
+    await Promise.all([
+      recordVerifiedExercise(player, parsed.data),
+      recordNoxLearningEvents(player, [
+        exerciseLearningEvent({
+          ...parsed.data,
+          category: exercise.category,
+          themes: exercise.themes,
+          sourceDate: getLocalDateKey(),
+        }),
+      ]),
+    ]);
     return noStoreJson(
       { recorded: true },
       { status: 201 },

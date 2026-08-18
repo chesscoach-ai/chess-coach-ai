@@ -13,6 +13,7 @@ import { Chessboard } from "react-chessboard";
 import MoveEffects, {
   useMoveAnimation,
 } from "@/components/ChessBoard/MoveEffects";
+import { CapturedRow, getCapturedPieces } from "@/components/ChessBoard/CapturedPieces";
 import { useTapToMove } from "@/components/ChessBoard/useTapToMove";
 import { useChessSounds } from "@/hooks/useChessSounds";
 import type { ChessGameController } from "@/hooks/useChessGame";
@@ -431,9 +432,16 @@ export default function ChessBoard({
       parsedReviewIndicators?.played ||
         suggestedMove,
     );
+  const orientation = playerColor ?? "white";
+  const captured = getCapturedPieces(game.fen);
+  const topCapturer = orientation === "white" ? "black" : "white";
+  const bottomCapturer = orientation;
 
   return (
     <section className="w-full max-w-[min(760px,78vh)]">
+      <div className="mb-1.5">
+        <CapturedRow capturer={topCapturer} pieces={captured[topCapturer]} align="start" />
+      </div>
       <div className="board-presentation">
         <div className="chess-board-live overflow-hidden rounded-2xl shadow-2xl">
           <Chessboard
@@ -446,6 +454,9 @@ export default function ChessBoard({
             }
           />
         </div>
+      </div>
+      <div className="mt-1.5">
+        <CapturedRow capturer={bottomCapturer} pieces={captured[bottomCapturer]} align="end" />
       </div>
 
       {!presentationOnly && (

@@ -21,4 +21,13 @@ export type DevRuntimeDiagnosticPayload = {
   };
   cache: Record<string, unknown> | null;
   noxAi: Record<string, unknown> | null;
+  noxMemory: {
+    profiles: number;
+    learningEvents: number;
+    conceptsTracked: number;
+    strengths: number;
+    weaknesses: number;
+    milestones: number;
+    persistence: "postgresql" | "local-json";
+  };
 };

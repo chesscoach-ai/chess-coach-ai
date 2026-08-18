@@ -3,6 +3,7 @@ import type {
   PositionAnalysisResponse,
   MoveReviewResponse,
 } from "@/services/api/ApiService";
+import type { NoxMemorySummary } from "@/lib/nox/memoryTypes";
 
 export type NoxState =
   | "idle"
@@ -35,6 +36,7 @@ export type NoxContext = {
   exerciseStatus?: "idle" | "incorrect" | "correct" | "completed";
   primaryMessage?: string | null;
   exerciseHint?: string | null;
+  memory?: NoxMemorySummary | null;
 };
 
 export type NoxReply = {
@@ -106,6 +108,7 @@ export type ServerNoxContext = {
     id: string;
     source: "deterministic_rules";
   }>;
+  memory?: NoxMemorySummary;
 };
 
 export type ServerNoxResponse = {
