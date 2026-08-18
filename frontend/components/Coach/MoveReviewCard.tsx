@@ -9,7 +9,6 @@ import {
   type AiPersonaId,
 } from "@/lib/ai/opponents";
 import { explainPlayedMove } from "@/lib/chess/pedagogy";
-import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
 import type { LearningProfile } from "@/lib/learning/types";
 
 type MoveReviewCardProps = {
@@ -185,15 +184,14 @@ function ReviewContent({
 
       </div>
 
-      <CoachMentorMessage
-        compact
-        name="Nox"
-        title={getCoachReactionTitle(review)}
-      >
-        <p>
+      <div className="rounded-xl border border-gray-800 bg-gray-950/40 p-4">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">
+          Explication du coup
+        </p>
+        <p className="mt-2 text-sm leading-6 text-gray-300">
           {explainPlayedMove(review, coachPersonaId, learningProfile)}
         </p>
-      </CoachMentorMessage>
+      </div>
 
       <EvaluationComparison
         review={review}
@@ -407,23 +405,6 @@ function getClassificationClassName(
         "bg-red-950/50",
         "text-red-300",
       ].join(" ");
-  }
-}
-
-function getCoachReactionTitle(
-  review: MoveReviewResponse,
-): string {
-  switch (review.classification) {
-    case "excellent":
-      return "Très propre. Garde ce réflexe.";
-    case "good":
-      return "Bonne décision, avec une petite marge de progression.";
-    case "inaccuracy":
-      return "Pas dramatique : voici le détail qui t’a échappé.";
-    case "mistake":
-      return "On ralentit ici : ce moment mérite d’être rejoué.";
-    case "blunder":
-      return "Ouch… tu t’es fait mater sauvagement par la tactique.";
   }
 }
 

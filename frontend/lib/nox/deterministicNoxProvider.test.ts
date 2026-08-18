@@ -151,6 +151,10 @@ describe("DeterministicNoxProvider", () => {
     expect(getDeterministicNoxReply(context, "show").suggestedMove).toBe(
       "g1f3",
     );
+    expect(getDeterministicNoxReply(context, "show").highlightedSquares).toEqual([
+      "g1",
+      "f3",
+    ]);
   });
 
   it("reste honnête si un bouton demande une analyse absente", () => {
@@ -186,5 +190,17 @@ describe("DeterministicNoxProvider", () => {
         baseContext({ mode: "exercise", exerciseStatus: "incorrect" }),
       ).state,
     ).toBe("warning");
+  });
+
+  it("explique une pièce et une notation avec des mots de débutant", () => {
+    const reply = getDeterministicNoxReply(
+      baseContext({ analysis: createAnalysis() }),
+      "piece_help",
+      "Pourquoi mon cavalier est utile ?",
+    );
+    expect(reply.message).toContain("saute par-dessus");
+    expect(reply.message).toContain("g1");
+    expect(reply.message).toContain("f3");
+    expect(reply.message).toContain("Cf3");
   });
 });

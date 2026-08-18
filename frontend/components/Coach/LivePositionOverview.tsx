@@ -17,6 +17,8 @@ type Props = {
   positionKey: string;
   positionAnalysis?: PositionAnalysisResponse | null;
   onShowMove?: (move: string) => void;
+  onHighlightSquares?: (squares: string[]) => void;
+  onClearVisual?: () => void;
   coachPersonaId?: AiPersonaId;
   learningProfile?: LearningProfile | null;
   livePrecision?: {
@@ -33,6 +35,8 @@ export default function LivePositionOverview({
   positionKey,
   positionAnalysis = null,
   onShowMove,
+  onHighlightSquares,
+  onClearVisual,
   coachPersonaId = "balanced",
   learningProfile = null,
   livePrecision,
@@ -45,6 +49,8 @@ export default function LivePositionOverview({
         positionKey={positionKey}
         positionAnalysis={positionAnalysis}
         onShowMove={onShowMove}
+        onHighlightSquares={onHighlightSquares}
+        onClearVisual={onClearVisual}
         coachPersonaId={coachPersonaId}
         learningProfile={learningProfile}
       />
@@ -77,6 +83,8 @@ function LastMoveSummary({
   positionKey,
   positionAnalysis,
   onShowMove,
+  onHighlightSquares,
+  onClearVisual,
   coachPersonaId,
   learningProfile,
 }: {
@@ -85,6 +93,8 @@ function LastMoveSummary({
   positionKey: string;
   positionAnalysis: PositionAnalysisResponse | null;
   onShowMove?: (move: string) => void;
+  onHighlightSquares?: (squares: string[]) => void;
+  onClearVisual?: () => void;
   coachPersonaId: AiPersonaId;
   learningProfile: LearningProfile | null;
 }) {
@@ -102,6 +112,8 @@ function LastMoveSummary({
         primaryMessage,
       }}
       onShowMove={onShowMove}
+      onHighlightSquares={onHighlightSquares}
+      onClearVisual={onClearVisual}
     />
   );
 }

@@ -1,10 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 
 import NoxShell from "@/components/Nox/NoxShell";
 
 describe("NoxShell", () => {
-  it("affiche Nox Écuyer et les boutons conversationnels", () => {
+  it("affiche Nox Écuyer et le champ conversationnel", () => {
     const markup = renderToStaticMarkup(
       <NoxShell
         context={{
@@ -17,10 +18,9 @@ describe("NoxShell", () => {
     expect(markup).toContain("Nox");
     expect(markup).toContain("Écuyer");
     expect(markup).toContain("data-state=\"idle\"");
-    expect(markup).toContain("Pourquoi ce coup ?");
-    expect(markup).toContain("Quel est mon plan ?");
-    expect(markup).toContain("Qu’est-ce que j’ai raté ?");
-    expect(markup).toContain("Montre-moi");
+    expect(markup).toContain("Demande à Nox");
+    expect(markup).toContain("Parler à Nox");
+    expect(markup).toContain("data-source=\"deterministic\"");
   });
 
   it("rend le shell mobile compact sans masquer son texte accessible", () => {
@@ -34,10 +34,11 @@ describe("NoxShell", () => {
       />,
     );
 
-    expect(markup).toContain("overflow-x-auto");
+    expect(markup).toContain("Parler à Nox");
     expect(markup).toContain("Nox, jeune écuyer et compagnon d’échecs");
     expect(markup).toContain("data-state=\"thinking\"");
     expect(markup).toContain("aria-live=\"polite\"");
+    expect(markup).toContain("sm:block");
   });
 
   it("peut masquer les actions dans un exercice", () => {
@@ -54,5 +55,15 @@ describe("NoxShell", () => {
 
     expect(markup).toContain("data-state=\"success\"");
     expect(markup).not.toContain("Pourquoi ce coup ?");
+  });
+
+  it("n’appelle aucun service OpenAI ou endpoint distant", () => {
+    const source = readFileSync(
+      new URL("./NoxShell.tsx", import.meta.url),
+      "utf8",
+    );
+    expect(source).not.toContain("NoxService");
+    expect(source).not.toContain("fetch(");
+    expect(source).not.toContain("OPENAI");
   });
 });

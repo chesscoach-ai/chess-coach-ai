@@ -1,13 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { deterministicNoxProvider } from "@/lib/nox/deterministicNoxProvider";
 import {
-  buildServerNoxContext,
-  isNoxAiEligible,
-} from "@/lib/nox/noxContextBuilder";
+  getContextualQuickActions,
+  NoxConversationService,
+} from "@/lib/nox/noxConversationService";
+import {
+  appendNoxExchange,
+  currentNoxSession,
+  type NoxConversationSession,
+} from "@/lib/nox/noxSession";
 import type {
   NoxContext,
   NoxProvider,
@@ -15,17 +20,6 @@ import type {
   NoxReply,
   NoxState,
 } from "@/lib/nox/types";
-import { NoxService } from "@/services/api/NoxService";
-
-const QUICK_ACTIONS: Array<{
-  id: NoxQuickAction;
-  label: string;
-}> = [
-  { id: "why", label: "Pourquoi ce coup ?" },
-  { id: "plan", label: "Quel est mon plan ?" },
-  { id: "missed", label: "Qu’est-ce que j’ai raté ?" },
-  { id: "show", label: "Montre-moi" },
-];
 
 const STATE_STYLES: Record<
   NoxState,
@@ -35,6 +29,11 @@ const STATE_STYLES: Record<
     label: "À tes côtés",
     dot: "bg-slate-400",
     border: "border-indigo-900/70",
+  },
+  listening: {
+    label: "Je t’écoute",
+    dot: "animate-pulse bg-violet-400 motion-reduce:animate-none",
+    border: "border-violet-700/80",
   },
   thinking: {
     label: "Je réfléchis",
@@ -61,117 +60,112 @@ const STATE_STYLES: Record<
 export default function NoxShell({
   context,
   onShowMove,
+  onHighlightSquares,
+  onClearVisual,
   showQuickActions = true,
   provider = deterministicNoxProvider,
 }: {
   context: NoxContext;
   onShowMove?: (move: string) => void;
+  onHighlightSquares?: (squares: string[]) => void;
+  onClearVisual?: () => void;
   showQuickActions?: boolean;
   provider?: NoxProvider;
 }) {
-  const [selection, setSelection] = useState<{
+  const conversation = useMemo(
+    () => new NoxConversationService(provider),
+    [provider],
+  );
+  const questionId = useId();
+  const reaction = useMemo(
+    () => conversation.react(context),
+    [context, conversation],
+  );
+  const quickActions = useMemo(
+    () => getContextualQuickActions(context),
+    [context],
+  );
+  const [session, setSession] = useState<NoxConversationSession | null>(null);
+  const [draft, setDraft] = useState<{ contextKey: string; value: string }>({
+    contextKey: context.contextKey,
+    value: "",
+  });
+  const [expanded, setExpanded] = useState<{
     contextKey: string;
-    action: NoxQuickAction;
-  } | null>(null);
-  const activeAction =
-    selection?.contextKey === context.contextKey
-      ? selection.action
-      : null;
-
-  const deterministicReply = useMemo(
-    () => provider.getReply(context, activeAction),
-    [activeAction, context, provider],
-  );
-  const serverContext = useMemo(
-    () => buildServerNoxContext(context, activeAction),
-    [activeAction, context],
-  );
-  const intelligenceKey = `${context.contextKey}:${activeAction ?? "reaction"}`;
-  const reviewClassification = context.review?.classification ?? null;
-  const reviewClassificationLabel =
-    context.review?.classification_label ?? null;
-  const remoteEligible =
-    provider === deterministicNoxProvider &&
-    serverContext !== null &&
-    isNoxAiEligible(context, activeAction);
-  const [remoteReply, setRemoteReply] = useState<{
-    key: string;
-    reply: NoxReply;
-    source: "deterministic" | "openai" | "cache";
-  } | null>(null);
+    value: boolean;
+  }>({ contextKey: context.contextKey, value: false });
+  const [focused, setFocused] = useState(false);
+  const messageCounter = useRef(0);
+  const currentSession = currentNoxSession(session, context.contextKey);
+  const currentDraft = draft.contextKey === context.contextKey ? draft.value : "";
+  const isExpanded =
+    expanded.contextKey === context.contextKey ? expanded.value : false;
+  const reply = currentSession?.currentReply ?? reaction;
+  const displayState: NoxState = focused ? "listening" : reply.state;
+  const appearance = STATE_STYLES[displayState];
 
   useEffect(() => {
-    if (!remoteEligible || !serverContext) {
-      return;
-    }
-    const controller = new AbortController();
-    void NoxService.respond(serverContext, controller.signal)
-      .then((result) => {
-        setRemoteReply({
-          key: intelligenceKey,
-          source: result.source,
-          reply: {
-            state: result.response.state,
-            title: result.response.title,
-            message: result.response.message,
-            classification: reviewClassification,
-            classificationLabel: reviewClassificationLabel,
-            suggestedMove: result.response.referenced_move_uci,
-            lesson: result.response.lesson,
-            conceptLabel: result.response.concept?.label ?? null,
-            followUp: result.response.follow_up,
-          },
-        });
-      })
-      .catch(() => {
-        setRemoteReply({
-          key: intelligenceKey,
-          source: "deterministic",
-          reply: deterministicReply,
-        });
-      });
-    return () => controller.abort();
-  }, [
-    deterministicReply,
-    intelligenceKey,
-    remoteEligible,
-    reviewClassification,
-    reviewClassificationLabel,
-    serverContext,
-  ]);
+    onClearVisual?.();
+  }, [context.contextKey, onClearVisual]);
 
-  const hasCurrentRemoteReply = remoteReply?.key === intelligenceKey;
-  const reply = hasCurrentRemoteReply
-    ? remoteReply.reply
-    : deterministicReply;
-  const appearance = STATE_STYLES[reply.state];
-
-  function handleAction(action: NoxQuickAction): void {
-    setSelection({ contextKey: context.contextKey, action });
-    const nextReply = provider.getReply(context, action);
-    if (action === "show" && nextReply.suggestedMove) {
-      onShowMove?.(nextReply.suggestedMove);
+  function showVerifiedVisual(nextReply: NoxReply): void {
+    onClearVisual?.();
+    if (nextReply.suggestedMove) onShowMove?.(nextReply.suggestedMove);
+    if (nextReply.highlightedSquares?.length) {
+      onHighlightSquares?.(nextReply.highlightedSquares);
     }
+  }
+
+  function appendExchange(
+    userText: string,
+    nextReply: NoxReply,
+    activeAction: NoxQuickAction | null,
+  ): void {
+    messageCounter.current += 1;
+    const idPrefix = `${context.contextKey}:${messageCounter.current}`;
+    setSession((current) =>
+      appendNoxExchange(
+        current,
+        context.contextKey,
+        userText,
+        nextReply,
+        activeAction,
+        idPrefix,
+      ),
+    );
+    showVerifiedVisual(nextReply);
+  }
+
+  function handleAction(action: NoxQuickAction, label: string): void {
+    appendExchange(label, conversation.askQuickAction(context, action), action);
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+    const question = currentDraft.trim();
+    if (!question) return;
+    const { reply: nextReply } = conversation.askQuestion(context, question);
+    appendExchange(question, nextReply, null);
+    setDraft({ contextKey: context.contextKey, value: "" });
+  }
+
+  function resetConversation(): void {
+    setSession(null);
+    setDraft({ contextKey: context.contextKey, value: "" });
+    onClearVisual?.();
   }
 
   return (
     <section
       data-testid="nox-shell"
-      data-state={reply.state}
-      data-source={hasCurrentRemoteReply ? remoteReply.source : "local"}
+      data-state={displayState}
+      data-source="deterministic"
       aria-label="Nox, compagnon d’échecs"
       className={`overflow-hidden rounded-2xl border bg-gradient-to-br from-indigo-950/55 via-gray-900 to-gray-950 shadow-xl ${appearance.border}`}
     >
-      <div className="flex items-start gap-3 p-4">
+      <div className="flex items-start gap-3 p-3 sm:p-4">
         <div className="shrink-0 text-center">
-          <div
-            className={[
-              "relative h-14 w-14 overflow-hidden rounded-2xl border border-indigo-500/60 bg-slate-950 shadow-[0_0_24px_rgba(99,102,241,0.24)] sm:h-16 sm:w-16",
-              reply.state === "idle"
-                ? "motion-safe:animate-[pulse_4s_ease-in-out_infinite]"
-                : "",
-            ].join(" ")}
-          >
+          <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-indigo-500/60 bg-slate-950 shadow-[0_0_24px_rgba(99,102,241,0.24)] sm:h-16 sm:w-16">
             <Image
               src="/brand/nox-squire.svg"
               alt="Nox, jeune écuyer et compagnon d’échecs"
@@ -181,81 +175,125 @@ export default function NoxShell({
               priority
             />
           </div>
-          <p className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-indigo-300">
+          <p className="mt-1 text-[9px] font-black uppercase tracking-[0.12em] text-indigo-300">
             Écuyer
           </p>
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.16em] text-indigo-300">
                 Nox
               </p>
               <div className="mt-1 flex items-center gap-2 text-[11px] text-gray-400">
-                <span
-                  aria-hidden="true"
-                  className={`h-2 w-2 rounded-full ${appearance.dot}`}
-                />
+                <span aria-hidden="true" className={`h-2 w-2 rounded-full ${appearance.dot}`} />
                 {appearance.label}
               </div>
             </div>
-            {reply.classificationLabel && (
-              <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold text-gray-200">
-                {reply.classificationLabel}
-              </span>
-            )}
+            <button
+              type="button"
+              aria-expanded={isExpanded}
+              onClick={() =>
+                setExpanded({ contextKey: context.contextKey, value: !isExpanded })
+              }
+              className="rounded-lg border border-indigo-800/70 px-2.5 py-2 text-[11px] font-bold text-indigo-200 sm:hidden"
+            >
+              {isExpanded ? "Réduire" : "Parler à Nox"}
+            </button>
           </div>
 
-          <div className="mt-3" aria-live="polite" aria-atomic="true">
+          <div className="mt-2" aria-live="polite" aria-atomic="true">
             <p className="font-bold text-white">{reply.title}</p>
-            <p className="mt-1 text-sm leading-6 text-gray-300">
+            <p className="mt-1 text-sm leading-5 text-gray-300 sm:leading-6">
               {reply.message}
             </p>
-            {reply.lesson && (
-              <p className="mt-2 rounded-lg border border-white/5 bg-black/15 px-3 py-2 text-xs leading-5 text-indigo-100">
-                {reply.conceptLabel && (
-                  <span className="mr-2 font-black text-indigo-300">
-                    {reply.conceptLabel}
-                  </span>
-                )}
-                {reply.lesson}
-              </p>
-            )}
-            {reply.followUp && (
-              <p className="mt-2 text-xs font-medium text-gray-400">
-                {reply.followUp}
-              </p>
-            )}
           </div>
         </div>
       </div>
 
-      {showQuickActions && (
-        <div className="border-t border-white/5 px-4 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500">
-            Que veux-tu comprendre ?
-          </p>
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-1 xl:flex-wrap">
-            {QUICK_ACTIONS.map((action) => (
-              <button
-                key={action.id}
-                type="button"
-                aria-pressed={activeAction === action.id}
-                onClick={() => handleAction(action.id)}
-                className={[
-                  "min-h-10 shrink-0 rounded-xl border px-3 py-2 text-xs font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300",
-                  activeAction === action.id
-                    ? "border-indigo-500 bg-indigo-600/30 text-white"
-                    : "border-gray-700 bg-gray-950/55 text-gray-300 hover:border-indigo-700 hover:text-white",
-                ].join(" ")}
-              >
-                {action.label}
-              </button>
-            ))}
+      <div className={`${isExpanded ? "block" : "hidden"} border-t border-white/5 px-3 py-3 sm:block sm:px-4`}>
+        {showQuickActions && quickActions.length > 0 && (
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500">
+              Que veux-tu comprendre ?
+            </p>
+            <div className="mt-2 flex gap-2 overflow-x-auto pb-1 xl:flex-wrap">
+              {quickActions.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  aria-pressed={currentSession?.activeAction === action.id}
+                  onClick={() => handleAction(action.id, action.label)}
+                  className="min-h-10 shrink-0 rounded-xl border border-gray-700 bg-gray-950/55 px-3 py-2 text-xs font-semibold text-gray-300 transition hover:border-indigo-700 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300"
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        <form onSubmit={handleSubmit} className="mt-3 flex gap-2">
+          <label htmlFor={questionId} className="sr-only">
+            Demande à Nox
+          </label>
+          <input
+            id={questionId}
+            value={currentDraft}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            onChange={(event) =>
+              setDraft({ contextKey: context.contextKey, value: event.target.value })
+            }
+            placeholder="Demande à Nox…"
+            autoComplete="off"
+            className="min-h-11 min-w-0 flex-1 rounded-xl border border-gray-700 bg-gray-950/70 px-3 text-sm text-white outline-none placeholder:text-gray-500 focus:border-violet-500"
+          />
+          <button
+            type="submit"
+            disabled={!currentDraft.trim()}
+            className="min-h-11 rounded-xl bg-violet-600 px-4 text-sm font-black text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Envoyer
+          </button>
+        </form>
+
+        {currentSession && currentSession.messages.length > 0 && (
+          <details className="mt-3 rounded-xl border border-white/5 bg-black/15">
+            <summary className="cursor-pointer list-none px-3 py-2 text-xs font-bold text-gray-400">
+              Historique de cette position ({currentSession.messages.length / 2})
+            </summary>
+            <div className="max-h-52 space-y-2 overflow-y-auto border-t border-white/5 p-3">
+              {currentSession.messages.map((entry) => (
+                <div
+                  key={entry.id}
+                  className={
+                    entry.role === "nox"
+                      ? "mr-5 rounded-xl bg-indigo-950/55 px-3 py-2 text-xs leading-5 text-indigo-100"
+                      : "ml-5 rounded-xl bg-gray-800 px-3 py-2 text-xs leading-5 text-gray-200"
+                  }
+                >
+                  <span className="mr-1 font-black text-gray-400">
+                    {entry.role === "nox" ? "Nox" : "Toi"} ·
+                  </span>{" "}
+                  {entry.text}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={resetConversation}
+                className="text-[11px] font-bold text-gray-500 hover:text-white"
+              >
+                Effacer cette conversation
+              </button>
+            </div>
+          </details>
+        )}
+        <p className="mt-2 text-[10px] leading-4 text-gray-600">
+          Conversation locale à cette position. Nox répond seulement avec les faits disponibles.
+        </p>
+      </div>
     </section>
   );
 }

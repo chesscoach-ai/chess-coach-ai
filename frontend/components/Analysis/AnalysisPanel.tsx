@@ -23,7 +23,6 @@ import {
   getAiPersona,
   type AiPersonaId,
 } from "@/lib/ai/opponents";
-import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
 import { buildPositionCoachInsight } from "@/lib/coach/contextualCoach";
 import type { LearningProfile } from "@/lib/learning/types";
 
@@ -320,24 +319,16 @@ export default function AnalysisPanel({
       {!analysis &&
         !isLoading &&
         !errorMessage && (
-          <CoachMentorMessage
-            compact
-            title="À toi de jouer."
-          >
-            Joue un coup ou importe une partie. Je te dirai d’abord ce qui
-            compte vraiment, puis tu pourras ouvrir les chiffres si tu veux
-            entrer dans la salle des machines.
-          </CoachMentorMessage>
+          <div className="rounded-xl border border-dashed border-gray-700 bg-gray-950/35 p-4 text-sm leading-6 text-gray-400">
+            Joue un coup ou importe une partie pour afficher ici les données
+            détaillées de la position.
+          </div>
         )}
 
       {isLoading && !analysis && (
-        <CoachMentorMessage
-          compact
-          title="Je regarde la position…"
-        >
-          Donne-moi une seconde : je vérifie les menaces, la sécurité des
-          rois et le plan le plus utile. Promis, pas de récitation de robot.
-        </CoachMentorMessage>
+        <div className="rounded-xl border border-blue-900/60 bg-blue-950/25 p-4 text-sm text-blue-200">
+          Calcul de la position en cours…
+        </div>
       )}
 
       {analysis && (
@@ -405,7 +396,7 @@ function PanelHeader({
     <div className="mb-4 flex items-start justify-between gap-4">
       <div>
         <h2 className="text-lg font-semibold text-white">
-          Analyse avec Nox
+          Analyse détaillée de la position
         </h2>
 
         <p className="mt-1 text-sm leading-6 text-gray-400">
@@ -416,7 +407,7 @@ function PanelHeader({
           {requestState === "queued"
             ? "Position reçue, analyse imminente…"
             : requestState === "calculating"
-              ? "Nox vérifie la position…"
+              ? "Le moteur vérifie la position…"
               : requestState === "unavailable"
                 ? "Analyse momentanément indisponible"
                 : requestState === "ready"
@@ -448,16 +439,21 @@ function CoachPositionSummary({
   const move =
     analysis.best_move_details;
   return (
-    <CoachMentorMessage
-      name="Nox"
-      title={`Mon choix : le ${move.moved_piece} joue ${move.move_san}`}
-    >
-      <p>{move.beginner_description}</p>
-      <p className="mt-2 text-blue-100">
+    <div className="rounded-xl border border-indigo-900/60 bg-indigo-950/20 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-indigo-300">
+        Synthèse structurée
+      </p>
+      <p className="mt-2 font-bold text-white">
+        Le {move.moved_piece} joue {move.move_san}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-gray-300">
+        {move.beginner_description}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-blue-100">
         {getPersonaCoachLead(coachPersonaId)}{" "}
         {buildPositionCoachInsight({ move, profile: learningProfile })}
       </p>
-    </CoachMentorMessage>
+    </div>
   );
 }
 

@@ -6,6 +6,7 @@ import type {
 
 export type NoxState =
   | "idle"
+  | "listening"
   | "thinking"
   | "tip"
   | "success"
@@ -16,6 +17,12 @@ export type NoxQuickAction =
   | "plan"
   | "missed"
   | "show";
+
+export type NoxIntent =
+  | NoxQuickAction
+  | "best_move"
+  | "piece_help"
+  | "position_help";
 
 export type NoxMode = "analysis" | "exercise";
 
@@ -40,14 +47,22 @@ export type NoxReply = {
   lesson?: string | null;
   conceptLabel?: string | null;
   followUp?: string | null;
+  highlightedSquares?: string[];
 };
 
 export interface NoxProvider {
   getReply(
     context: NoxContext,
-    action?: NoxQuickAction | null,
+    action?: NoxIntent | null,
+    question?: string,
   ): NoxReply;
 }
+
+export type NoxConversationMessage = {
+  id: string;
+  role: "user" | "nox";
+  text: string;
+};
 
 export type NoxPlayerLevel = "beginner" | "intermediate" | "advanced";
 

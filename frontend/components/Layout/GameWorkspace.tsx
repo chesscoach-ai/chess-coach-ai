@@ -20,7 +20,6 @@ import GameSummary from "@/components/Coach/GameSummary";
 import DailyCoachMission from "@/components/Coach/DailyCoachMission";
 import LivePositionOverview from "@/components/Coach/LivePositionOverview";
 import MoveReviewCard from "@/components/Coach/MoveReviewCard";
-import CoachMentorMessage from "@/components/Coach/CoachMentorMessage";
 import type { CurrentUser } from "@/components/Layout/ProductWorkspace";
 import MoveList from "@/components/PGN/MoveList";
 import NavigationControls from "@/components/PGN/NavigationControls";
@@ -64,6 +63,12 @@ export default function GameWorkspace({
 
   const positionAnalysis =
     usePositionAnalysis(game.fen);
+  const clearSuggestedMove = positionAnalysis.clearSuggestedMove;
+  const [noxHighlightedSquares, setNoxHighlightedSquares] = useState<string[]>([]);
+  const clearNoxVisual = useCallback(() => {
+    clearSuggestedMove();
+    setNoxHighlightedSquares([]);
+  }, [clearSuggestedMove]);
 
   const reviews =
     useMoveReviews(game);
@@ -345,6 +350,7 @@ export default function GameWorkspace({
                 suggestedMove={
                   positionAnalysis.suggestedMove
                 }
+                highlightedSquares={noxHighlightedSquares}
                 reviewIndicators={
                   reviews.selectedMoveReview
                     ? {
@@ -399,6 +405,8 @@ export default function GameWorkspace({
             onShowMove={
               positionAnalysis.selectSuggestedUci
             }
+            onHighlightSquares={setNoxHighlightedSquares}
+            onClearVisual={clearNoxVisual}
             coachPersonaId={aiOpponent.personaId}
             learningProfile={learningProfile}
             livePrecision={
@@ -631,13 +639,13 @@ function getMoveImpact(
 function EmptyMoveReview() {
   return (
     <section className="rounded-2xl border border-gray-800 bg-gray-900/50 p-5 shadow-lg">
-      <CoachMentorMessage
-        compact
-        title="Quel coup veux-tu revoir ?"
-      >
-        Sélectionne un coup dans la partie. Je te donnerai un verdict, ce que
-        tu as bien vu et le réflexe à retenir pour la prochaine fois.
-      </CoachMentorMessage>
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">
+        Analyse du coup sélectionné
+      </p>
+      <p className="mt-2 text-sm leading-6 text-gray-400">
+        Sélectionne un coup dans la partie pour afficher son verdict, ce qui
+        était réussi et le réflexe à retenir pour la prochaine fois.
+      </p>
     </section>
   );
 }

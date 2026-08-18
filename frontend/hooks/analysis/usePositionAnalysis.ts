@@ -101,6 +101,10 @@ export function usePositionAnalysis(
     [],
   );
 
+  const clearSuggestedMove = useCallback((): void => {
+    setSuggestedMove(null);
+  }, []);
+
   const clearPositionAnalysis =
     useCallback((): void => {
       setSuggestedMove(null);
@@ -116,6 +120,7 @@ export function usePositionAnalysis(
     suggestedMove,
     selectSuggestedMove,
     selectSuggestedUci,
+    clearSuggestedMove,
     handleAnalysisComplete,
     setIsCurrentPositionAnalyzing,
     clearPositionAnalysis,

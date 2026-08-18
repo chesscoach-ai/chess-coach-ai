@@ -39,6 +39,7 @@ export type ReviewBoardIndicators = {
 type ChessBoardProps = {
   game: ChessGameController;
   suggestedMove?: SuggestedMove | null;
+  highlightedSquares?: string[];
   reviewIndicators?: ReviewBoardIndicators | null;
   onMovePlayed?: (moveData: PlayedMoveData) => void;
   onReset?: () => void;
@@ -88,6 +89,7 @@ const CLASSIFICATION_COLORS: Record<
 export default function ChessBoard({
   game,
   suggestedMove = null,
+  highlightedSquares = [],
   reviewIndicators = null,
   onMovePlayed,
   onReset,
@@ -390,6 +392,16 @@ export default function ChessBoard({
       suggestedMoveSquareStyle;
     squareStyles[suggestedMove.to] =
       suggestedMoveSquareStyle;
+  }
+
+  for (const square of highlightedSquares) {
+    if (/^[a-h][1-8]$/.test(square) && !squareStyles[square]) {
+      squareStyles[square] = {
+        background:
+          "radial-gradient(circle, rgba(139, 92, 246, 0.65) 22%, rgba(99, 102, 241, 0.22) 70%)",
+        boxShadow: "inset 0 0 0 3px rgba(167, 139, 250, 0.8)",
+      };
+    }
   }
 
   Object.assign(

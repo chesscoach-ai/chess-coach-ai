@@ -1,6 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const serverUrl = process.env.CAPACITOR_SERVER_URL?.trim();
+const isLocalDevelopmentServer = serverUrl?.startsWith("http://") ?? false;
 
 const config: CapacitorConfig = {
   appId: "com.chessclan.app",
@@ -10,7 +11,7 @@ const config: CapacitorConfig = {
     ? {
         server: {
           url: serverUrl,
-          cleartext: false,
+          cleartext: isLocalDevelopmentServer,
           allowNavigation: [new URL(serverUrl).hostname],
         },
       }
