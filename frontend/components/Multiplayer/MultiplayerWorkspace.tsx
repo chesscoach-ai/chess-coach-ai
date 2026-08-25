@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo } from "react";
 import { Chess } from "chess.js";
 
@@ -14,6 +15,7 @@ import { useChessGame } from "@/hooks/useChessGame";
 import { useOnlineGame } from "@/hooks/useOnlineGame";
 import { useAiOpponent } from "@/hooks/useAiOpponent";
 import { getAiLevel, getAiPersona } from "@/lib/ai/opponents";
+import { NOX_RANK_ASSETS } from "@/lib/nox/rankAssets";
 
 export type MultiplayerKind =
   | "launcher"
@@ -28,6 +30,9 @@ export default function MultiplayerWorkspace({
   requestedKind,
   onKindChange,
   onOpenGameReview,
+  onAnalyze,
+  onAnalyzePgn,
+  onHistory,
 }: {
   currentUser: CurrentUser | null;
   requestedKind: MultiplayerKind;
@@ -35,6 +40,9 @@ export default function MultiplayerWorkspace({
   onOpenGameReview: (
     gameId: string,
   ) => Promise<void>;
+  onAnalyze: () => void;
+  onAnalyzePgn: (pgn: string) => void;
+  onHistory: () => void;
 }) {
   const kind = requestedKind;
   const online = useOnlineGame(
@@ -53,7 +61,7 @@ export default function MultiplayerWorkspace({
       />
 
       {kind === "launcher" ? (
-        <PlayLauncher onSelect={selectKind} />
+        <PlayLauncher onSelect={selectKind} onAnalyze={onAnalyze} onHistory={onHistory} />
       ) : kind === "community" ? (
         <CommunityHub
           currentUser={currentUser}
@@ -107,7 +115,7 @@ export default function MultiplayerWorkspace({
             description="Choisis son niveau et son style avant le duel"
             onBack={() => selectKind("launcher")}
           />
-          <AiMatch />
+          <AiMatch onAnalyze={onAnalyzePgn} />
         </div>
       ) : (
         <div className="space-y-4">
@@ -116,7 +124,7 @@ export default function MultiplayerWorkspace({
             description="Deux joueurs, un appareil, aucun classement"
             onBack={() => selectKind("launcher")}
           />
-          <LocalMatch />
+          <LocalMatch onAnalyze={onAnalyzePgn} />
         </div>
       )}
 
@@ -125,7 +133,7 @@ export default function MultiplayerWorkspace({
   );
 }
 
-function AiMatch() {
+function AiMatch({ onAnalyze }: { onAnalyze: (pgn: string) => void }) {
   const game = useChessGame();
   const opponent = useAiOpponent(game, true);
   const position = useMemo(() => new Chess(game.fen), [game.fen]);
@@ -200,6 +208,7 @@ function AiMatch() {
               révèle ni évaluation, ni flèche, ni suggestion pendant ce duel.
             </p>
           </section>
+          {result && <FinishedLocalGame onAnalyze={() => onAnalyze(game.pgn)} onRematch={game.reset} />}
         </aside>
       </section>
     </div>
@@ -208,26 +217,24 @@ function AiMatch() {
 
 function PlayLauncher({
   onSelect,
+  onAnalyze,
+  onHistory,
 }: {
   onSelect: (kind: MultiplayerKind) => void;
+  onAnalyze: () => void;
+  onHistory: () => void;
 }) {
   const previewGame = useChessGame();
+  const noxAvatar = NOX_RANK_ASSETS.squire.avatar;
 
   return (
-    <section className="mx-auto w-full max-w-7xl overflow-hidden rounded-3xl border border-gray-800 bg-gray-900 shadow-2xl">
-      <div className="border-b border-gray-800 bg-gradient-to-r from-blue-950/70 via-gray-900 to-violet-950/50 px-5 py-5 sm:px-7">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">
-          Jouer aux échecs
-        </p>
-        <h1 className="mt-1 text-2xl font-black text-white sm:text-3xl">
-          Comment veux-tu jouer ?
-        </h1>
-        <p className="mt-2 text-sm text-gray-400">
-          Choisis un mode et entre dans la partie en quelques secondes.
-        </p>
+    <section className="-mx-3 w-auto overflow-hidden border-y border-gray-800 bg-gray-900 shadow-2xl sm:mx-auto sm:w-full sm:max-w-7xl sm:rounded-3xl sm:border">
+      <div className="flex items-center gap-3 border-b border-gray-800 bg-gradient-to-r from-blue-950/70 via-gray-900 to-violet-950/50 px-4 py-4 sm:px-7 sm:py-5">
+        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl border border-indigo-700 bg-slate-950"><Image src={noxAvatar} alt="Nox, ton compagnon d’échecs" fill sizes="48px" className="object-cover" /></div>
+        <div><p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">Jouer</p><h1 className="mt-0.5 text-xl font-black text-white sm:text-3xl">Prêt pour une partie ?</h1><p className="mt-1 text-sm text-gray-400">Nox sera là après le duel pour t’aider à comprendre.</p></div>
       </div>
 
-      <div className="grid items-start gap-5 p-4 sm:p-6 xl:grid-cols-[minmax(560px,720px)_minmax(320px,390px)] xl:justify-center">
+      <div className="grid items-start gap-4 p-1.5 sm:gap-5 sm:p-6 xl:grid-cols-[minmax(560px,720px)_minmax(320px,390px)] xl:justify-center">
         <div className="min-w-0">
           <ChessBoard
             game={previewGame}
@@ -235,23 +242,23 @@ function PlayLauncher({
             interactionDisabled
             presentationOnly
           />
-          <p className="mt-3 text-center text-xs text-gray-500">
+          <p className="mt-2 px-2 text-center text-xs text-gray-500 sm:mt-3">
             L’échiquier devient interactif dès que ton mode est lancé.
           </p>
         </div>
 
-        <div className="grid gap-3">
+        <div className="grid gap-3 px-2 pb-3 sm:px-0 sm:pb-0">
         <LaunchChoice
           icon="⚡"
-          title="Jouer en ligne"
-          description="Match classé contre un joueur proche de ton Elo"
+          title="Jouer maintenant"
+          description="Match en ligne contre un joueur proche de ton niveau"
           accent="blue"
           onClick={() => onSelect("online")}
         />
         <LaunchChoice
           icon="🤖"
           title="Défier une IA"
-          description="Adversaires du niveau débutant au maître"
+          description="Choisis un adversaire virtuel, du débutant au maître"
           accent="violet"
           onClick={() => onSelect("ai")}
         />
@@ -269,6 +276,10 @@ function PlayLauncher({
           accent="gray"
           onClick={() => onSelect("local")}
         />
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={onAnalyze} className="min-h-12 rounded-xl border border-violet-800 bg-violet-950/25 px-3 py-2 text-left text-xs font-bold text-violet-200 hover:bg-violet-950/45">💡 Analyser avec Nox</button>
+          <button type="button" onClick={onHistory} className="min-h-12 rounded-xl border border-gray-700 bg-gray-950/45 px-3 py-2 text-left text-xs font-bold text-gray-300 hover:bg-gray-800">◷ Mes parties</button>
+        </div>
         </div>
       </div>
     </section>
@@ -367,7 +378,7 @@ function FairPlayNotice() {
             Partie sans assistance
           </h2>
           <p className="mt-0.5 text-xs text-gray-500">
-            Stockfish reste masqué jusqu’au résultat.
+            Les conseils de Nox restent masqués jusqu’au résultat.
           </p>
         </div>
         </div>
@@ -376,7 +387,7 @@ function FairPlayNotice() {
         </span>
       </summary>
       <p className="border-t border-violet-900/40 px-4 py-3 text-sm leading-6 text-gray-400">
-        Les évaluations, les suggestions et le coach sont entièrement
+        Les évaluations, les suggestions et Nox sont entièrement
         désactivés pendant la partie. L’analyse sera proposée seulement après
         le résultat.
       </p>
@@ -384,7 +395,7 @@ function FairPlayNotice() {
   );
 }
 
-function LocalMatch() {
+function LocalMatch({ onAnalyze }: { onAnalyze: (pgn: string) => void }) {
   const game = useChessGame();
   const position = useMemo(() => new Chess(game.fen), [game.fen]);
   const whiteToMove = position.turn() === "w";
@@ -427,13 +438,16 @@ function LocalMatch() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={game.reset}
-            className="mt-4 w-full rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-semibold text-gray-200 transition hover:bg-gray-800"
-          >
-            Nouvelle partie locale
-          </button>
+          {!result && (
+            <button
+              type="button"
+              onClick={game.reset}
+              className="mt-4 w-full rounded-xl border border-gray-700 px-4 py-2.5 text-sm font-semibold text-gray-200 transition hover:bg-gray-800"
+            >
+              Nouvelle partie locale
+            </button>
+          )}
+          {result && <FinishedLocalGame onAnalyze={() => onAnalyze(game.pgn)} onRematch={game.reset} />}
         </section>
 
         <section className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5">
@@ -446,6 +460,10 @@ function LocalMatch() {
       </aside>
     </section>
   );
+}
+
+function FinishedLocalGame({ onAnalyze, onRematch }: { onAnalyze: () => void; onRematch: () => void }) {
+  return <section className="mt-4 rounded-xl border border-violet-800/70 bg-violet-950/30 p-3"><p className="text-xs font-black uppercase tracking-[0.14em] text-violet-300">Partie terminée</p><p className="mt-1 text-sm text-gray-300">Nox peut maintenant t’aider à comprendre les moments importants.</p><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={onAnalyze} className="rounded-lg bg-violet-600 px-3 py-2 text-xs font-black text-white hover:bg-violet-500">Analyser avec Nox</button><button type="button" onClick={onRematch} className="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold text-gray-300 hover:bg-gray-800">Rejouer</button></div></section>;
 }
 
 function LocalPlayerRow({

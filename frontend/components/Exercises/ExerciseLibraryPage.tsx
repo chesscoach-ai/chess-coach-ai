@@ -272,7 +272,7 @@ export default function ExerciseLibraryPage({
           ...offlineSession,
           sourceExampleId: example.id,
           coachNote:
-            "Stockfish est momentanément indisponible : l’exercice reste jouable avec le coup de référence de la partie.",
+            "La vérification automatique est momentanément indisponible : l’exercice reste jouable avec le coup de référence de la partie.",
           champion: example.champion,
           decisionNumber:
             example.decisionNumber,
@@ -333,11 +333,11 @@ export default function ExerciseLibraryPage({
         <div className="mb-5 flex items-center justify-between gap-4">
           <div>
             <p className="mb-2 text-sm font-medium uppercase tracking-widest text-emerald-400">
-              Coach Knightly
+              Nox à tes côtés
             </p>
 
             <h1 className="text-2xl font-black sm:text-3xl">
-              Entraînement
+              Entraînement libre
             </h1>
 
             <p className="mt-2 text-slate-400">
@@ -351,7 +351,7 @@ export default function ExerciseLibraryPage({
               onClick={onExit}
               className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
             >
-              Retour au jeu
+              Retour à Progresser
             </button>
           ) : (
           <Link
@@ -363,7 +363,7 @@ export default function ExerciseLibraryPage({
           )}
         </div>
 
-        <div className="mb-5"><DailyCoachMission profile={learningProfile} /></div>
+        {!embedded && <div className="mb-5"><DailyCoachMission profile={learningProfile} /></div>}
 
         <LearningSkillPath
           path={skillPath}

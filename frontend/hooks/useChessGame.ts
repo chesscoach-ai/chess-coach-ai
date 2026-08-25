@@ -265,6 +265,7 @@ export function useChessGame() {
 
   return {
     fen,
+    pgn: engine.getPGN(),
     history,
     moves,
 

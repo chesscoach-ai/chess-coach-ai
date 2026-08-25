@@ -48,8 +48,7 @@ export default function CriticalPositionList({
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400">
             Retrouve le meilleur coup avant
-            d’afficher la solution de
-            Stockfish.
+            d’afficher la solution expliquée.
           </p>
         </div>
 

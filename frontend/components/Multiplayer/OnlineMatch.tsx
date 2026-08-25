@@ -319,6 +319,14 @@ export default function OnlineMatch({
             </section>
           )}
 
+          {game.status === "finished" && (
+            <section className="rounded-2xl border border-violet-800/70 bg-gradient-to-br from-violet-950/45 to-gray-900 p-4" aria-labelledby="finished-game-title">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">Partie terminée</p>
+              <h2 id="finished-game-title" className="mt-1 text-lg font-black text-white">Nox est prêt à la revoir avec toi</h2>
+              <p className="mt-1 text-sm leading-5 text-gray-300">Découvre ton meilleur moment, l’erreur la plus utile et ce que nous pouvons travailler ensuite.</p>
+            </section>
+          )}
+
           <div className="grid grid-cols-2 gap-2">
             {game.status === "active" ? (
               <>
@@ -354,7 +362,7 @@ export default function OnlineMatch({
                   }
                   className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-500 disabled:opacity-60"
                 >
-                  Voir le bilan
+                  Analyser avec Nox
                 </button>
                 <button
                   type="button"
@@ -379,7 +387,7 @@ export default function OnlineMatch({
             {game.status !==
               "finished" && (
               <div className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-center text-xs leading-5 text-gray-500">
-                Stockfish
+                Aide pendant la partie
                 <span className="block font-semibold text-gray-300">
                   Hors ligne
                 </span>

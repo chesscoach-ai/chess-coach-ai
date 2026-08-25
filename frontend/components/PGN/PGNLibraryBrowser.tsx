@@ -108,7 +108,7 @@ export default function PGNLibraryBrowser({
 
             <div>
               <p className="font-semibold text-blue-100">
-                Analyse Stockfish en cours
+                Vérification du coup en cours
               </p>
 
               <p className="mt-1 text-sm text-blue-300/80">

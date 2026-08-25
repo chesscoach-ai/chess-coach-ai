@@ -10,11 +10,13 @@ export default function NoxNotebook({
   loading,
   onReset,
   progression,
+  showProgressionSummary = true,
 }: {
   memory: NoxMemoryEnvelope | null;
   loading: boolean;
   onReset: () => Promise<boolean>;
   progression?: NoxProgressionSnapshot | null;
+  showProgressionSummary?: boolean;
 }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const summary = memory?.summary;
@@ -44,7 +46,7 @@ export default function NoxNotebook({
         <span className="text-indigo-300 transition group-open:rotate-180" aria-hidden="true">⌄</span>
       </summary>
       <div className="space-y-4 border-t border-indigo-900/40 px-4 py-4 text-sm">
-        <div className="rounded-xl border border-indigo-900/60 bg-gray-950/45 p-3">
+        {showProgressionSummary && <div className="rounded-xl border border-indigo-900/60 bg-gray-950/45 p-3">
           <div className="flex items-center justify-between gap-3">
             <div><p className="font-black text-white">Nox — {progression?.rankLabel ?? "Écuyer"}</p><p className="mt-1 text-xs text-gray-400">Notre progression vient des échecs appris ensemble.</p></div>
             <span className="text-sm font-black text-indigo-300">{progression?.progressPercent ?? 0}%</span>
@@ -53,7 +55,7 @@ export default function NoxNotebook({
           <p className="mt-2 text-xs text-indigo-200">{progression?.nextRankLabel ? `Chemin vers ${progression.nextRankLabel}` : "Tous les rangs narratifs sont atteints."}</p>
           {progression?.remaining[0] && <p className="mt-1 text-xs text-gray-400">Encore {progression.remaining[0]}.</p>}
           {progression?.sources.length ? <ul className="mt-2 space-y-1 text-xs text-gray-300">{progression.sources.map((source) => <li key={source}>• {source}</li>)}</ul> : null}
-        </div>
+        </div>}
         <NotebookGroup title="✓ Nous maîtrisons" concepts={summary?.strengths ?? []} tone="text-emerald-300" empty="Pas encore de force confirmée." />
         <NotebookGroup
           title="À travailler"

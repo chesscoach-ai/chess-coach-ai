@@ -415,7 +415,7 @@ export default function DailyJourneyHub({
               </div>
             ) : (
               <p className="rounded-xl border border-dashed border-gray-700 px-3 py-3 text-xs leading-5 text-gray-500">
-                Ajoute un ami dans la Communauté pour débloquer une quête en
+                Ajoute un ami dans l’espace Clan pour débloquer une quête en
                 duo la semaine prochaine.
               </p>
             )}

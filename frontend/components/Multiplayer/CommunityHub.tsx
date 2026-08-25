@@ -38,7 +38,7 @@ export default function CommunityHub({
         throw new Error(
           "message" in payload && payload.message
             ? payload.message
-            : "La communauté ne peut pas être chargée.",
+            : "L’espace Clan ne peut pas être chargé.",
         );
       }
       setDashboard(payload.dashboard);
@@ -47,7 +47,7 @@ export default function CommunityHub({
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "La communauté ne peut pas être chargée.",
+          : "L’espace Clan ne peut pas être chargé.",
       );
     } finally {
       setIsLoading(false);
@@ -91,7 +91,7 @@ export default function CommunityHub({
     return (
       <section className="rounded-2xl border border-violet-900/60 bg-violet-950/20 p-8 text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">
-          Communauté
+          Clan
         </p>
         <h2 className="mt-2 text-2xl font-black text-white">
           Ton identité de joueur commence ici
@@ -114,7 +114,7 @@ export default function CommunityHub({
     return (
       <section className="rounded-2xl border border-gray-800 bg-gray-900 p-8 text-center">
         <p className="text-gray-400">
-          {isLoading ? "Ouverture de la communauté…" : error}
+          {isLoading ? "Ouverture de l’espace Clan…" : error}
         </p>
       </section>
     );

@@ -17,14 +17,11 @@ import type {
   PlayedMoveData,
 } from "@/components/ChessBoard";
 import GameSummary from "@/components/Coach/GameSummary";
-import DailyCoachMission from "@/components/Coach/DailyCoachMission";
 import LivePositionOverview from "@/components/Coach/LivePositionOverview";
 import MoveReviewCard from "@/components/Coach/MoveReviewCard";
-import type { CurrentUser } from "@/components/Layout/ProductWorkspace";
 import MoveList from "@/components/PGN/MoveList";
 import NavigationControls from "@/components/PGN/NavigationControls";
 import PGNInput from "@/components/PGN/PGNInput";
-import PlayerStatistics from "@/components/Statistics/PlayerStatistics";
 
 import {
   usePositionAnalysis,
@@ -49,12 +46,10 @@ export default function GameWorkspace({
   initialPgn,
   reviewGameId,
   onReviewSaved,
-  currentUser,
 }: {
   initialPgn?: string;
   reviewGameId?: string;
   onReviewSaved?: () => void;
-  currentUser: CurrentUser | null;
 }) {
   const game = useChessGame();
   const aiOpponent = useAiOpponent(game);
@@ -435,10 +430,6 @@ export default function GameWorkspace({
         </aside>
       </section>
 
-      <DailyCoachMission
-        profile={learningProfile}
-      />
-
       {reviewGameId && (
         <section className="rounded-xl border border-emerald-800/70 bg-emerald-950/25 px-4 py-3">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-300">
@@ -451,11 +442,6 @@ export default function GameWorkspace({
           </p>
         </section>
       )}
-
-      <PlayerStatistics
-        currentUser={currentUser}
-        variant="analysis"
-      />
 
       <section className="grid items-start gap-6 xl:grid-cols-2">
         <div

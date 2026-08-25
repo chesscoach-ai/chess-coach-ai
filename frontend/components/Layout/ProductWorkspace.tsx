@@ -14,8 +14,7 @@ import MultiplayerWorkspace, {
 import AnalysisPaywall from "@/components/Billing/AnalysisPaywall";
 import ExerciseLibraryPage from "@/components/Exercises/ExerciseLibraryPage";
 import ExerciseTrainer from "@/components/Exercises/ExerciseTrainer";
-import ActivityStreak from "@/components/Statistics/ActivityStreak";
-import PlayerStatistics from "@/components/Statistics/PlayerStatistics";
+import ProgressWorkspace from "@/components/Progression/ProgressWorkspace";
 import type { AnalysisEntitlement } from "@/lib/billing/types";
 import {
   ApiService,
@@ -52,12 +51,14 @@ export default function ProductWorkspace({
     useState(0);
   const [reviewError, setReviewError] =
     useState("");
+  const [directAnalysisPgn, setDirectAnalysisPgn] = useState<string | undefined>();
   const [requestedMultiplayerKind, setRequestedMultiplayerKind] =
     useState<MultiplayerKind>("launcher");
 
   useEffect(() => {
     const requestedMode = searchParams.get("mode");
     const requestedKind = searchParams.get("kind");
+    const requestedFocus = searchParams.get("focus");
     const timer = window.setTimeout(() => {
       if (
         requestedMode === "multiplayer" ||
@@ -76,6 +77,10 @@ export default function ProductWorkspace({
       ) {
         setRequestedMultiplayerKind(requestedKind);
         setMode("multiplayer");
+      }
+      if (requestedFocus === "daily-mission") {
+        setMode("progression");
+        scrollAfterRender("daily-coach");
       }
     }, 0);
     return () => window.clearTimeout(timer);
@@ -97,8 +102,17 @@ export default function ProductWorkspace({
       review.game.id,
     );
     setOpenedReview(review);
+    setDirectAnalysisPgn(undefined);
     setMode("analysis");
     setReviewError("");
+  }
+
+  function openDirectAnalysis(pgn?: string): void {
+    setOpenedReview(null);
+    setDirectAnalysisPgn(pgn);
+    setReviewError("");
+    setMode("analysis");
+    scrollAfterRender("game-board");
   }
 
   async function openReviewFromGame(
@@ -176,7 +190,7 @@ export default function ProductWorkspace({
     scrollAfterRender("exercise-workspace");
   }
 
-  function openStatistics(): void {
+  function openProgress(): void {
     setMode("progression");
     scrollAfterRender("progression-workspace");
   }
@@ -195,13 +209,10 @@ export default function ProductWorkspace({
   return (
     <div className="w-full">
       <WorkspaceMenu
-        mode={mode}
+        pillar={mode === "multiplayer" && requestedMultiplayerKind === "community" ? "clan" : mode === "progression" || mode === "exercises" ? "progress" : "play"}
         onPlay={() => selectMobileMode("multiplayer")}
-        onCoach={() => selectMobileMode("analysis")}
-        onExercises={openExercises}
-        onCommunity={openCommunity}
-        onStatistics={openStatistics}
-        onHistory={openHistory}
+        onProgress={openProgress}
+        onClan={openCommunity}
       />
 
       {mode === "analysis" ? (
@@ -219,16 +230,14 @@ export default function ProductWorkspace({
           openedReview ? (
             <GameWorkspace
               key={
-                openedReview?.game.id ??
-                "free-analysis"
+                openedReview?.game.id ?? directAnalysisPgn ?? "free-analysis"
               }
               initialPgn={
-                openedReview?.game.pgn
+                openedReview?.game.pgn ?? directAnalysisPgn
               }
               reviewGameId={
                 openedReview?.game.id
               }
-              currentUser={currentUser}
               onReviewSaved={() => {
                 setHistoryRefreshKey(
                   (current) =>
@@ -266,6 +275,9 @@ export default function ProductWorkspace({
           onOpenGameReview={
             openReviewFromGame
           }
+          onAnalyze={() => openDirectAnalysis()}
+          onAnalyzePgn={openDirectAnalysis}
+          onHistory={openHistory}
         />
       ) : mode === "exercises" ? (
         <div id="exercise-workspace" className="scroll-mt-20">
@@ -278,7 +290,7 @@ export default function ProductWorkspace({
           ) : exerciseView === "library" ? (
             <ExerciseLibraryPage
               embedded
-              onExit={() => selectMobileMode("multiplayer")}
+              onExit={openProgress}
               onTrainingStart={() => setExerciseView("training")}
             />
           ) : (
@@ -289,35 +301,29 @@ export default function ProductWorkspace({
           )}
         </div>
       ) : (
-        <div
-          id="progression-workspace"
-          className="scroll-mt-20 space-y-4 sm:space-y-6"
-        >
-          <ActivityStreak currentUser={currentUser} />
-          <PlayerStatistics currentUser={currentUser} variant="analysis" />
-        </div>
+        <ProgressWorkspace currentUser={currentUser} onOpenExercises={openExercises} />
       )}
 
       <MobileDock
-        mode={mode}
-        onModeChange={selectMobileMode}
-        onExercisesOpen={openExercises}
-        onStatisticsOpen={openStatistics}
+        pillar={mode === "multiplayer" && requestedMultiplayerKind === "community" ? "clan" : mode === "progression" || mode === "exercises" ? "progress" : "play"}
+        onPlay={() => selectMobileMode("multiplayer")}
+        onProgress={openProgress}
+        onClan={openCommunity}
       />
     </div>
   );
 }
 
-function MobileDock({
-  mode,
-  onModeChange,
-  onExercisesOpen,
-  onStatisticsOpen,
+export function MobileDock({
+  pillar,
+  onPlay,
+  onProgress,
+  onClan,
 }: {
-  mode: ProductMode;
-  onModeChange: (mode: ProductMode) => void;
-  onExercisesOpen: () => void;
-  onStatisticsOpen: () => void;
+  pillar: "play" | "progress" | "clan";
+  onPlay: () => void;
+  onProgress: () => void;
+  onClan: () => void;
 }) {
   const itemClass =
     "flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[10px] font-bold transition active:scale-95";
@@ -330,10 +336,10 @@ function MobileDock({
       <div className="mx-auto flex max-w-md gap-1">
         <button
           type="button"
-          aria-current={mode === "multiplayer" ? "page" : undefined}
-          onClick={() => onModeChange("multiplayer")}
+          aria-current={pillar === "play" ? "page" : undefined}
+          onClick={onPlay}
           className={`${itemClass} ${
-            mode === "multiplayer"
+            pillar === "play"
               ? "bg-blue-600/20 text-blue-300"
               : "text-gray-500"
           }`}
@@ -343,42 +349,29 @@ function MobileDock({
         </button>
         <button
           type="button"
-          aria-current={mode === "analysis" ? "page" : undefined}
-          onClick={() => onModeChange("analysis")}
+          aria-current={pillar === "progress" ? "page" : undefined}
+          onClick={onProgress}
           className={`${itemClass} ${
-            mode === "analysis"
-              ? "bg-blue-600/20 text-blue-300"
-              : "text-gray-500"
-          }`}
-        >
-          <DockIcon path="M9 18h6m-5 3h4m3-12a5 5 0 1 0-10 0c0 2 1 3.5 2.5 4.5V15h5v-1.5C16 12 17 11 17 9Z" />
-          Nox
-        </button>
-        <button
-          type="button"
-          aria-current={mode === "exercises" ? "page" : undefined}
-          onClick={onExercisesOpen}
-          className={`${itemClass} ${
-            mode === "exercises"
-              ? "bg-blue-600/20 text-blue-300"
+            pillar === "progress"
+              ? "bg-violet-600/20 text-violet-300"
               : "text-gray-500"
           }`}
         >
           <DockIcon path="M12 3 4 7v10l8 4 8-4V7l-8-4Zm0 0v18M4 7l8 4 8-4" />
-          Exercices
+          Progresser
         </button>
         <button
           type="button"
-          aria-current={mode === "progression" ? "page" : undefined}
-          onClick={onStatisticsOpen}
+          aria-current={pillar === "clan" ? "page" : undefined}
+          onClick={onClan}
           className={`${itemClass} ${
-            mode === "progression"
-              ? "bg-blue-600/20 text-blue-300"
+            pillar === "clan"
+              ? "bg-red-700/20 text-red-300"
               : "text-gray-500"
           }`}
         >
-          <DockIcon path="M5 20V10m7 10V4m7 16v-7" />
-          Progrès
+          <DockIcon path="M6 18 18 6M8 6l10 10M5 19l3-1-2-2-1 3Zm14-14-3 1 2 2 1-3Z" />
+          Clan
         </button>
       </div>
     </nav>

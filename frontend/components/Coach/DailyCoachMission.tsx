@@ -28,7 +28,7 @@ export default function DailyCoachMission({ profile: _profile }: { profile: Lear
       if (response.ok) setMission(await response.json());
     }
     const session = buildExercise(example.pgn, { id: example.id, title: example.title, description: example.description });
-    saveExerciseSession({ ...session, sourceExampleId: example.id, missionId: mission!.id, missionStep: mission!.currentStep + 1, missionTotal: mission!.exerciseIds.length, missionConceptId: mission!.conceptId, coachNote: `${mission!.reason} Nox ne donnera pas la réponse, mais il t’aidera à regarder au bon endroit.`, returnHref: "/?focus=daily-mission", returnLabel: "Continuer la mission de Nox" });
+    saveExerciseSession({ ...session, sourceExampleId: example.id, missionId: mission!.id, missionStep: mission!.currentStep + 1, missionTotal: mission!.exerciseIds.length, missionConceptId: mission!.conceptId, coachNote: `${mission!.reason} Nox ne donnera pas la réponse, mais il t’aidera à regarder au bon endroit.`, returnHref: "/?mode=progression&focus=daily-mission", returnLabel: "Continuer la mission de Nox" });
     router.push("/exercises/training?mission=1");
   }
 

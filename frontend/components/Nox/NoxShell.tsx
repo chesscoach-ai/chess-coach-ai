@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { deterministicNoxProvider } from "@/lib/nox/deterministicNoxProvider";
@@ -234,8 +235,8 @@ export default function NoxShell({
             </div>
           )}
           {context.mission && (
-            <a
-              href="#daily-coach"
+            <Link
+              href="/?mode=progression&focus=daily-mission"
               className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-violet-800/60 bg-violet-950/30 px-3 py-2 text-xs transition hover:border-violet-500"
             >
               <span className="min-w-0">
@@ -245,7 +246,7 @@ export default function NoxShell({
               <span className="shrink-0 font-black text-violet-300">
                 {context.mission.status === "completed" ? "Terminée ✓" : `${context.mission.currentStep}/${context.mission.exerciseIds.length} →`}
               </span>
-            </a>
+            </Link>
           )}
         </div>
       </div>
