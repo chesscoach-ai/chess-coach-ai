@@ -9,6 +9,7 @@ import PlayerStatistics from "@/components/Statistics/PlayerStatistics";
 import { useNoxMemory } from "@/hooks/useNoxMemory";
 import { useNoxProgression } from "@/hooks/useNoxProgression";
 import { NOX_RANK_ASSETS } from "@/lib/nox/rankAssets";
+import Link from "next/link";
 
 export default function ProgressWorkspace({ currentUser, onOpenExercises }: { currentUser: CurrentUser | null; onOpenExercises: () => void }) {
   const memory = useNoxMemory();
@@ -27,6 +28,8 @@ export default function ProgressWorkspace({ currentUser, onOpenExercises }: { cu
       </header>
 
       <DailyCoachMission profile={null} />
+
+      {!currentUser && <section className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-4 text-sm leading-6 text-blue-100"><p className="font-black">Découvre librement la première mission</p><p className="mt-1 text-blue-100/75">Connecte-toi ensuite pour que Nox se souvienne de ce que vous apprenez ensemble et retrouve ta progression sur tous tes appareils.</p><Link href="/auth" className="mt-3 inline-flex min-h-11 items-center rounded-xl border border-blue-700 px-4 font-bold">Se connecter quand je veux</Link></section>}
 
       <section className="rounded-2xl border border-indigo-900/65 bg-gradient-to-br from-indigo-950/40 via-gray-900 to-gray-950 p-4 sm:p-5" aria-labelledby="nox-progression-title">
         <div className="flex items-center gap-4">

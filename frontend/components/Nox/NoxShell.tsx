@@ -22,6 +22,7 @@ import type {
   NoxState,
 } from "@/lib/nox/types";
 import { NOX_RANK_ASSETS } from "@/lib/nox/rankAssets";
+import { trackBetaEvent } from "@/lib/beta/client";
 
 const STATE_STYLES: Record<
   NoxState,
@@ -151,6 +152,7 @@ export default function NoxShell({
   }
 
   function handleAction(action: NoxQuickAction, label: string): void {
+    trackBetaEvent("first_nox_interaction");
     appendExchange(label, conversation.askQuickAction(context, action), action);
   }
 
@@ -158,6 +160,7 @@ export default function NoxShell({
     event.preventDefault();
     const question = currentDraft.trim();
     if (!question) return;
+    trackBetaEvent("first_nox_interaction");
     const { reply: nextReply } = conversation.askQuestion(context, question);
     appendExchange(question, nextReply, null);
     setDraft({ contextKey: context.contextKey, value: "" });

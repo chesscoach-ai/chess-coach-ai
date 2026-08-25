@@ -23,6 +23,7 @@ import type {
   OnlinePlayer,
   PlayerColor,
 } from "@/lib/multiplayer/types";
+import { trackBetaEvent } from "@/lib/beta/client";
 
 export default function OnlineMatch({
   game,
@@ -69,6 +70,8 @@ export default function OnlineMatch({
   const animatedGameId = useRef(
     game.id,
   );
+  const betaStartedGameId = useRef<string | null>(null);
+  const betaCompletedGameId = useRef<string | null>(null);
   const displayedFen =
     optimisticPosition?.sourceFen === game.fen
       ? optimisticPosition.displayedFen
@@ -84,6 +87,17 @@ export default function OnlineMatch({
     onMove: handlePieceDrop,
   });
   const lastMove = game.moves.at(-1);
+
+  useEffect(() => {
+    if (game.status === "active" && betaStartedGameId.current !== game.id) {
+      betaStartedGameId.current = game.id;
+      trackBetaEvent("game_started");
+    }
+    if (game.status === "finished" && betaCompletedGameId.current !== game.id) {
+      betaCompletedGameId.current = game.id;
+      trackBetaEvent("game_completed");
+    }
+  }, [game.id, game.status]);
 
   useEffect(() => {
     if (

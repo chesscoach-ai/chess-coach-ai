@@ -15,6 +15,8 @@ import AnalysisPaywall from "@/components/Billing/AnalysisPaywall";
 import ExerciseLibraryPage from "@/components/Exercises/ExerciseLibraryPage";
 import ExerciseTrainer from "@/components/Exercises/ExerciseTrainer";
 import ProgressWorkspace from "@/components/Progression/ProgressWorkspace";
+import SectionErrorBoundary from "@/components/Layout/SectionErrorBoundary";
+import { trackBetaEvent } from "@/lib/beta/client";
 import type { AnalysisEntitlement } from "@/lib/billing/types";
 import {
   ApiService,
@@ -94,6 +96,10 @@ export default function ProductWorkspace({
       // AnalysisPanel garde son bouton de relance et affiche l'erreur utile.
     });
   }, [analysisEntitlement.hasAccess, mode]);
+
+  useEffect(() => {
+    if (mode === "analysis") trackBetaEvent("first_analysis");
+  }, [mode]);
 
   function handleReviewReady(
     review: OpenedGameReview,
@@ -226,8 +232,9 @@ export default function ProductWorkspace({
             </p>
           )}
 
-          {analysisEntitlement.hasAccess ||
-          openedReview ? (
+          {analysisEntitlement.hasAccess || openedReview || !currentUser ? (
+            <>
+            {!currentUser && <section className="rounded-xl border border-blue-900/70 bg-blue-950/20 p-4 text-sm leading-6 text-blue-100"><p className="font-black">Aperçu invité de l’analyse avec Nox</p><p className="mt-1 text-blue-100/75">Tu peux essayer l’échiquier et les explications. Connecte-toi pour que Nox mémorise tes apprentissages et retrouve tes missions.</p></section>}
             <GameWorkspace
               key={
                 openedReview?.game.id ?? directAnalysisPgn ?? "free-analysis"
@@ -245,6 +252,7 @@ export default function ProductWorkspace({
                 );
               }}
             />
+            </>
           ) : (
             <AnalysisPaywall
               currentUser={currentUser}
@@ -301,7 +309,9 @@ export default function ProductWorkspace({
           )}
         </div>
       ) : (
-        <ProgressWorkspace currentUser={currentUser} onOpenExercises={openExercises} />
+        <SectionErrorBoundary title="Progresser se repose un instant" message="L’échiquier reste disponible pendant que nous remettons les notes de Nox en ordre." action={<button type="button" onClick={() => selectMobileMode("multiplayer")} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white">Revenir à Jouer</button>}>
+          <ProgressWorkspace currentUser={currentUser} onOpenExercises={openExercises} />
+        </SectionErrorBoundary>
       )}
 
       <MobileDock

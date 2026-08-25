@@ -409,7 +409,7 @@ function PanelHeader({
             : requestState === "calculating"
               ? "Le moteur vérifie la position…"
               : requestState === "unavailable"
-                ? "Analyse momentanément indisponible"
+                ? "Service d’analyse injoignable — la partie reste disponible"
                 : requestState === "ready"
                   ? "Conseil à jour"
                   : "Prêt"}

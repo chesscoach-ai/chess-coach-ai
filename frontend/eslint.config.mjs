@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     // Outils et sorties natives générés localement par Gradle/Android.
     ".android-tools/**",
     ".gradle-user-home/**",
+    ".gradle-beta-home/**",
     "android/**/build/**",
   ]),
 ]);

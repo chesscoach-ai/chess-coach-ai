@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { findUserByEmail } from "@/lib/auth/userStore";
 import { recordLegalAcceptance } from "@/lib/legal/acceptanceStore";
+import { canAttemptLogin, clearLoginFailures, recordFailedLogin } from "@/lib/auth/loginLimiter";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -31,13 +32,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const parsed = credentialsSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
+        if (!canAttemptLogin(parsed.data.email)) return null;
+
         const user = await findUserByEmail(parsed.data.email);
         if (
           !user ||
           !(await compare(parsed.data.password, user.passwordHash))
         ) {
+          recordFailedLogin(parsed.data.email);
           return null;
         }
+
+        clearLoginFailures(parsed.data.email);
 
         return { id: user.id, name: user.name, email: user.email };
       },

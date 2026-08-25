@@ -63,6 +63,10 @@ export default function PrivacyPage() {
           tant qu’un mécanisme de consentement conforme n’aura pas été ajouté.
         </p>
       </LegalSection>
+      <LegalSection title="Mesure de la bêta et retours">
+        <p>La bêta enregistre des événements fonctionnels pseudonymes — ouverture, partie, analyse, interaction avec Nox et mission — afin de comprendre si le parcours fonctionne. Aucun contenu de conversation ou de partie n’est joint à ces événements.</p>
+        <p>Un avis ou un signalement contient uniquement les réponses saisies et les métadonnées techniques annoncées dans le formulaire. L’adresse e-mail n’est pas ajoutée automatiquement.</p>
+      </LegalSection>
     </LegalPage>
   );
 }

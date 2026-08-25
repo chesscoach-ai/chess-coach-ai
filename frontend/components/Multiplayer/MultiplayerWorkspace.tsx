@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Chess } from "chess.js";
 
 import ChessBoard from "@/components/ChessBoard";
@@ -16,6 +16,7 @@ import { useOnlineGame } from "@/hooks/useOnlineGame";
 import { useAiOpponent } from "@/hooks/useAiOpponent";
 import { getAiLevel, getAiPersona } from "@/lib/ai/opponents";
 import { NOX_RANK_ASSETS } from "@/lib/nox/rankAssets";
+import { trackBetaEvent } from "@/lib/beta/client";
 
 export type MultiplayerKind =
   | "launcher"
@@ -138,6 +139,7 @@ function AiMatch({ onAnalyze }: { onAnalyze: (pgn: string) => void }) {
   const opponent = useAiOpponent(game, true);
   const position = useMemo(() => new Chess(game.fen), [game.fen]);
   const result = getLocalGameResult(position);
+  useBetaGameEvents(game.moves.length, result);
   const persona = getAiPersona(opponent.personaId);
   const level = getAiLevel(opponent.levelId);
   const playerTurn =
@@ -400,6 +402,7 @@ function LocalMatch({ onAnalyze }: { onAnalyze: (pgn: string) => void }) {
   const position = useMemo(() => new Chess(game.fen), [game.fen]);
   const whiteToMove = position.turn() === "w";
   const result = getLocalGameResult(position);
+  useBetaGameEvents(game.moves.length, result);
 
   return (
     <section className="grid items-start justify-center gap-6 xl:grid-cols-[minmax(620px,760px)_minmax(320px,380px)]">
@@ -464,6 +467,16 @@ function LocalMatch({ onAnalyze }: { onAnalyze: (pgn: string) => void }) {
 
 function FinishedLocalGame({ onAnalyze, onRematch }: { onAnalyze: () => void; onRematch: () => void }) {
   return <section className="mt-4 rounded-xl border border-violet-800/70 bg-violet-950/30 p-3"><p className="text-xs font-black uppercase tracking-[0.14em] text-violet-300">Partie terminée</p><p className="mt-1 text-sm text-gray-300">Nox peut maintenant t’aider à comprendre les moments importants.</p><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={onAnalyze} className="rounded-lg bg-violet-600 px-3 py-2 text-xs font-black text-white hover:bg-violet-500">Analyser avec Nox</button><button type="button" onClick={onRematch} className="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold text-gray-300 hover:bg-gray-800">Rejouer</button></div></section>;
+}
+
+function useBetaGameEvents(moveCount: number, result: string | null) {
+  const started = useRef(false);
+  const completed = useRef(false);
+  useEffect(() => {
+    if (moveCount === 0) { started.current = false; completed.current = false; return; }
+    if (!started.current) { started.current = true; trackBetaEvent("game_started"); }
+    if (result && !completed.current) { completed.current = true; trackBetaEvent("game_completed"); }
+  }, [moveCount, result]);
 }
 
 function LocalPlayerRow({

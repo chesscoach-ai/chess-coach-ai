@@ -1,26 +1,29 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PGN_EXAMPLES } from "@/data/pgn/examples";
 import { buildExercise } from "@/lib/exercise/buildExercise";
 import { saveExerciseSession } from "@/lib/exercises/exerciseStorage";
 import { useNoxMission } from "@/hooks/useNoxMission";
 import type { LearningProfile } from "@/lib/learning/types";
+import { trackBetaEvent } from "@/lib/beta/client";
 
 export default function DailyCoachMission({ profile: _profile }: { profile: LearningProfile | null }) {
   void _profile;
   const router = useRouter();
   const { mission, loading, setMission } = useNoxMission();
   const [answer, setAnswer] = useState<number | null>(null);
+  const completed = mission?.status === "completed";
+  useEffect(() => { if (completed) trackBetaEvent("first_mission_completed"); }, [completed]);
   if (loading || !mission) return <section className="rounded-2xl border border-indigo-900/60 bg-gray-900/60 p-4 text-sm text-gray-400">Nox prépare une courte mission…</section>;
-  const completed = mission.status === "completed";
   const currentExerciseId = mission.exerciseIds[mission.currentStep];
   const progress = Math.round((mission.currentStep / mission.exerciseIds.length) * 100);
   const correctCount = mission.results.filter((result) => result.success).length;
 
   async function begin() {
     if (!currentExerciseId) return;
+    trackBetaEvent("first_mission_started");
     const example = PGN_EXAMPLES.find((item) => item.id === currentExerciseId);
     if (!example) return;
     if (mission!.persistent && mission!.status === "offered") {

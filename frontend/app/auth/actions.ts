@@ -5,6 +5,9 @@ import { z } from "zod";
 
 import { signIn } from "@/auth";
 import { createUser } from "@/lib/auth/userStore";
+import { randomUUID } from "node:crypto";
+import { recordBetaEvent } from "@/lib/beta/store";
+import { KNIGHTLY_BETA_VERSION } from "@/lib/beta/constants";
 
 export type AuthActionState = { error?: string };
 
@@ -58,6 +61,7 @@ export async function register(
 
   try {
     await createUser(parsed.data);
+    await recordBetaEvent({ eventName: "account_created", visitorId: randomUUID(), page: "/auth", platform: "web", version: KNIGHTLY_BETA_VERSION });
   } catch (error) {
     if (error instanceof Error && error.message === "ACCOUNT_EXISTS") {
       return { error: "Un compte existe déjà avec cette adresse e-mail." };

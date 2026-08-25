@@ -274,7 +274,7 @@ function friendlyHttpError(
     );
   }
   return new AnalysisApiError(
-    "Le moteur d’analyse est momentanément indisponible.",
+    "Knightly n’arrive pas à joindre le service d’analyse pour le moment. Tu peux continuer à jouer et réessayer ensuite.",
     "unavailable",
     status,
     technicalDetail,

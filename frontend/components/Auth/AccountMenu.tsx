@@ -9,7 +9,7 @@ export default async function AccountMenu() {
     return (
       <Link
         href="/auth"
-        className="rounded-xl border border-blue-700 bg-blue-950/30 px-4 py-2 text-sm font-semibold text-blue-200 transition hover:bg-blue-900/40"
+        className="rounded-xl border border-blue-700 bg-blue-950/30 px-3 py-2 text-xs font-semibold text-blue-200 transition hover:bg-blue-900/40 sm:px-4 sm:text-sm"
       >
         Connexion
       </Link>

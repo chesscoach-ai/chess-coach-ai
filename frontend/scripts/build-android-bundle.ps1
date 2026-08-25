@@ -25,7 +25,7 @@ if (-not (Test-Path -LiteralPath $androidSdk)) {
 $env:JAVA_HOME = $jdkRoot.FullName
 $env:ANDROID_HOME = $androidSdk
 $env:ANDROID_USER_HOME = Join-Path $frontendRoot ".android-user-home"
-$env:GRADLE_USER_HOME = Join-Path $frontendRoot ".gradle-user-home"
+$env:GRADLE_USER_HOME = Join-Path $frontendRoot ".gradle-beta-home"
 $env:CAPACITOR_SERVER_URL = $ServerUrl
 
 Push-Location $frontendRoot
@@ -37,7 +37,9 @@ try {
 
   Push-Location $androidRoot
   try {
-    & .\gradlew.bat clean bundleRelease
+    & .\gradlew.bat --stop
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    & .\gradlew.bat clean bundleRelease --no-daemon
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   } finally {
     Pop-Location

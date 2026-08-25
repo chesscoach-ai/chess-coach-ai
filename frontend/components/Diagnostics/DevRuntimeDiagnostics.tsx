@@ -11,6 +11,7 @@ import { NOX_RANK_IDS, type NoxRankId } from "@/lib/nox/progressionTypes";
 import { NOX_RANKS } from "@/lib/nox/progressionRules";
 import { NOX_PREVIEW_STORAGE_KEY } from "@/hooks/useNoxProgression";
 import { NOX_CONCEPT_IDS } from "@/lib/nox/memoryTypes";
+import BetaDiagnosticsPanel from "@/components/Diagnostics/BetaDiagnosticsPanel";
 
 function numberValue(
   source: Record<string, unknown> | null,
@@ -307,6 +308,8 @@ export default function DevRuntimeDiagnostics({
         <button type="button" onClick={() => void simulateKingSafetyWeakness()} className="mt-3 rounded-lg border border-amber-800 px-3 py-2 text-xs font-bold text-amber-200 hover:bg-amber-950/40">Simuler 3 erreurs · sécurité du roi</button>
         <div className="mt-3 flex flex-wrap gap-2">{NOX_CONCEPT_IDS.map((conceptId) => <button key={conceptId} type="button" onClick={async () => { const response = await fetch("/api/nox/missions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "dev_generate", conceptId }) }); if (response.ok) window.location.assign("/?mode=progression&focus=daily-mission"); else setError("Connecte-toi pour générer une mission DEV persistante."); }} className="rounded-lg border border-indigo-800 px-3 py-2 text-xs font-bold text-indigo-200 hover:bg-indigo-900/40">{conceptId}</button>)}<button type="button" disabled={payload.noxMission.active === "aucune"} onClick={async () => { const response = await fetch("/api/nox/missions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "dev_complete", missionId: payload.noxMission.active }) }); if (response.ok) await refresh(); else setError("Impossible de terminer cette mission DEV."); }} className="rounded-lg border border-emerald-800 px-3 py-2 text-xs font-bold text-emerald-200 disabled:opacity-40">Terminer la mission active</button></div>
       </div>
+
+      <BetaDiagnosticsPanel />
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map(([label, value]) => (

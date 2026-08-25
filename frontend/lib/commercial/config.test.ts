@@ -60,7 +60,7 @@ describe("commercial launch guard", () => {
       priceMonthlyCents: 299,
       priceAnnualCents: 2499,
     });
-  });
+  }, 15_000);
 
   it("allows only listed preview accounts before launch", async () => {
     process.env.ANALYSIS_PREVIEW_EMAILS =

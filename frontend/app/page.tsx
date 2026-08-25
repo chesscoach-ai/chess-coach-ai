@@ -3,6 +3,8 @@ import Image from "next/image";
 import AccountMenu from "@/components/Auth/AccountMenu";
 import ProductWorkspace from "@/components/Layout/ProductWorkspace";
 import ExperienceSettings from "@/components/Settings/ExperienceSettings";
+import BetaOnboarding from "@/components/Beta/BetaOnboarding";
+import BetaRuntime from "@/components/Beta/BetaRuntime";
 import { auth } from "@/auth";
 import { getAnalysisEntitlement } from "@/lib/billing/subscriptionStore";
 
@@ -20,24 +22,24 @@ export default async function Home() {
 
   return (
     <main className="safe-page-bottom min-h-screen bg-gray-950 px-3 pt-3 text-white sm:px-6 sm:pt-6 lg:pt-8">
+      <BetaRuntime />
+      <BetaOnboarding />
       <div className="mx-auto flex max-w-[1500px] flex-col items-center">
         <header className="mb-4 flex w-full items-center justify-between gap-4 border-b border-gray-800/80 pb-3 sm:mb-6 sm:pb-4">
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <Image
               src="/brand/knightly-mark.svg"
               alt="Symbole Knightly, cavalier d’échecs"
               width={64}
               height={64}
               priority
-              className="h-12 w-12 shrink-0 rounded-2xl shadow-[0_0_24px_rgba(99,102,241,0.3)] sm:h-16 sm:w-16"
+              className="h-10 w-10 shrink-0 rounded-xl shadow-[0_0_24px_rgba(99,102,241,0.3)] sm:h-16 sm:w-16 sm:rounded-2xl"
             />
             <div className="min-w-0">
               <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-indigo-300 sm:text-xs sm:tracking-[0.22em]">
                 AI Chess Companion
               </p>
-              <h1 className="truncate text-xl font-black text-white sm:mt-1 sm:text-3xl">
-                Knightly
-              </h1>
+              <div className="flex items-center gap-1.5 sm:gap-2"><h1 className="text-lg font-black text-white sm:mt-1 sm:text-3xl">Knightly</h1><span className="rounded-full border border-indigo-700/80 bg-indigo-950/60 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.1em] text-indigo-200 sm:px-2 sm:text-[9px]">Beta</span></div>
               <p className="mt-1 hidden text-sm text-gray-400 md:block">
                 Joue, comprends et progresse à chaque partie.
               </p>

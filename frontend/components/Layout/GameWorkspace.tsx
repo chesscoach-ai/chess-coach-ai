@@ -36,6 +36,7 @@ import { useLearningProfile } from "@/hooks/useLearningProfile";
 import { useNoxMemory } from "@/hooks/useNoxMemory";
 import { useNoxProgression } from "@/hooks/useNoxProgression";
 import { useNoxMission } from "@/hooks/useNoxMission";
+import SectionErrorBoundary from "@/components/Layout/SectionErrorBoundary";
 import { useAiOpponent } from "@/hooks/useAiOpponent";
 import {
   setActiveGameReviewId,
@@ -395,6 +396,7 @@ export default function GameWorkspace({
         </div>
 
         <aside className="min-w-0 space-y-4 xl:sticky xl:top-24">
+          <SectionErrorBoundary title="Nox cherche ses mots" message="Tu peux continuer à jouer : l’échiquier et la partie restent disponibles.">
           <LivePositionOverview
             review={
               reviews.selectedMoveReview
@@ -423,6 +425,7 @@ export default function GameWorkspace({
               livePrecision
             }
           />
+          </SectionErrorBoundary>
           <AiOpponentPanel
             opponent={aiOpponent}
             context="analysis"
