@@ -1,7 +1,4 @@
-import {
-  fetchBackend,
-  getBackendHeaders,
-} from "@/lib/api/backendServer";
+import { fetchBackend } from "@/lib/api/backendServer";
 import { billingErrorResponse } from "@/lib/billing/apiResponse";
 import { getAnalysisEntitlement } from "@/lib/billing/subscriptionStore";
 import { getAuthenticatedPlayer } from "@/lib/multiplayer/playerSession";
@@ -23,10 +20,10 @@ export async function POST(request: Request) {
       "/api/exercises/analyse-position",
       {
         method: "POST",
-        headers: getBackendHeaders({
+        headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-        }),
+        },
         body: await request.text(),
         cache: "no-store",
       },

@@ -11,10 +11,7 @@ import {
 } from "@/lib/ai/opponents";
 import { selectAiMove } from "@/lib/ai/selectMove";
 import type { PositionAnalysisResponse } from "@/services/api/ApiService";
-import {
-  fetchBackend,
-  getBackendHeaders,
-} from "@/lib/api/backendServer";
+import { fetchBackend } from "@/lib/api/backendServer";
 
 export const runtime = "nodejs";
 
@@ -54,10 +51,10 @@ export async function POST(request: Request) {
     const level = getAiLevel(parsed.data.levelId);
     const response = await fetchBackend("/analysis", {
       method: "POST",
-      headers: getBackendHeaders({
+      headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-      }),
+      },
       body: JSON.stringify({
         fen: parsed.data.fen,
         // Un adversaire doit répondre vite : les grandes profondeurs et
