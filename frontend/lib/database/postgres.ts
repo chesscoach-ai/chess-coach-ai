@@ -2,7 +2,7 @@ import "server-only";
 
 import { Pool } from "pg";
 
-export const REQUIRED_DATABASE_REVISION = "0005_nox_missions";
+export const REQUIRED_DATABASE_REVISION = "0006_beta_observability";
 
 let sharedPool: Pool | null = null;
 let migrationCheck: Promise<void> | null = null;
