@@ -246,6 +246,9 @@ export default function ProductWorkspace({
               reviewGameId={
                 openedReview?.game.id
               }
+              reviewedPlayerColor={
+                openedReview?.game.youAre
+              }
               onReviewSaved={() => {
                 setHistoryRefreshKey(
                   (current) =>

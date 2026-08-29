@@ -44,14 +44,17 @@ import {
   setActiveGameReviewId,
   type MoveReviewResponse,
 } from "@/services/api/ApiService";
+import type { PlayerColor } from "@/lib/multiplayer/types";
 
 export default function GameWorkspace({
   initialPgn,
   reviewGameId,
+  reviewedPlayerColor,
   onReviewSaved,
 }: {
   initialPgn?: string;
   reviewGameId?: string;
+  reviewedPlayerColor?: PlayerColor;
   onReviewSaved?: () => void;
 }) {
   const game = useChessGame();
@@ -100,7 +103,9 @@ export default function GameWorkspace({
           "white"
           ? 0
           : 1
-        : 0;
+        : reviewedPlayerColor === "black"
+          ? 1
+          : 0;
     const visibleReviews = Object.entries(reviews.moveReviews)
       .filter(([index]) => Number(index) <= maximumIndex);
     const playerReviews = visibleReviews
@@ -147,6 +152,7 @@ export default function GameWorkspace({
   }, [
     aiOpponent.enabled,
     aiOpponent.playerColor,
+    reviewedPlayerColor,
     reviews.moveReviews,
     reviews.selectedMoveIndex,
   ]);
