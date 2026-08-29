@@ -17,7 +17,9 @@ import type {
   PlayedMoveData,
 } from "@/components/ChessBoard";
 import GameSummary from "@/components/Coach/GameSummary";
-import LivePositionOverview from "@/components/Coach/LivePositionOverview";
+import LivePositionOverview, {
+  LivePrecisionCard,
+} from "@/components/Coach/LivePositionOverview";
 import MoveReviewCard from "@/components/Coach/MoveReviewCard";
 import MoveList from "@/components/PGN/MoveList";
 import NavigationControls from "@/components/PGN/NavigationControls";
@@ -98,22 +100,20 @@ export default function GameWorkspace({
           "white"
           ? 0
           : 1
-        : null;
-    const playerReviews = Object.entries(
-      reviews.moveReviews,
-    )
-      .filter(
-        ([index]) =>
-          Number(index) <= maximumIndex &&
-          (playerParity === null ||
-            Number(index) % 2 ===
-              playerParity),
-      )
+        : 0;
+    const visibleReviews = Object.entries(reviews.moveReviews)
+      .filter(([index]) => Number(index) <= maximumIndex);
+    const playerReviews = visibleReviews
+      .filter(([index]) => Number(index) % 2 === playerParity)
       .sort(
         ([first], [second]) =>
           Number(first) -
           Number(second),
       )
+      .map(([, review]) => review);
+    const opponentReviews = visibleReviews
+      .filter(([index]) => Number(index) % 2 !== playerParity)
+      .sort(([first], [second]) => Number(first) - Number(second))
       .map(([, review]) => review);
     const latest =
       playerReviews[
@@ -129,6 +129,12 @@ export default function GameWorkspace({
           : null,
       reviewedMoveCount:
         playerReviews.length,
+      opponentAccuracy:
+        opponentReviews.length > 0
+          ? getEstimatedAccuracy(opponentReviews)
+          : null,
+      opponentReviewedMoveCount:
+        opponentReviews.length,
       impact: latest
         ? getMoveImpact(
             latest.classification,
@@ -331,6 +337,11 @@ export default function GameWorkspace({
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      <AiOpponentPanel
+        opponent={aiOpponent}
+        context="analysis"
+      />
+
       <section
         id="game-board"
         className="scroll-mt-20 grid items-start justify-center gap-6 xl:grid-cols-[minmax(620px,760px)_minmax(320px,390px)]"
@@ -377,6 +388,15 @@ export default function GameWorkspace({
             </div>
           </div>
 
+          <LivePrecisionCard
+            accuracy={livePrecision.accuracy}
+            reviewedMoveCount={livePrecision.reviewedMoveCount}
+            opponentAccuracy={livePrecision.opponentAccuracy}
+            opponentReviewedMoveCount={livePrecision.opponentReviewedMoveCount}
+            impact={livePrecision.impact}
+            impactKey={livePrecision.impactKey}
+          />
+
           <NavigationControls
             currentMoveIndex={
               game.currentMoveIndex
@@ -393,6 +413,7 @@ export default function GameWorkspace({
             onNext={handleNextMove}
             onEnd={handleGoToEnd}
           />
+
         </div>
 
         <aside className="min-w-0 space-y-4 xl:sticky xl:top-24">
@@ -421,15 +442,8 @@ export default function GameWorkspace({
             noxProgression={noxProgression.progression}
             noxMission={noxMission.mission}
             onResetNoxMemory={noxMemory.reset}
-            livePrecision={
-              livePrecision
-            }
           />
           </SectionErrorBoundary>
-          <AiOpponentPanel
-            opponent={aiOpponent}
-            context="analysis"
-          />
         </aside>
       </section>
 

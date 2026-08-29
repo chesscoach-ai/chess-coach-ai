@@ -215,8 +215,9 @@ export default function ProductWorkspace({
   return (
     <div className="w-full">
       <WorkspaceMenu
-        pillar={mode === "multiplayer" && requestedMultiplayerKind === "community" ? "clan" : mode === "progression" || mode === "exercises" ? "progress" : "play"}
+        pillar={mode === "analysis" ? "coach" : mode === "multiplayer" && requestedMultiplayerKind === "community" ? "clan" : mode === "progression" || mode === "exercises" ? "progress" : "play"}
         onPlay={() => selectMobileMode("multiplayer")}
+        onCoach={() => openDirectAnalysis()}
         onProgress={openProgress}
         onClan={openCommunity}
       />
@@ -315,8 +316,9 @@ export default function ProductWorkspace({
       )}
 
       <MobileDock
-        pillar={mode === "multiplayer" && requestedMultiplayerKind === "community" ? "clan" : mode === "progression" || mode === "exercises" ? "progress" : "play"}
+        pillar={mode === "analysis" ? "coach" : mode === "multiplayer" && requestedMultiplayerKind === "community" ? "clan" : mode === "progression" || mode === "exercises" ? "progress" : "play"}
         onPlay={() => selectMobileMode("multiplayer")}
+        onCoach={() => openDirectAnalysis()}
         onProgress={openProgress}
         onClan={openCommunity}
       />
@@ -327,11 +329,13 @@ export default function ProductWorkspace({
 export function MobileDock({
   pillar,
   onPlay,
+  onCoach,
   onProgress,
   onClan,
 }: {
-  pillar: "play" | "progress" | "clan";
+  pillar: "play" | "coach" | "progress" | "clan";
   onPlay: () => void;
+  onCoach: () => void;
   onProgress: () => void;
   onClan: () => void;
 }) {
@@ -344,6 +348,19 @@ export function MobileDock({
       className="safe-bottom fixed inset-x-0 bottom-0 z-50 border-t border-gray-800 bg-gray-950/95 px-2 pt-2 shadow-[0_-12px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl md:hidden"
     >
       <div className="mx-auto flex max-w-md gap-1">
+        <button
+          type="button"
+          aria-current={pillar === "coach" ? "page" : undefined}
+          onClick={onCoach}
+          className={`${itemClass} ${
+            pillar === "coach"
+              ? "bg-violet-600/20 text-violet-300"
+              : "text-gray-500"
+          }`}
+        >
+          <DockIcon path="M9 18h6M10 22h4M8 2h8l2 7-6 7-6-7 2-7Z" />
+          Coach
+        </button>
         <button
           type="button"
           aria-current={pillar === "play" ? "page" : undefined}

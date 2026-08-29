@@ -30,12 +30,6 @@ type Props = {
   noxProgression?: NoxProgressionSnapshot | null;
   noxMission?: NoxMission | null;
   onResetNoxMemory?: () => Promise<boolean>;
-  livePrecision?: {
-    accuracy: number | null;
-    reviewedMoveCount: number;
-    impact: number | null;
-    impactKey: string;
-  };
 };
 
 export default function LivePositionOverview({
@@ -53,7 +47,6 @@ export default function LivePositionOverview({
   noxProgression = null,
   noxMission = null,
   onResetNoxMemory = async () => false,
-  livePrecision,
 }: Props) {
   return (
     <section className="space-y-4">
@@ -77,24 +70,6 @@ export default function LivePositionOverview({
         loading={noxMemoryLoading}
         onReset={onResetNoxMemory}
         progression={noxProgression}
-      />
-
-      <LivePrecisionCard
-        accuracy={
-          livePrecision?.accuracy ??
-          null
-        }
-        reviewedMoveCount={
-          livePrecision?.reviewedMoveCount ??
-          0
-        }
-        impact={
-          livePrecision?.impact ?? null
-        }
-        impactKey={
-          livePrecision?.impactKey ??
-          "empty"
-        }
       />
 
     </section>
@@ -151,14 +126,18 @@ function LastMoveSummary({
   );
 }
 
-function LivePrecisionCard({
+export function LivePrecisionCard({
   accuracy,
   reviewedMoveCount,
+  opponentAccuracy,
+  opponentReviewedMoveCount,
   impact,
   impactKey,
 }: {
   accuracy: number | null;
   reviewedMoveCount: number;
+  opponentAccuracy: number | null;
+  opponentReviewedMoveCount: number;
   impact: number | null;
   impactKey: string;
 }) {
@@ -168,19 +147,20 @@ function LivePrecisionCard({
     impact !== null && impact < 0;
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 p-4 shadow-lg">
-      <div className="flex items-center justify-between gap-4">
-        <div>
+    <section aria-label="Précision comparée" className="overflow-hidden rounded-xl border border-gray-800 bg-gray-900 px-3 py-2.5 shadow-lg">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-4">
+          <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-            Précision en direct
+            Ta précision
           </p>
-          <div className="mt-1 flex items-end gap-2">
-            <p className="text-3xl font-black text-white">
+          <div className="flex items-baseline gap-1.5">
+            <p className="text-xl font-black text-white">
               {accuracy !== null
                 ? `${accuracy}%`
                 : "—"}
             </p>
-            <p className="pb-1 text-xs text-gray-500">
+            <p className="text-[10px] text-gray-500">
               {reviewedMoveCount} coup
               {reviewedMoveCount > 1
                 ? "s"
@@ -191,12 +171,25 @@ function LivePrecisionCard({
                 : ""}
             </p>
           </div>
+          </div>
+
+          <div className="border-l border-gray-800 pl-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-600">
+              Adversaire
+            </p>
+            <p className="text-sm font-black text-gray-300">
+              {opponentAccuracy !== null ? `${opponentAccuracy}%` : "—"}
+              <span className="ml-1 text-[10px] font-normal text-gray-600">
+                ({opponentReviewedMoveCount})
+              </span>
+            </p>
+          </div>
         </div>
 
         <div
           key={impactKey}
           className={[
-            "flex min-w-20 flex-col items-center rounded-xl border px-3 py-2",
+            "flex min-w-16 items-center justify-center gap-1 rounded-lg border px-2 py-1.5",
             positive
               ? "border-emerald-800 bg-emerald-950/35 text-emerald-300"
               : negative
@@ -207,7 +200,7 @@ function LivePrecisionCard({
           <span
             aria-hidden="true"
             className={[
-              "text-xl font-black",
+              "text-sm font-black",
               positive || negative
                 ? "animate-bounce"
                 : "",
@@ -227,7 +220,7 @@ function LivePrecisionCard({
         </div>
       </div>
 
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-gray-800">
+      <div className="mt-2 h-1 overflow-hidden rounded-full bg-gray-800">
         <div
           className="h-full rounded-full bg-gradient-to-r from-blue-600 to-emerald-400 transition-[width] duration-700 ease-out"
           style={{
@@ -235,8 +228,8 @@ function LivePrecisionCard({
           }}
         />
       </div>
-      <p className="mt-2 text-[11px] leading-4 text-gray-500">
-        L’impact indique si le dernier coup renforce ou réduit la qualité de la partie.
+      <p className="mt-1 text-[10px] leading-4 text-gray-500">
+        Calculée uniquement sur tes coups. Le score adverse sert de comparaison.
       </p>
     </section>
   );
