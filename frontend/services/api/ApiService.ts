@@ -5,6 +5,7 @@ import {
 
 const SECURE_ANALYSIS_BASE_URL = "/api/analysis-engine";
 const DEFAULT_TIMEOUT_MS = 65_000;
+const SATURATION_RETRY_DELAY_MS = 900;
 let activeGameReviewId: string | null =
   null;
 
@@ -316,12 +317,34 @@ export class ApiService {
     options.onStateChange?.("calculating");
 
     try {
-      const response = await fetch(endpoint, {
-        ...init,
-        signal: controller.signal,
-        cache: "no-store",
-      });
-      if (!response.ok) throw await ApiService.parseError(response);
+      let response: Response | null = null;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        response = await fetch(endpoint, {
+          ...init,
+          signal: controller.signal,
+          cache: "no-store",
+        });
+        if (response.ok) break;
+
+        const retryable = response.status === 429 || response.status === 503;
+        if (!retryable || attempt === 1) {
+          throw await ApiService.parseError(response);
+        }
+
+        // Render Free peut momentanément refuser une requête pendant qu'une
+        // analyse précédente libère le seul moteur disponible.
+        await new Promise<void>((resolve, reject) => {
+          const retryTimer = globalThis.setTimeout(resolve, SATURATION_RETRY_DELAY_MS);
+          const abortRetry = () => {
+            globalThis.clearTimeout(retryTimer);
+            reject(new DOMException("aborted", "AbortError"));
+          };
+          controller.signal.addEventListener("abort", abortRetry, { once: true });
+        });
+      }
+      if (!response?.ok) {
+        throw await ApiService.parseError(response ?? new Response(null, { status: 503 }));
+      }
       const payload = (await response.json()) as T;
       recordAnalysisFinished({
         endpoint,

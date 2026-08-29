@@ -43,10 +43,13 @@ describe("ApiService analyse", () => {
     [400, "La position ne peut pas être analysée."],
     [503, "L’analyse est très sollicitée. Réessaie dans quelques secondes."],
     [504, "Cette position demande plus de temps que prévu."],
-  ])("traduit l'erreur HTTP %s", async (status, expectedMessage) => {
+  ])("traduit l'erreur HTTP %s après une nouvelle tentative", async (status, expectedMessage) => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({ detail: "FastAPI raw" }, status),
+    );
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(jsonResponse({ detail: "FastAPI raw" }, status)),
+      fetchMock,
     );
 
     await expect(
@@ -56,6 +59,7 @@ describe("ApiService analyse", () => {
       status,
       technicalDetail: "FastAPI raw",
     });
+    expect(fetchMock).toHaveBeenCalledTimes(status === 503 ? 2 : 1);
   });
 
   it("traduit une erreur réseau sans exposer le détail technique", async () => {
