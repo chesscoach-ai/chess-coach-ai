@@ -1,8 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+
+import NoxAvatar from "@/components/Nox/NoxAvatar";
 
 import { deterministicNoxProvider } from "@/lib/nox/deterministicNoxProvider";
 import {
@@ -21,43 +23,16 @@ import type {
   NoxReply,
   NoxState,
 } from "@/lib/nox/types";
-import { NOX_RANK_ASSETS } from "@/lib/nox/rankAssets";
+import { getNoxRankVisual, NOX_STATE_VISUALS } from "@/lib/nox/rankAssets";
 import { trackBetaEvent } from "@/lib/beta/client";
 
-const STATE_STYLES: Record<
-  NoxState,
-  { label: string; dot: string; border: string }
-> = {
-  idle: {
-    label: "À tes côtés",
-    dot: "bg-slate-400",
-    border: "border-indigo-900/70",
-  },
-  listening: {
-    label: "Je t’écoute",
-    dot: "animate-pulse bg-violet-400 motion-reduce:animate-none",
-    border: "border-violet-700/80",
-  },
-  thinking: {
-    label: "Je réfléchis",
-    dot: "animate-pulse bg-blue-400 motion-reduce:animate-none",
-    border: "border-blue-800/80",
-  },
-  tip: {
-    label: "Conseil disponible",
-    dot: "bg-indigo-400",
-    border: "border-indigo-700/80",
-  },
-  success: {
-    label: "Bien vu",
-    dot: "bg-emerald-400",
-    border: "border-emerald-700/80",
-  },
-  warning: {
-    label: "À observer",
-    dot: "bg-amber-400",
-    border: "border-amber-700/80",
-  },
+const STATE_BORDERS: Record<NoxState, string> = {
+  idle: "border-indigo-900/70",
+  listening: "border-violet-700/80",
+  thinking: "border-blue-800/80",
+  tip: "border-indigo-700/80",
+  success: "border-emerald-700/80",
+  warning: "border-amber-700/80",
 };
 
 export default function NoxShell({
@@ -105,9 +80,9 @@ export default function NoxShell({
     expanded.contextKey === context.contextKey ? expanded.value : false;
   const reply = currentSession?.currentReply ?? reaction;
   const displayState: NoxState = focused ? "listening" : reply.state;
-  const appearance = STATE_STYLES[displayState];
+  const appearance = NOX_STATE_VISUALS[displayState];
   const progression = context.progression;
-  const rankAsset = NOX_RANK_ASSETS[progression?.rank ?? "squire"];
+  const rankAsset = getNoxRankVisual(progression?.rank);
   const [showEvolution, setShowEvolution] = useState(false);
 
   useEffect(() => {
@@ -178,20 +153,11 @@ export default function NoxShell({
       data-state={displayState}
       data-source="deterministic"
       aria-label="Nox, compagnon d’échecs"
-      className={`overflow-hidden rounded-2xl border bg-gradient-to-br from-indigo-950/55 via-gray-900 to-gray-950 shadow-xl ${appearance.border}`}
+      className={`overflow-hidden rounded-2xl border bg-gradient-to-br from-indigo-950/55 via-gray-900 to-gray-950 shadow-xl ${STATE_BORDERS[displayState]}`}
     >
       <div className="flex items-start gap-3 p-3 sm:p-4">
         <div className="shrink-0 text-center">
-          <div className={`relative h-12 w-12 overflow-hidden rounded-2xl border bg-slate-950 shadow-[0_0_24px_rgba(99,102,241,0.24)] sm:h-16 sm:w-16 ${rankAsset.accent}`}>
-            <Image
-              src={rankAsset.avatar}
-              alt="Nox, jeune écuyer et compagnon d’échecs"
-              fill
-              sizes="64px"
-              className="object-cover"
-              priority
-            />
-          </div>
+          <NoxAvatar rank={progression?.rank} rankLabel={progression?.rankLabel} state={displayState} size="regular" priority />
           <p className="mt-1 text-[9px] font-black uppercase tracking-[0.12em] text-indigo-300">
             {progression?.rankLabel ?? "Écuyer"} <span aria-hidden="true">{rankAsset.emblem}</span>
           </p>
@@ -254,16 +220,20 @@ export default function NoxShell({
         </div>
       </div>
 
-      {showEvolution && progression && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/80 p-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Évolution de Nox">
-          <div className="max-w-sm rounded-3xl border border-indigo-400/70 bg-gradient-to-br from-indigo-950 to-slate-950 p-7 text-center shadow-2xl motion-safe:animate-pulse motion-reduce:animate-none">
-            <p className="text-4xl" aria-hidden="true">{rankAsset.emblem}</p>
+      {showEvolution && progression && createPortal(
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/80 p-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Évolution de Nox">
+          <div className="max-w-sm rounded-3xl border border-indigo-400/70 bg-gradient-to-br from-indigo-950 to-slate-950 p-7 text-center shadow-2xl motion-safe:animate-[nox-success_700ms_ease-out_1] motion-reduce:animate-none">
+            <div className="mx-auto flex justify-center"><NoxAvatar rank={progression.rank} rankLabel={progression.rankLabel} state="success" size="hero" /></div>
             <h2 className="mt-3 text-2xl font-black text-white">Nox évolue !</h2>
             <p className="mt-3 text-indigo-100">Grâce à tout ce que nous avons appris ensemble, Nox devient <strong>{progression.rankLabel}</strong>.</p>
+            <p className="mt-3 rounded-xl border border-indigo-700/60 bg-indigo-950/50 p-3 text-sm text-indigo-100">
+              {progression.sources[0] ?? rankAsset.milestone}
+            </p>
             <p className="mt-3 text-sm text-indigo-300">« Regarde mon armure ! On commence à former une sacrée équipe. »</p>
             <button type="button" onClick={() => setShowEvolution(false)} className="mt-5 rounded-xl bg-indigo-500 px-5 py-3 font-black text-white hover:bg-indigo-400">Continuer ensemble</button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       <div className={`${isExpanded ? "block" : "hidden"} border-t border-white/5 px-3 py-3 sm:block sm:px-4`}>

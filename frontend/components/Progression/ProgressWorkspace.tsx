@@ -1,21 +1,21 @@
 "use client";
 
-import Image from "next/image";
 import DailyCoachMission from "@/components/Coach/DailyCoachMission";
 import type { CurrentUser } from "@/components/Layout/ProductWorkspace";
 import NoxNotebook from "@/components/Nox/NoxNotebook";
+import NoxAvatar from "@/components/Nox/NoxAvatar";
 import ActivityStreak from "@/components/Statistics/ActivityStreak";
 import PlayerStatistics from "@/components/Statistics/PlayerStatistics";
 import { useNoxMemory } from "@/hooks/useNoxMemory";
 import { useNoxProgression } from "@/hooks/useNoxProgression";
-import { NOX_RANK_ASSETS } from "@/lib/nox/rankAssets";
+import { getNoxRankVisual } from "@/lib/nox/rankAssets";
 import Link from "next/link";
 
 export default function ProgressWorkspace({ currentUser, onOpenExercises }: { currentUser: CurrentUser | null; onOpenExercises: () => void }) {
   const memory = useNoxMemory();
   const progression = useNoxProgression();
   const rank = progression.progression;
-  const asset = NOX_RANK_ASSETS[rank?.rank ?? "squire"];
+  const asset = getNoxRankVisual(rank?.rank);
   const mastery = Object.values(memory.memory?.profile.mastery ?? {});
   const mastered = mastery.filter((item) => item?.status === "mastered").length;
   const improving = mastery.filter((item) => item?.status === "improving").length;
@@ -23,7 +23,7 @@ export default function ProgressWorkspace({ currentUser, onOpenExercises }: { cu
   return (
     <div id="progression-workspace" className="mx-auto max-w-5xl scroll-mt-20 space-y-4 sm:space-y-6">
       <header className="flex items-center gap-3 px-1">
-        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl border border-indigo-800 bg-slate-950"><Image src={asset.avatar} alt="Nox, ton compagnon d’échecs" fill sizes="48px" className="object-cover" /></div>
+        <NoxAvatar rank={rank?.rank} rankLabel={rank?.rankLabel} size="compact" />
         <div><p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">Progresser</p><h1 className="text-2xl font-black text-white">Ta prochaine étape avec Nox</h1><p className="mt-1 text-sm text-gray-400">Une mission utile maintenant, le reste quand tu en as envie.</p></div>
       </header>
 
@@ -33,8 +33,8 @@ export default function ProgressWorkspace({ currentUser, onOpenExercises }: { cu
 
       <section className="rounded-2xl border border-indigo-900/65 bg-gradient-to-br from-indigo-950/40 via-gray-900 to-gray-950 p-4 sm:p-5" aria-labelledby="nox-progression-title">
         <div className="flex items-center gap-4">
-          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-indigo-700 bg-slate-950"><Image src={asset.avatar} alt="" fill sizes="64px" className="object-cover" /></div>
-          <div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-[0.16em] text-indigo-300">Progression de Nox</p><h2 id="nox-progression-title" className="mt-1 text-xl font-black text-white">Nox — {rank?.rankLabel ?? "Écuyer"}</h2><p className="mt-1 text-sm text-gray-300">{!rank ? "Nox rassemble ce que vous avez déjà appris ensemble." : rank.nextRankLabel ? `Pour devenir ${rank.nextRankLabel}, continuons à transformer tes premiers apprentissages en réflexes.` : "Nous avons atteint le dernier rang narratif, mais chaque partie peut encore nous apprendre quelque chose."}</p></div>
+          <NoxAvatar rank={rank?.rank} rankLabel={rank?.rankLabel} state={rank?.recentlyEvolved ? "success" : "idle"} size="hero" />
+          <div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase tracking-[0.16em] text-indigo-300">Progression de Nox</p><h2 id="nox-progression-title" className="mt-1 text-xl font-black text-white">Nox — {rank?.rankLabel ?? "Écuyer"} <span aria-hidden="true">{asset.emblem}</span></h2><p className="mt-1 text-sm text-gray-300">{asset.description}</p><p className="mt-2 text-xs text-indigo-200">{!rank ? "Nox rassemble ce que vous avez déjà appris ensemble." : rank.nextRankLabel ? `Prochaine évolution : ${rank.nextRankLabel}. ${rank.remaining[0] ? `Encore ${rank.remaining[0]}.` : asset.milestone}` : "Dernier rang narratif atteint : votre apprentissage, lui, continue."}</p></div>
         </div>
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-gray-800" aria-label={`Progression vers le prochain rang : ${rank?.progressPercent ?? 0} %`}><div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-cyan-300 transition-[width] motion-reduce:transition-none" style={{ width: `${rank?.progressPercent ?? 0}%` }} /></div>
         <div className="mt-3 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-emerald-950/45 px-3 py-1.5 font-bold text-emerald-300">{mastered} concept{mastered > 1 ? "s" : ""} maîtrisé{mastered > 1 ? "s" : ""}</span><span className="rounded-full bg-amber-950/45 px-3 py-1.5 font-bold text-amber-300">{improving} faiblesse{improving > 1 ? "s" : ""} en amélioration</span><span className="rounded-full bg-indigo-950/55 px-3 py-1.5 font-bold text-indigo-300">{rank?.progressPercent ?? 0}% vers la suite</span></div>

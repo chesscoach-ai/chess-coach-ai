@@ -35,10 +35,11 @@ describe("NoxShell", () => {
     );
 
     expect(markup).toContain("Parler à Nox");
-    expect(markup).toContain("Nox, jeune écuyer et compagnon d’échecs");
+    expect(markup).toContain("Nox, Écuyer.");
     expect(markup).toContain("data-state=\"thinking\"");
     expect(markup).toContain("aria-live=\"polite\"");
     expect(markup).toContain("sm:block");
+    expect(markup).toContain("motion-reduce:animate-none");
   });
 
   it("peut masquer les actions dans un exercice", () => {

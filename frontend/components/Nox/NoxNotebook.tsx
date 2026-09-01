@@ -39,8 +39,8 @@ export default function NoxNotebook({
             {loading
               ? "Nox relit ses notes…"
               : hasObservations
-                ? "Ce que nous maîtrisons et travaillons ensemble."
-                : "Nox attend plusieurs observations avant de conclure."}
+                ? "Voilà ce que j’ai compris de ton jeu."
+                : "Voilà ce que j’ai compris de ton jeu : j’attends encore quelques observations avant de conclure."}
           </p>
         </div>
         <span className="text-indigo-300 transition group-open:rotate-180" aria-hidden="true">⌄</span>

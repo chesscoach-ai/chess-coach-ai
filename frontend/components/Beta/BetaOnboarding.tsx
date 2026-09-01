@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 
+import NoxAvatar from "@/components/Nox/NoxAvatar";
 import { trackBetaEvent } from "@/lib/beta/client";
 
 const STORAGE_KEY = "knightly:beta:onboarding:v1";
@@ -36,8 +36,8 @@ export default function BetaOnboarding() {
           <button type="button" onClick={finish} className="min-h-11 px-2 text-sm font-bold text-gray-400 hover:text-white">Passer</button>
         </div>
         <div className="mt-6 flex items-center gap-4">
-          <Image src="/brand/nox-squire.svg" alt="Nox, ton compagnon d’échecs" width={72} height={72} className="h-16 w-16 rounded-2xl border border-indigo-700 bg-indigo-950" />
-          <div><p className="text-xs font-black uppercase tracking-[0.15em] text-indigo-300">Nox à tes côtés</p><h2 id="beta-onboarding-title" className="mt-1 text-2xl font-black text-white">{steps[step][0]}</h2></div>
+          <NoxAvatar rank="squire" rankLabel="Écuyer" state={step === 0 ? "idle" : step === 1 ? "tip" : step === 2 ? "thinking" : "success"} size="regular" priority />
+          <div><p className="text-xs font-black uppercase tracking-[0.15em] text-indigo-300">Moi, c’est Nox</p><h2 id="beta-onboarding-title" className="mt-1 text-2xl font-black text-white">{steps[step][0]}</h2></div>
         </div>
         <p className="mt-5 min-h-14 text-base leading-7 text-gray-300">{steps[step][1]}</p>
         {step === 2 && <p className="rounded-xl border border-gray-800 bg-gray-900/70 p-3 text-xs leading-5 text-gray-400">Tu peux jouer sans compte. Connecte-toi plus tard pour que Nox se souvienne de ce que vous apprenez ensemble.</p>}

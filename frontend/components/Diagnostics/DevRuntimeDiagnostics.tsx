@@ -12,6 +12,9 @@ import { NOX_RANKS } from "@/lib/nox/progressionRules";
 import { NOX_PREVIEW_STORAGE_KEY } from "@/hooks/useNoxProgression";
 import { NOX_CONCEPT_IDS } from "@/lib/nox/memoryTypes";
 import BetaDiagnosticsPanel from "@/components/Diagnostics/BetaDiagnosticsPanel";
+import NoxAvatar from "@/components/Nox/NoxAvatar";
+import { getNoxRankVisual, NOX_STATE_VISUALS } from "@/lib/nox/rankAssets";
+import type { NoxState } from "@/lib/nox/types";
 
 function numberValue(
   source: Record<string, unknown> | null,
@@ -43,6 +46,7 @@ export default function DevRuntimeDiagnostics({
   const [loading, setLoading] = useState(false);
   const [frontendAnalysis, setFrontendAnalysis] =
     useState<FrontendAnalysisDiagnostic | null>(null);
+  const [noxPreviewState, setNoxPreviewState] = useState<NoxState>("idle");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -292,6 +296,25 @@ export default function DevRuntimeDiagnostics({
       <div className="mt-5 rounded-2xl border border-violet-900/70 bg-violet-950/20 p-4">
         <p className="text-xs font-black uppercase tracking-[0.14em] text-violet-300">Aperçu des rangs · DEV uniquement</p>
         <p className="mt-1 text-xs text-gray-400">L’aperçu reste local à ce navigateur et ne modifie aucune progression réelle.</p>
+        <div className="mt-3 flex flex-wrap gap-2" aria-label="État visuel de Nox à prévisualiser">
+          {(Object.keys(NOX_STATE_VISUALS) as NoxState[]).map((state) => (
+            <button key={state} type="button" aria-pressed={noxPreviewState === state} onClick={() => setNoxPreviewState(state)} className={`rounded-lg border px-3 py-2 text-xs font-bold ${noxPreviewState === state ? "border-cyan-400 bg-cyan-950/60 text-cyan-100" : "border-gray-700 text-gray-300"}`}>
+              {NOX_STATE_VISUALS[state].label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {NOX_RANK_IDS.map((rank) => {
+            const visual = getNoxRankVisual(rank);
+            return (
+              <article key={rank} data-testid={`nox-preview-${rank}`} className="flex items-center gap-3 rounded-xl border border-violet-900/55 bg-gray-950/55 p-3">
+                <NoxAvatar rank={rank} rankLabel={NOX_RANKS[rank].label} state={noxPreviewState} size="regular" />
+                <div className="min-w-0"><p className="font-black text-white">{NOX_RANKS[rank].label} <span aria-hidden="true">{visual.emblem}</span></p><p className="mt-1 text-[11px] leading-4 text-gray-400">{visual.description}</p><p className="mt-1 text-[10px] text-violet-300">{visual.badge} · asset {visual.assetStatus === "final" ? "final" : "provisoire"}</p></div>
+              </article>
+            );
+          })}
+        </div>
+        <p className="mt-4 text-xs font-bold text-violet-200">Simuler l’évolution dans l’interface (localStorage DEV uniquement)</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {NOX_RANK_IDS.map((rank) => (
             <button key={rank} type="button" onClick={() => { window.localStorage.setItem(NOX_PREVIEW_STORAGE_KEY, rank); window.location.assign("/?mode=analysis"); }} className="rounded-lg border border-violet-800 px-3 py-2 text-xs font-bold text-violet-200 hover:bg-violet-900/40">
