@@ -31,18 +31,10 @@ export default function AuthPage() {
           </div>
         </div>
         <h1 className="mt-6 text-3xl font-bold">Retrouve ton espace de jeu</h1>
-        <div className="mt-4 rounded-2xl border border-emerald-800 bg-emerald-950/30 p-4">
-          <p className="font-black text-emerald-300">
-            30 jours de Knightly+ offerts
-          </p>
-          <p className="mt-1 text-xs leading-5 text-emerald-100/80">
-            Toutes les analyses et les fonctions du coach sont débloquées dès
-            la création du compte. Aucun paiement n’est demandé pour essayer.
-          </p>
-        </div>
         <p className="mt-2 text-sm leading-6 text-gray-400">
-          Crée ton compte pour préparer ton espace personnel et tes prochaines
-          sessions d’entraînement.
+          Crée ton compte pour retrouver tes parties, la mémoire de Nox et ta
+          Session du jour sur tous tes appareils. Knightly Free reste utile et
+          aucun abonnement n’est activé automatiquement.
         </p>
 
         <div className="mt-6">

@@ -39,6 +39,21 @@ export default async function AccountPage() {
           </div>
         ) : (
           <div className="mt-8 space-y-6">
+            {entitlement.knightly.plan === "free" && (
+              <section className="rounded-2xl border border-indigo-900 bg-indigo-950/20 p-6">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-indigo-300">Knightly Free</p>
+                <h2 className="mt-2 text-xl font-bold text-white">L’essentiel pour jouer et progresser</h2>
+                <p className="mt-2 text-sm leading-6 text-gray-300">Ta Session du jour, les exercices libres, les rangs de Nox, trois bilans découverte et le Clan restent inclus.</p>
+                <Link href="/plus" className="mt-4 inline-flex min-h-11 items-center rounded-xl border border-indigo-700 px-4 text-sm font-bold text-indigo-200">Découvrir Knightly+</Link>
+              </section>
+            )}
+            {entitlement.knightly.plan === "plus" && entitlement.status === "active" && (
+              <section className="rounded-2xl border border-indigo-700 bg-indigo-950/25 p-6">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-indigo-300">Knightly+</p>
+                <h2 className="mt-2 text-xl font-bold text-white">Accompagnement approfondi actif</h2>
+                <p className="mt-2 text-sm leading-6 text-gray-300">Nox peut suivre davantage de tendances, de bilans et de sessions personnalisées. Aucun avantage compétitif n’est accordé.</p>
+              </section>
+            )}
             {entitlement.status === "lifetime" && (
               <section className="rounded-2xl border border-emerald-800 bg-emerald-950/25 p-6">
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">

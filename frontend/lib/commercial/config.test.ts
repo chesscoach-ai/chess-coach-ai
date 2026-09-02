@@ -15,6 +15,8 @@ const variableNames = [
   "ANALYSIS_PREVIEW_EMAILS",
   "AUTH_URL",
   "COMMERCIAL_LAUNCH_ENABLED",
+  "KNIGHTLY_PLUS_ENABLED",
+  "KNIGHTLY_CHECKOUT_ENABLED",
   "LEGAL_ADDRESS",
   "LEGAL_DOCUMENTS_REVIEWED",
   "LEGAL_ENTITY_NAME",
@@ -57,8 +59,8 @@ describe("commercial launch guard", () => {
     expect(getCommercialReadiness()).toMatchObject({
       launchEnabled: false,
       ready: false,
-      priceMonthlyCents: 299,
-      priceAnnualCents: 2499,
+      priceMonthlyCents: 200,
+      priceAnnualCents: 1999,
     });
   }, 15_000);
 
@@ -79,6 +81,10 @@ describe("commercial launch guard", () => {
     Object.assign(process.env, {
       AUTH_URL: "https://chess.example.com",
       COMMERCIAL_LAUNCH_ENABLED: "true",
+      KNIGHTLY_PLUS_ENABLED: "true",
+      KNIGHTLY_CHECKOUT_ENABLED: "true",
+      ANALYSIS_PRICE_MONTHLY_CENTS: "200",
+      ANALYSIS_PRICE_ANNUAL_CENTS: "1999",
       LEGAL_ADDRESS: "1 rue du Test",
       LEGAL_DOCUMENTS_REVIEWED: "true",
       LEGAL_ENTITY_NAME: "Chess Coach",

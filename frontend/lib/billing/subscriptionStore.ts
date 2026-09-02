@@ -22,15 +22,15 @@ import {
   getCommercialReadiness,
   hasPreviewAnalysisAccess,
 } from "@/lib/commercial/config";
+import { getKnightlyEntitlements, type KnightlyAccessState } from "@/lib/billing/knightlyPolicy";
+import { getKnightlyPricing } from "@/lib/billing/pricing";
 
 const dataDirectory = path.join(process.cwd(), ".data");
 const subscriptionsFile = path.join(dataDirectory, "subscriptions.json");
 const trialsFile = path.join(dataDirectory, "analysis-trials.json");
-const TRIAL_DURATION_DAYS = 30;
 let pool: Pool | null = null;
 let databaseReady: Promise<void> | null = null;
 let localQueue: Promise<unknown> = Promise.resolve();
-let localTrialQueue: Promise<unknown> = Promise.resolve();
 
 function getPool(): Pool | null {
   pool ??= getPostgresPool();
@@ -50,73 +50,36 @@ function getTrialUserHash(userId: string): string {
     .digest("hex");
 }
 
-function createTrial(now = new Date()): AnalysisTrial {
-  const endsAt = new Date(now);
-  endsAt.setUTCDate(endsAt.getUTCDate() + TRIAL_DURATION_DAYS);
-  return {
-    startedAt: now.toISOString(),
-    endsAt: endsAt.toISOString(),
-  };
-}
-
-async function getOrCreateAnalysisTrial(
+async function getAnalysisTrial(
   userId: string,
-): Promise<AnalysisTrial> {
+): Promise<AnalysisTrial | null> {
   const userHash = getTrialUserHash(userId);
   const database = getPool();
   if (!database) {
-    const run = localTrialQueue.then(async () => {
-      await mkdir(dataDirectory, { recursive: true });
-      let trials: Record<string, AnalysisTrial> = {};
-      try {
-        trials = JSON.parse(
-          await readFile(trialsFile, "utf8"),
-        ) as Record<string, AnalysisTrial>;
-      } catch (error) {
-        if (
-          !(
-            error instanceof Error &&
-            "code" in error &&
-            error.code === "ENOENT"
-          )
-        ) {
-          throw error;
-        }
-      }
-      const existing = trials[userHash];
-      if (existing) return existing;
-      const trial = createTrial();
-      trials[userHash] = trial;
-      await writeFile(
-        trialsFile,
-        JSON.stringify(trials, null, 2),
-        "utf8",
-      );
-      return trial;
-    });
-    localTrialQueue = run.then(
-      () => undefined,
-      () => undefined,
-    );
-    return run;
+    try {
+      const trials = JSON.parse(await readFile(trialsFile, "utf8")) as Record<string, AnalysisTrial>;
+      return trials[userHash] ?? null;
+    } catch (error) {
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") return null;
+      throw error;
+    }
   }
 
   await databaseReady;
-  const trial = createTrial();
   const result = await database.query<{
     started_at: Date;
     ends_at: Date;
   }>(
-    `INSERT INTO analysis_trial_claims (user_hash, started_at, ends_at)
-     VALUES ($1, $2, $3)
-     ON CONFLICT (user_hash) DO UPDATE SET user_hash = EXCLUDED.user_hash
-     RETURNING started_at, ends_at`,
-    [userHash, trial.startedAt, trial.endsAt],
+    `SELECT started_at, ends_at
+     FROM analysis_trial_claims
+     WHERE user_hash = $1
+     LIMIT 1`,
+    [userHash],
   );
-  return {
+  return result.rows[0] ? {
     startedAt: result.rows[0].started_at.toISOString(),
     endsAt: result.rows[0].ends_at.toISOString(),
-  };
+  } : null;
 }
 
 async function readLocalSubscriptions(): Promise<
@@ -258,7 +221,7 @@ export async function getAnalysisEntitlement(
     ? await getBillingSubscription(userId)
     : null;
   const trial = userId
-    ? await getOrCreateAnalysisTrial(userId)
+    ? await getAnalysisTrial(userId)
     : null;
   const trialIsActive = Boolean(
     trial && new Date(trial.endsAt).getTime() > Date.now(),
@@ -267,14 +230,18 @@ export async function getAnalysisEntitlement(
     subscription?.status === "active" || subscription?.status === "trialing";
   const commercial =
     getCommercialReadiness();
+  const pricing = getKnightlyPricing();
+  const hasPlusAccess = developmentUnlock || previewUnlock || lifetimeUnlock || hasPaidAccess || trialIsActive;
+  const accessState: KnightlyAccessState = hasPlusAccess
+    ? "plus_active"
+    : subscription?.status === "canceled"
+      ? "plus_cancelled"
+      : subscription && ["past_due", "unpaid", "paused"].includes(subscription.status)
+        ? "plus_expired"
+        : "free";
 
   return {
-    hasAccess:
-      developmentUnlock ||
-      previewUnlock ||
-      lifetimeUnlock ||
-      hasPaidAccess ||
-      trialIsActive,
+    hasAccess: hasPlusAccess,
     status: lifetimeUnlock
       ? "lifetime"
       : developmentUnlock || previewUnlock
@@ -300,5 +267,7 @@ export async function getAnalysisEntitlement(
       (trialIsActive ? trial?.endsAt ?? null : null),
     trialEndsAt: trial?.endsAt ?? null,
     cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd ?? false,
+    knightly: getKnightlyEntitlements(hasPlusAccess ? "plus" : "free", accessState),
+    pricingAvailability: pricing.availability,
   };
 }

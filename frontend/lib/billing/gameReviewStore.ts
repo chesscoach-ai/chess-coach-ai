@@ -11,8 +11,9 @@ import {
   ensureDatabaseMigrations,
   getPostgresPool,
 } from "@/lib/database/postgres";
+import { getKnightlyEntitlements } from "@/lib/billing/knightlyPolicy";
 
-const FREE_REVIEW_LIMIT = 3;
+const FREE_REVIEW_LIMIT = getKnightlyEntitlements("free").gameReviewsPerAccount ?? 3;
 const dataDirectory = path.join(
   process.cwd(),
   ".data",

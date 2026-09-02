@@ -1,26 +1,14 @@
 import type { Metadata } from "next";
 
 import { LegalPage, LegalSection } from "@/components/Legal/LegalPage";
-import {
-  getAnalysisPriceAnnualCents,
-  getAnalysisPriceMonthlyCents,
-} from "@/lib/commercial/config";
+import { getKnightlyPricing } from "@/lib/billing/pricing";
 
 export const metadata: Metadata = {
   title: "Conditions d’abonnement | Knightly",
 };
 
 export default function SalesTermsPage() {
-  const currency = new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: "EUR",
-  });
-  const monthlyPrice = currency.format(
-    getAnalysisPriceMonthlyCents() / 100,
-  );
-  const annualPrice = currency.format(
-    getAnalysisPriceAnnualCents() / 100,
-  );
+  const pricing = getKnightlyPricing();
   return (
     <LegalPage
       title="Conditions d’abonnement"
@@ -28,18 +16,17 @@ export default function SalesTermsPage() {
     >
       <LegalSection title="Offre et prix">
         <p>
-          Knightly+ est proposé à {monthlyPrice} TTC par mois ou {annualPrice} TTC
-          par an. Le multijoueur reste gratuit et aucune formule payante
-          n’accorde d’avantage pendant une partie classée.
+          Knightly+ est en préparation. Les prix cibles ne deviennent des prix
+          de vente qu’après alignement et validation explicite de la
+          configuration Stripe. État actuel : {pricing.availability === "available" ? "offre disponible" : "paiement indisponible"}. Le multijoueur reste gratuit et aucune formule payante n’accorde d’avantage pendant une partie classée.
         </p>
       </LegalSection>
       <LegalSection title="Essai gratuit">
         <p>
-          Chaque compte peut activer une seule période d’essai Knightly+ de 30
-          jours. Elle ne demande aucun moyen de paiement et ne se transforme
-          pas automatiquement en abonnement payant. Une empreinte technique du
-          compte est conservée afin d’éviter le renouvellement abusif de
-          l’offre après la suppression puis la recréation du même compte.
+          Aucun essai temporel n’est activé automatiquement. Knightly Free
+          propose actuellement trois bilans découverte, la Session du jour et
+          les exercices libres pour permettre d’évaluer le produit sans carte
+          bancaire. Les essais historiques déjà accordés restent honorés.
         </p>
       </LegalSection>
       <LegalSection title="Paiement et renouvellement">

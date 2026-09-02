@@ -9,6 +9,7 @@ import {
   getAnalysisPriceAnnualCents,
   getAnalysisPriceMonthlyCents,
 } from "@/lib/commercial/config";
+import { getKnightlyPricing } from "@/lib/billing/pricing";
 
 export const runtime = "nodejs";
 
@@ -21,6 +22,9 @@ export async function POST(request: Request) {
     const player = await getAuthenticatedPlayer();
     if (!player) throw new Error("AUTH_REQUIRED");
     assertCommercialLaunchReady();
+    if (getKnightlyPricing().availability !== "available") {
+      throw new Error("CHECKOUT_DISABLED");
+    }
     const stripe = getStripe();
     const existing = await getBillingSubscription(player.id);
     if (

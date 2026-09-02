@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 import { PGN_EXAMPLES } from "@/data/pgn/examples";
-import { getAnalysisEntitlement } from "@/lib/billing/subscriptionStore";
 import {
   multiplayerErrorResponse,
   noStoreJson,
@@ -50,8 +49,6 @@ export async function GET() {
   try {
     const player = await getAuthenticatedPlayer();
     if (!player) throw new Error("AUTH_REQUIRED");
-    const entitlement = await getAnalysisEntitlement(player.id);
-    if (!entitlement.hasAccess) throw new Error("SUBSCRIPTION_REQUIRED");
     return noStoreJson({
       progress: await listVerifiedExerciseProgress(player.id),
     });
@@ -71,8 +68,6 @@ export async function POST(
         "AUTH_REQUIRED",
       );
     }
-    const entitlement = await getAnalysisEntitlement(player.id);
-    if (!entitlement.hasAccess) throw new Error("SUBSCRIPTION_REQUIRED");
     const parsed =
       exerciseResultSchema.safeParse(
         await request.json(),

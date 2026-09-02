@@ -347,6 +347,15 @@ export default function DevRuntimeDiagnostics({
         <div className="mt-3 flex flex-wrap gap-2">{NOX_CONCEPT_IDS.map((conceptId) => <button key={conceptId} type="button" onClick={async () => { const response = await fetch("/api/nox/missions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "dev_generate", conceptId }) }); if (response.ok) window.location.assign("/?mode=progression&focus=daily-mission"); else setError("Connecte-toi pour générer une mission DEV persistante."); }} className="rounded-lg border border-indigo-800 px-3 py-2 text-xs font-bold text-indigo-200 hover:bg-indigo-900/40">{conceptId}</button>)}<button type="button" disabled={payload.noxMission.active === "aucune"} onClick={async () => { const response = await fetch("/api/nox/missions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "dev_complete", missionId: payload.noxMission.active }) }); if (response.ok) await refresh(); else setError("Impossible de terminer cette mission DEV."); }} className="rounded-lg border border-emerald-800 px-3 py-2 text-xs font-bold text-emerald-200 disabled:opacity-40">Terminer la mission active</button></div>
       </div>
 
+      <div className="mt-5 rounded-2xl border border-fuchsia-900/70 bg-fuchsia-950/20 p-4">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-fuchsia-300">Knightly+ · scénarios DEV</p>
+        <p className="mt-1 text-xs text-gray-400">Ces liens n’accordent aucun droit serveur et sont ignorés en production.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[["free", "Free · quota disponible"], ["plus", "Knightly+"], ["quota", "Quota atteint"], ["soft", "Soft paywall"], ["unavailable", "Billing indisponible"]].map(([preview, label]) => <a key={preview} href={`/plus?preview=${preview}`} className="rounded-lg border border-fuchsia-800 px-3 py-2 text-xs font-bold text-fuchsia-100 hover:bg-fuchsia-950/40">{label}</a>)}
+          <a href="/plus" className="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold text-gray-300">Page réelle</a>
+        </div>
+      </div>
+
       <BetaDiagnosticsPanel />
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

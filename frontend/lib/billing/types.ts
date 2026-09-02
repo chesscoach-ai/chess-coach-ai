@@ -20,6 +20,8 @@ export type AnalysisEntitlement = {
   currentPeriodEnd: string | null;
   trialEndsAt: string | null;
   cancelAtPeriodEnd: boolean;
+  knightly: import("@/lib/billing/knightlyPolicy").KnightlyEntitlements;
+  pricingAvailability: "preview" | "unavailable" | "available";
 };
 
 export type BillingSubscription = {

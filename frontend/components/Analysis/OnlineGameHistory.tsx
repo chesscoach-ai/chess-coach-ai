@@ -8,6 +8,8 @@ import {
 
 import type { CurrentUser } from "@/components/Layout/ProductWorkspace";
 import type { OnlineGameHistoryItem } from "@/lib/multiplayer/types";
+import AnalysisPaywall from "@/components/Billing/AnalysisPaywall";
+import type { AnalysisEntitlement } from "@/lib/billing/types";
 
 export type ReviewAllowance = {
   freeLimit: number;
@@ -27,6 +29,7 @@ export default function OnlineGameHistory({
   refreshKey,
   activeGameId,
   onOpenReview,
+  entitlement,
 }: {
   currentUser: CurrentUser | null;
   refreshKey: number;
@@ -34,6 +37,7 @@ export default function OnlineGameHistory({
   onOpenReview: (
     review: OpenedGameReview,
   ) => void;
+  entitlement: AnalysisEntitlement;
 }) {
   const [games, setGames] =
     useState<OnlineGameHistoryItem[]>(
@@ -49,6 +53,7 @@ export default function OnlineGameHistory({
     useState(Boolean(currentUser));
   const [error, setError] =
     useState("");
+  const [plusOffer, setPlusOffer] = useState(false);
 
   useEffect(() => {
     if (!currentUser) {
@@ -162,11 +167,13 @@ export default function OnlineGameHistory({
       );
       onOpenReview(payload);
     } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Ce bilan ne peut pas être ouvert.",
-      );
+      const message = requestError instanceof Error ? requestError.message : "Ce bilan ne peut pas être ouvert.";
+      if (message.includes("Knightly+") || message.includes("bilans gratuits")) {
+        setPlusOffer(true);
+        setError("");
+      } else {
+        setError(message);
+      }
     } finally {
       setLoadingId(null);
     }
@@ -262,6 +269,7 @@ export default function OnlineGameHistory({
           {error}
         </p>
       )}
+      {plusOffer && <div className="p-4 sm:p-5"><AnalysisPaywall currentUser={currentUser} entitlement={entitlement} limitReached onContinueFree={() => setPlusOffer(false)} /></div>}
       </div>
     </details>
   );

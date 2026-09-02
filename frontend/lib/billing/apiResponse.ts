@@ -12,6 +12,8 @@ const messages: Record<string, string> = {
     "Le paiement sera disponible dès que Stripe aura été configuré.",
   BILLING_PRICE_INVALID:
     "Les tarifs Stripe doivent correspondre aux offres Knightly+ configurées.",
+  CHECKOUT_DISABLED:
+    "Knightly+ est en préparation. Aucun paiement ne peut être déclenché pour le moment.",
   INVALID_REQUEST:
     "La formule d’abonnement sélectionnée est invalide.",
   SUBSCRIPTION_REQUIRED:
@@ -30,6 +32,7 @@ const statuses: Record<string, number> = {
   CUSTOMER_NOT_FOUND: 404,
   BILLING_NOT_CONFIGURED: 503,
   BILLING_PRICE_INVALID: 503,
+  CHECKOUT_DISABLED: 503,
   INVALID_REQUEST: 400,
   INVALID_WEBHOOK: 400,
 };

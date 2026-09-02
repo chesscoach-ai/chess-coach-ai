@@ -69,10 +69,14 @@ services:
         sync: false
       - key: COMMERCIAL_LAUNCH_ENABLED
         value: "false"
+      - key: KNIGHTLY_PLUS_ENABLED
+        value: "false"
+      - key: KNIGHTLY_CHECKOUT_ENABLED
+        value: "false"
       - key: ANALYSIS_PRICE_MONTHLY_CENTS
-        value: "299"
+        value: "200"
       - key: ANALYSIS_PRICE_ANNUAL_CENTS
-        value: "2499"
+        value: "1999"
       - key: ANALYSIS_PREVIEW_EMAILS
         sync: false
       - key: LEGAL_ENTITY_NAME

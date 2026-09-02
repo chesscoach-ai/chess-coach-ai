@@ -26,4 +26,13 @@ describe("événements d’activation bêta", () => {
     expect(response.status).toBe(204);
     expect(recordBetaEvent).toHaveBeenCalledWith(payload);
   });
+  it("accepte les événements anonymisés de découverte Knightly+", async () => {
+    const { POST } = await import("./route");
+    for (const eventName of ["plus_offer_viewed", "plus_details_viewed", "plus_cta_clicked", "plus_limit_reached", "plus_dismissed"]) {
+      const payload = { eventName, visitorId: crypto.randomUUID(), page: "/plus", platform: "web", version: "0.1.0-beta.1" };
+      const response = await POST(new Request("http://localhost/api/beta/events", { method: "POST", body: JSON.stringify(payload) }));
+      expect(response.status).toBe(204);
+      expect(recordBetaEvent).toHaveBeenCalledWith(payload);
+    }
+  });
 });

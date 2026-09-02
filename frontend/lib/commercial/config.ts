@@ -1,6 +1,7 @@
 import "server-only";
 
 import { isStripeConfigured } from "@/lib/billing/stripeClient";
+import { getKnightlyPricing, KNIGHTLY_TARGET_PRICING } from "@/lib/billing/pricing";
 
 const REQUIRED_LEGAL_VARIABLES = [
   "LEGAL_ENTITY_NAME",
@@ -23,35 +24,39 @@ export type CommercialReadiness = {
 
 export function getAnalysisPriceMonthlyCents(): number {
   const configured = Number.parseInt(
-    process.env.ANALYSIS_PRICE_MONTHLY_CENTS ?? "299",
+    process.env.ANALYSIS_PRICE_MONTHLY_CENTS ?? String(KNIGHTLY_TARGET_PRICING.monthlyCents),
     10,
   );
   return Number.isSafeInteger(configured) &&
     configured >= 50 &&
     configured <= 10_000
     ? configured
-    : 299;
+    : KNIGHTLY_TARGET_PRICING.monthlyCents;
 }
 
 export function getAnalysisPriceAnnualCents(): number {
   const configured = Number.parseInt(
-    process.env.ANALYSIS_PRICE_ANNUAL_CENTS ?? "2499",
+    process.env.ANALYSIS_PRICE_ANNUAL_CENTS ?? String(KNIGHTLY_TARGET_PRICING.annualCents),
     10,
   );
   return Number.isSafeInteger(configured) &&
     configured >= 500 &&
     configured <= 100_000
     ? configured
-    : 2499;
+    : KNIGHTLY_TARGET_PRICING.annualCents;
 }
 
 export function getCommercialReadiness(): CommercialReadiness {
+  const pricing = getKnightlyPricing();
   const missing = REQUIRED_LEGAL_VARIABLES.filter(
     (name) => !process.env[name]?.trim(),
   ) as string[];
   if (!isStripeConfigured()) {
     missing.push("STRIPE_CONFIGURATION");
   }
+  if (!pricing.plusEnabled) missing.push("KNIGHTLY_PLUS_ENABLED");
+  if (!pricing.checkoutEnabled) missing.push("KNIGHTLY_CHECKOUT_ENABLED");
+  if (!pricing.pricesAligned) missing.push("KNIGHTLY_PRICES_ALIGNED");
   if (process.env.LEGAL_DOCUMENTS_REVIEWED !== "true") {
     missing.push("LEGAL_DOCUMENTS_REVIEWED");
   }

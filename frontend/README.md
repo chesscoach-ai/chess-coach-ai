@@ -74,38 +74,17 @@ créées automatiquement.
 
 ## Abonnement Knightly+
 
-L’espace Analyse est actuellement configuré pour les abonnés Knightly+ à `2,99 EUR` par mois ou
-`24,99 EUR` par an. Le multijoueur reste gratuit. Le
-verrouillage est vérifié dans la page et dans le proxy serveur qui protège les
-appels à Stockfish.
+La politique Free/Plus versionnée et les règles d’activation sont documentées
+dans `../KNIGHTLY_FREEMIUM.md`. La cible produit est 2,00 EUR par mois et
+19,99 EUR par an, mais elle n’est pas une offre active. Stripe et le checkout
+restent désactivés tant que `KNIGHTLY_PLUS_ENABLED`,
+`KNIGHTLY_CHECKOUT_ENABLED` et `COMMERCIAL_LAUNCH_ENABLED` ne sont pas tous
+validés et que les prix Stripe ne correspondent pas exactement à la source de
+vérité.
 
-Dans Stripe :
-
-1. créez un produit « Knightly+ » ;
-2. ajoutez un tarif récurrent de `2,99 EUR`, facturé chaque mois ;
-3. ajoutez un tarif récurrent de `24,99 EUR`, facturé chaque année ;
-4. copiez leurs identifiants dans `STRIPE_PRICE_ID` et
-   `STRIPE_PRICE_ID_ANNUAL` ;
-5. configurez un webhook vers
-   `https://votre-domaine/api/billing/webhook` ;
-6. abonnez le webhook aux événements `checkout.session.completed`,
-   `customer.subscription.created`, `customer.subscription.updated` et
-   `customer.subscription.deleted` ;
-7. copiez le secret de signature dans `STRIPE_WEBHOOK_SECRET`.
-
-Variables nécessaires :
-
-```env
-STRIPE_SECRET_KEY=sk_...
-STRIPE_PRICE_ID=price_...
-STRIPE_PRICE_ID_ANNUAL=price_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-```
-
-Le portail client Stripe doit également être activé afin que les abonnés
-puissent mettre à jour leur moyen de paiement ou résilier. Pour travailler
-localement sans Stripe, `ANALYSIS_DEV_UNLOCK=true` déverrouille uniquement
-l’environnement de développement.
+`ANALYSIS_DEV_UNLOCK=true` déverrouille uniquement l’environnement de
+développement. Les scénarios visuels Free/Plus de `/dev/diagnostics` n’accordent
+jamais de droit serveur en production.
 
 Chaque analyse complète enrichit un profil pédagogique agrégé : Elo, thèmes
 d’erreur récurrents, gravité et recommandations. Les parties brutes ne sont pas

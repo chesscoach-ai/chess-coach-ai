@@ -272,11 +272,13 @@ export default function ProductWorkspace({
               entitlement={
                 analysisEntitlement
               }
+              onContinueFree={openProgress}
             />
           )}
 
           <OnlineGameHistory
             currentUser={currentUser}
+            entitlement={analysisEntitlement}
             refreshKey={
               historyRefreshKey
             }
@@ -303,13 +305,7 @@ export default function ProductWorkspace({
         />
       ) : mode === "exercises" ? (
         <div id="exercise-workspace" className="scroll-mt-20">
-          {!analysisEntitlement.hasAccess ? (
-            <AnalysisPaywall
-              currentUser={currentUser}
-              entitlement={analysisEntitlement}
-              feature="exercises"
-            />
-          ) : exerciseView === "library" ? (
+          {exerciseView === "library" ? (
             <ExerciseLibraryPage
               embedded
               onExit={openProgress}

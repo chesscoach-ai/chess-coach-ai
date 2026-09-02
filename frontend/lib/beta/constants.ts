@@ -14,6 +14,11 @@ export const BETA_EVENT_NAMES = [
   "daily_session_resumed",
   "daily_session_completed",
   "daily_session_abandoned",
+  "plus_offer_viewed",
+  "plus_details_viewed",
+  "plus_cta_clicked",
+  "plus_limit_reached",
+  "plus_dismissed",
   "account_created",
   "frontend_error",
 ] as const;
