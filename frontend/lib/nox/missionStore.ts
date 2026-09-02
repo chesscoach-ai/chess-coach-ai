@@ -14,22 +14,33 @@ const missionFile = path.join(process.cwd(), ".data", "nox-missions.json");
 let localQueue: Promise<unknown> = Promise.resolve();
 const missionRuntime = { eventsProduced: 0, eventsIgnored: 0 };
 
-export async function getActiveNoxMission(player: AuthenticatedPlayer | null, options: { forcedConcept?: NoxConceptId; date?: Date } = {}): Promise<NoxMission> {
+export async function getActiveNoxMission(player: AuthenticatedPlayer | null, options: { forcedConcept?: NoxConceptId; date?: Date; timeZone?: string } = {}): Promise<NoxMission> {
   const evidence = await getNoxMemoryEvidence(player);
   const stored = player ? await listMissions(player.id) : [];
   const active = stored.find((mission) => mission.status !== "completed");
   if (active && !options.forcedConcept) return active;
   const latestCompleted = stored.find((mission) => mission.status === "completed");
-  if (latestCompleted && !options.forcedConcept && new Date(latestCompleted.nextEligibleAt).getTime() > (options.date ?? new Date()).getTime()) return latestCompleted;
+  const now = options.date ?? new Date();
+  if (latestCompleted && !options.forcedConcept && localDateKey(new Date(latestCompleted.completedAt ?? latestCompleted.createdAt), options.timeZone) === localDateKey(now, options.timeZone)) return latestCompleted;
   const mission = buildNoxMission({
     ...evidence,
     date: options.date,
     recentConcepts: stored.filter((item) => item.status === "completed").slice(0, 3).map((item) => item.conceptId),
     forcedConcept: options.forcedConcept,
     persistent: Boolean(player),
+    timeZone: options.timeZone,
   });
   if (player) await saveMission(player.id, mission);
   return mission;
+}
+
+function localDateKey(date: Date, timeZone?: string): string {
+  if (!timeZone) return date.toISOString().slice(0, 10);
+  try {
+    const parts = new Intl.DateTimeFormat("fr-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+  } catch { return date.toISOString().slice(0, 10); }
 }
 
 export async function startNoxMission(player: AuthenticatedPlayer, missionId: string): Promise<NoxMission> {

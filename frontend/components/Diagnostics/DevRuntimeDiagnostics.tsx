@@ -326,6 +326,21 @@ export default function DevRuntimeDiagnostics({
       </div>
 
       <div className="mt-5 rounded-2xl border border-indigo-900/70 bg-indigo-950/20 p-4">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-cyan-300">Session du jour · scénarios DEV</p>
+        <p className="mt-1 text-xs text-gray-400">Ces aperçus transforment uniquement la réponse dans ce navigateur. Ils n’écrivent ni mémoire, ni résultat, ni progression de compte.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            ["new", "Nouvel utilisateur"],
+            ["weakness", "Faiblesse confirmée"],
+            ["spaced", "Révision espacée"],
+            ["consolidation", "Consolidation"],
+            ["in-progress", "Session en cours"],
+            ["completed", "Session terminée"],
+          ].map(([scenario, label]) => <button key={scenario} type="button" onClick={() => window.location.assign(`/?mode=progression&dailySessionPreview=${scenario}`)} className="rounded-lg border border-cyan-800 px-3 py-2 text-xs font-bold text-cyan-100 hover:bg-cyan-950/40">{label}</button>)}
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-indigo-900/70 bg-indigo-950/20 p-4">
         <p className="text-xs font-black uppercase tracking-[0.14em] text-indigo-300">Mission personnalisée · DEV uniquement</p>
         <p className="mt-1 text-xs text-gray-400">Génère une mission contrôlée depuis un concept sans inventer de position.</p>
         <button type="button" onClick={() => void simulateKingSafetyWeakness()} className="mt-3 rounded-lg border border-amber-800 px-3 py-2 text-xs font-bold text-amber-200 hover:bg-amber-950/40">Simuler 3 erreurs · sécurité du roi</button>

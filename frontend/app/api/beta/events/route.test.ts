@@ -19,4 +19,11 @@ describe("événements d’activation bêta", () => {
     expect(response.status).toBe(204);
     expect(recordBetaEvent).toHaveBeenCalledWith(payload);
   });
+  it("accepte les événements anonymisés de Session du jour", async () => {
+    const { POST } = await import("./route");
+    const payload = { eventName: "daily_session_completed", visitorId: crypto.randomUUID(), page: "/?mode=progression", platform: "mobile-web", version: "0.1.0-beta.1" };
+    const response = await POST(new Request("http://localhost/api/beta/events", { method: "POST", body: JSON.stringify(payload) }));
+    expect(response.status).toBe(204);
+    expect(recordBetaEvent).toHaveBeenCalledWith(payload);
+  });
 });

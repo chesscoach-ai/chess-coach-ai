@@ -28,6 +28,11 @@ describe("boucle complète des missions Nox", () => {
     expect(completed.results).toHaveLength(mission.exerciseIds.length);
     expect((await memoryStore.getNoxMemory(player)).profile.mastery.king_safety?.status).toBe("improving");
     expect((await progressionStore.getNoxProgression(player)).growthScore).toBeGreaterThan(before.growthScore);
+    const completedDate = new Date(completed.completedAt!);
+    expect((await missionStore.getActiveNoxMission(player, { date: completedDate, timeZone: "Europe/Paris" })).id).toBe(mission.id);
+    const nextDay = new Date(completedDate.getTime() + 86_400_000);
+    const nextMission = await missionStore.getActiveNoxMission(player, { date: nextDay, timeZone: "Europe/Paris" });
+    expect(nextMission.id).not.toBe(mission.id);
   });
 
   it("isole les comptes et propose une mission visiteur non persistante", async () => {

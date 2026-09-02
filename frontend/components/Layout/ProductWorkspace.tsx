@@ -34,6 +34,13 @@ export type CurrentUser = {
   email: string;
 };
 
+function requestedProductMode(value: string | null): ProductMode {
+  if (value === "analysis" || value === "exercises" || value === "progression") {
+    return value;
+  }
+  return "multiplayer";
+}
+
 export default function ProductWorkspace({
   currentUser,
   analysisEntitlement,
@@ -42,7 +49,9 @@ export default function ProductWorkspace({
   analysisEntitlement: AnalysisEntitlement;
 }) {
   const searchParams = useSearchParams();
-  const [mode, setMode] = useState<ProductMode>("multiplayer");
+  const [mode, setMode] = useState<ProductMode>(() =>
+    requestedProductMode(searchParams.get("mode")),
+  );
   const [exerciseView, setExerciseView] =
     useState<"library" | "training">("library");
   const [openedReview, setOpenedReview] =
@@ -80,9 +89,9 @@ export default function ProductWorkspace({
         setRequestedMultiplayerKind(requestedKind);
         setMode("multiplayer");
       }
-      if (requestedFocus === "daily-mission") {
+      if (requestedFocus === "daily-mission" || requestedFocus === "daily-session") {
         setMode("progression");
-        scrollAfterRender("daily-coach");
+        scrollAfterRender(requestedFocus === "daily-session" ? "daily-session" : "daily-coach");
       }
     }, 0);
     return () => window.clearTimeout(timer);
@@ -290,6 +299,7 @@ export default function ProductWorkspace({
           onAnalyze={() => openDirectAnalysis()}
           onAnalyzePgn={openDirectAnalysis}
           onHistory={openHistory}
+          onOpenProgress={openProgress}
         />
       ) : mode === "exercises" ? (
         <div id="exercise-workspace" className="scroll-mt-20">

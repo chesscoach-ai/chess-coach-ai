@@ -27,7 +27,7 @@ export default function ProgressWorkspace({ currentUser, onOpenExercises }: { cu
         <div><p className="text-xs font-black uppercase tracking-[0.16em] text-violet-300">Progresser</p><h1 className="text-2xl font-black text-white">Ta prochaine étape avec Nox</h1><p className="mt-1 text-sm text-gray-400">Une mission utile maintenant, le reste quand tu en as envie.</p></div>
       </header>
 
-      <DailyCoachMission profile={null} />
+      <DailyCoachMission profile={null} onOpenExercises={onOpenExercises} />
 
       {!currentUser && <section className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-4 text-sm leading-6 text-blue-100"><p className="font-black">Découvre librement la première mission</p><p className="mt-1 text-blue-100/75">Connecte-toi ensuite pour que Nox se souvienne de ce que vous apprenez ensemble et retrouve ta progression sur tous tes appareils.</p><Link href="/auth" className="mt-3 inline-flex min-h-11 items-center rounded-xl border border-blue-700 px-4 font-bold">Se connecter quand je veux</Link></section>}
 

@@ -41,6 +41,7 @@ export interface ExerciseSession {
   missionStep?: number;
   missionTotal?: number;
   missionConceptId?: string;
+  dailySessionId?: string;
 
   playerColor: ExerciseColor;
   hints: string[];

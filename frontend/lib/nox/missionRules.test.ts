@@ -50,4 +50,25 @@ describe("missions personnalisées de Nox", () => {
     expect(mission.difficulty).toBe("mastery");
     expect(new Date(mission.nextEligibleAt).getTime() - new Date(mission.createdAt).getTime()).toBe(10 * 86_400_000);
   });
+
+  it("préfère un échec récent à une révision espacée", () => {
+    const profile = createNoxMemoryProfile();
+    profile.mastery.endgame = { conceptId: "endgame", status: "mastered", weaknessObserved: false, score: 82, observations: 5, successes: 5, failures: 0, lastObservedAt: "2026-07-01T12:00:00Z", trend: "up" };
+    const events: LearningEvent[] = [{ id: "recent", sourceId: "recent", type: "move_review", conceptId: "calculation", outcome: "failure", occurredAt: "2026-08-17T12:00:00Z" }];
+    const mission = buildNoxMission({ profile, events, date: new Date("2026-08-18T10:00:00Z"), persistent: true });
+    expect(mission).toMatchObject({ conceptId: "calculation", reasonCode: "recent_failure" });
+  });
+
+  it("sélectionne une révision espacée seulement lorsqu’elle est arrivée à échéance", () => {
+    const profile = createNoxMemoryProfile();
+    profile.mastery.endgame = { conceptId: "endgame", status: "mastered", weaknessObserved: false, score: 82, observations: 5, successes: 5, failures: 0, lastObservedAt: "2026-07-01T12:00:00Z", trend: "up" };
+    expect(buildNoxMission({ profile, events: [], date: new Date("2026-08-18T10:00:00Z"), persistent: true }).reasonCode).toBe("spaced_review");
+    profile.mastery.endgame!.lastObservedAt = "2026-08-10T12:00:00Z";
+    expect(buildNoxMission({ profile, events: [], date: new Date("2026-08-18T10:00:00Z"), persistent: true }).reasonCode).toBe("guided_discovery");
+  });
+
+  it("construit son identifiant avec la date locale du joueur", () => {
+    const mission = buildNoxMission({ profile: createNoxMemoryProfile(), events: [], date: new Date("2026-09-01T22:30:00Z"), timeZone: "Europe/Paris" });
+    expect(mission.id).toContain("nox:2026-09-02:");
+  });
 });

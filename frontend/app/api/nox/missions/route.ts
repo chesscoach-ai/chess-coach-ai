@@ -13,12 +13,20 @@ const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("dev_complete"), missionId: z.string().min(3) }),
 ]);
 
-export async function GET() {
-  const mission = await getActiveNoxMission(await getAuthenticatedPlayer());
+export async function GET(request: Request) {
+  const requestedTimeZone = new URL(request.url).searchParams.get("timeZone") ?? undefined;
+  const timeZone = isValidTimeZone(requestedTimeZone) ? requestedTimeZone : undefined;
+  const mission = await getActiveNoxMission(await getAuthenticatedPlayer(), { timeZone });
   return Response.json(mission, { headers: {
     "Cache-Control": "no-store",
     "Set-Cookie": `knightly_mission_access=${encodeURIComponent(mission.id)}; Path=/exercises/training; HttpOnly; SameSite=Strict; Max-Age=3600${process.env.NODE_ENV === "production" ? "; Secure" : ""}`,
   } });
+}
+
+function isValidTimeZone(value: string | undefined): value is string {
+  if (!value || value.length > 80) return false;
+  try { new Intl.DateTimeFormat("fr-FR", { timeZone: value }).format(); return true; }
+  catch { return false; }
 }
 
 export async function POST(request: Request) {

@@ -24,6 +24,8 @@ import {
   markExerciseCompleted,
   recordTrainingActivity,
 } from "@/lib/pgnExerciseProgress";
+import { recordStoredDailyExercise } from "@/lib/nox/dailySessionStorage";
+import { trackBetaEvent } from "@/lib/beta/client";
 import {
   readPlacementSession,
   recordPlacementAttempt,
@@ -146,6 +148,14 @@ export default function ExerciseTrainer({
       },
     );
     recordTrainingActivity("completed");
+    if (session.dailySessionId && session.sourceExampleId && session.missionTotal) {
+      recordStoredDailyExercise({
+        sessionId: session.dailySessionId,
+        exerciseId: session.sourceExampleId,
+        success: session.mistakes === 0,
+        exercisesTotal: session.missionTotal,
+      });
+    }
     if (session.placementDifficulty) {
       const placement = readPlacementSession();
       if (placement) {
@@ -310,6 +320,9 @@ export default function ExerciseTrainer({
   function handleLeaveExercise(
     destination = "/exercises",
   ): void {
+    if (session?.dailySessionId && session.status !== "correct") {
+      trackBetaEvent("daily_session_abandoned");
+    }
     clearExerciseSession();
     if (onExit) {
       onExit();
@@ -420,7 +433,7 @@ export default function ExerciseTrainer({
 
             {session.missionId && (
               <p className="mt-2 text-xs font-black uppercase tracking-[0.14em] text-indigo-300">
-                Mission de Nox · Position {session.missionStep} / {session.missionTotal}
+                {session.dailySessionId ? "Session du jour" : "Mission de Nox"} · Position {session.missionStep} / {session.missionTotal}
               </p>
             )}
 

@@ -17,6 +17,9 @@ import { useAiOpponent } from "@/hooks/useAiOpponent";
 import { getAiLevel, getAiPersona } from "@/lib/ai/opponents";
 import { NOX_RANK_ASSETS } from "@/lib/nox/rankAssets";
 import { trackBetaEvent } from "@/lib/beta/client";
+import { useNoxMission } from "@/hooks/useNoxMission";
+import { buildNoxDailySession, resolvedTimeZone } from "@/lib/nox/dailySessionRules";
+import { readStoredNoxDailySession } from "@/lib/nox/dailySessionStorage";
 
 export type MultiplayerKind =
   | "launcher"
@@ -34,6 +37,7 @@ export default function MultiplayerWorkspace({
   onAnalyze,
   onAnalyzePgn,
   onHistory,
+  onOpenProgress,
 }: {
   currentUser: CurrentUser | null;
   requestedKind: MultiplayerKind;
@@ -44,6 +48,7 @@ export default function MultiplayerWorkspace({
   onAnalyze: () => void;
   onAnalyzePgn: (pgn: string) => void;
   onHistory: () => void;
+  onOpenProgress: () => void;
 }) {
   const kind = requestedKind;
   const online = useOnlineGame(
@@ -62,7 +67,7 @@ export default function MultiplayerWorkspace({
       />
 
       {kind === "launcher" ? (
-        <PlayLauncher onSelect={selectKind} onAnalyze={onAnalyze} onHistory={onHistory} />
+        <PlayLauncher onSelect={selectKind} onAnalyze={onAnalyze} onHistory={onHistory} onOpenProgress={onOpenProgress} />
       ) : kind === "community" ? (
         <CommunityHub
           currentUser={currentUser}
@@ -221,13 +226,17 @@ function PlayLauncher({
   onSelect,
   onAnalyze,
   onHistory,
+  onOpenProgress,
 }: {
   onSelect: (kind: MultiplayerKind) => void;
   onAnalyze: () => void;
   onHistory: () => void;
+  onOpenProgress: () => void;
 }) {
   const previewGame = useChessGame();
   const noxAvatar = NOX_RANK_ASSETS.squire.avatar;
+  const { mission } = useNoxMission();
+  const dailySession = useMemo(() => mission ? buildNoxDailySession({ mission, stored: readStoredNoxDailySession(), timeZone: resolvedTimeZone() }) : null, [mission]);
 
   return (
     <section className="-mx-3 w-auto overflow-hidden border-y border-gray-800 bg-gray-900 shadow-2xl sm:mx-auto sm:w-full sm:max-w-7xl sm:rounded-3xl sm:border">
@@ -247,6 +256,7 @@ function PlayLauncher({
           <p className="mt-2 px-2 text-center text-xs text-gray-500 sm:mt-3">
             L’échiquier devient interactif dès que ton mode est lancé.
           </p>
+          {dailySession && dailySession.status !== "completed" && <button type="button" onClick={onOpenProgress} className="mx-auto mt-3 flex min-h-11 items-center gap-2 rounded-xl border border-indigo-800/70 bg-indigo-950/25 px-4 text-left text-xs text-indigo-100 hover:bg-indigo-950/45"><span aria-hidden="true">✦</span><span><strong>Nox a préparé {dailySession.persistent ? "ta session du jour" : "une session découverte"}</strong> · ≈ {dailySession.estimatedMinutes} min</span></button>}
         </div>
 
         <div className="grid gap-3 px-2 pb-3 sm:px-0 sm:pb-0">

@@ -9,6 +9,11 @@ export const BETA_EVENT_NAMES = [
   "first_nox_interaction",
   "first_mission_started",
   "first_mission_completed",
+  "daily_session_viewed",
+  "daily_session_started",
+  "daily_session_resumed",
+  "daily_session_completed",
+  "daily_session_abandoned",
   "account_created",
   "frontend_error",
 ] as const;

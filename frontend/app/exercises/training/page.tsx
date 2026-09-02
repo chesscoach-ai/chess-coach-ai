@@ -4,8 +4,9 @@ import ExerciseTrainer from "@/components/Exercises/ExerciseTrainer";
 import { getAnalysisEntitlement } from "@/lib/billing/subscriptionStore";
 import { cookies } from "next/headers";
 
-export default async function ExerciseTrainingPage({ searchParams }: { searchParams: Promise<{ mission?: string }> }) {
-  const missionMode = (await searchParams).mission === "1" && Boolean((await cookies()).get("knightly_mission_access")?.value);
+export default async function ExerciseTrainingPage({ searchParams }: { searchParams: Promise<{ mission?: string; dailySession?: string }> }) {
+  const requestedMode = await searchParams;
+  const missionMode = (requestedMode.mission === "1" || requestedMode.dailySession === "1") && Boolean((await cookies()).get("knightly_mission_access")?.value);
   const session = await auth();
   const currentUser = session?.user?.email
     ? {
