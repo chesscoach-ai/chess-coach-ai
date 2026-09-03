@@ -25,6 +25,22 @@ const messages: Record<string, { status: number; message: string }> = {
     status: 409,
     message: "Tu appartiens déjà à un clan ou ce tag est indisponible.",
   },
+  CLAN_INVITE_INVALID: {
+    status: 404,
+    message: "Cette invitation n’est plus valide. Demande un nouveau lien au clan.",
+  },
+  CLAN_FULL: {
+    status: 409,
+    message: "Cette troupe est complète pour le moment.",
+  },
+  CLAN_OWNER_REQUIRED: {
+    status: 403,
+    message: "Seul le chef du clan peut renouveler cette invitation.",
+  },
+  CLAN_RATE_LIMIT: {
+    status: 429,
+    message: "Doucement, chevalier : attends quelques secondes avant de renouveler le lien.",
+  },
 };
 
 export function communityErrorResponse(error: unknown): Response {

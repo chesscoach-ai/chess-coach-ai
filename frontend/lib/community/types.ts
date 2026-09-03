@@ -1,6 +1,7 @@
 import type { CommunityAvatarId } from "@/lib/community/avatars";
 import type { ClanExpedition } from "@/lib/community/clanExpedition";
 import type { BattleBannerId } from "@/lib/rewards/banners";
+import type { NoxRankId } from "@/lib/nox/progressionTypes";
 
 export type CommunityMember = {
   id: string;
@@ -20,6 +21,32 @@ export type CommunityClan = {
   tag: string;
   memberCount: number;
   monthlyPoints: number;
+  inviteCode?: string;
+};
+
+export type CommunityClanMember = Omit<CommunityMember, "id" | "wins" | "losses" | "draws" | "monthlyPoints"> & {
+  publicId: string;
+  noxRank: NoxRankId | null;
+  noxRankLabel: string | null;
+  activityLabel: string;
+  isCurrentPlayer: boolean;
+  isOwner: boolean;
+  sharesProgress: boolean;
+};
+
+export type ClanActivityItem = {
+  id: string;
+  kind: "welcome" | "game" | "milestone";
+  message: string;
+  occurredAt: string;
+};
+
+export type ClanWeeklyGoal = {
+  label: string;
+  current: number;
+  target: number;
+  completed: boolean;
+  weekLabel: string;
 };
 
 export type CommunityDashboard = {
@@ -34,4 +61,9 @@ export type CommunityDashboard = {
   clan: CommunityClan | null;
   clanExpedition: ClanExpedition | null;
   clanLeaderboard: CommunityClan[];
+  clanMembers: CommunityClanMember[];
+  clanActivity: ClanActivityItem[];
+  clanWeeklyGoal: ClanWeeklyGoal | null;
+  clanRole: "owner" | "member" | null;
+  shareProgress: boolean;
 };

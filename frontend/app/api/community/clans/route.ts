@@ -4,6 +4,8 @@ import { communityErrorResponse } from "@/lib/community/apiResponse";
 import {
   createCommunityClan,
   joinCommunityClan,
+  leaveCommunityClan,
+  rotateCommunityClanInvite,
 } from "@/lib/community/communityStore";
 import { getAuthenticatedPlayer } from "@/lib/multiplayer/playerSession";
 import { noStoreJson } from "@/lib/multiplayer/apiResponse";
@@ -18,8 +20,10 @@ const clanSchema = z.discriminatedUnion("action", [
   }),
   z.object({
     action: z.literal("join"),
-    tag: z.string().trim().min(2).max(8),
+    inviteCode: z.string().trim().min(2).max(16),
   }),
+  z.object({ action: z.literal("rotate-invite") }),
+  z.object({ action: z.literal("leave") }),
 ]);
 
 export async function POST(request: Request) {
@@ -34,8 +38,12 @@ export async function POST(request: Request) {
         parsed.data.name,
         parsed.data.tag,
       );
+    } else if (parsed.data.action === "join") {
+      await joinCommunityClan(player, parsed.data.inviteCode);
+    } else if (parsed.data.action === "rotate-invite") {
+      return noStoreJson({ success: true, inviteCode: await rotateCommunityClanInvite(player) });
     } else {
-      await joinCommunityClan(player, parsed.data.tag);
+      return noStoreJson({ success: true, outcome: await leaveCommunityClan(player) });
     }
     return noStoreJson({ success: true });
   } catch (error) {

@@ -66,6 +66,10 @@ class AlembicMigrationTests(unittest.TestCase):
                 "beta_events",
                 "beta_feedback",
                 "beta_bug_reports",
+                "community_profiles",
+                "community_friendships",
+                "community_clans",
+                "community_clan_members",
             }.issubset(self.table_names())
         )
         with closing(sqlite3.connect(self.database_path)) as connection:
@@ -149,6 +153,41 @@ class AlembicMigrationTests(unittest.TestCase):
         self.assertEqual(count, 1)
         self.assertEqual(self.current_revision(), migration_head())
 
+    def test_clan_v2_adopts_legacy_social_data_with_private_default(self) -> None:
+        command.upgrade(self.config, "0006_beta_observability")
+        with closing(sqlite3.connect(self.database_path)) as connection:
+            connection.executescript(
+                """
+                CREATE TABLE community_profiles (
+                    player_id TEXT PRIMARY KEY,
+                    avatar_id VARCHAR(40) NOT NULL DEFAULT 'iron-squire',
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+                CREATE TABLE community_clans (
+                    id UUID PRIMARY KEY, name VARCHAR(60) NOT NULL,
+                    tag VARCHAR(8) UNIQUE NOT NULL, owner_id TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+                INSERT INTO community_profiles (player_id, avatar_id)
+                VALUES ('kept-player', 'iron-squire');
+                INSERT INTO community_clans (id, name, tag, owner_id)
+                VALUES ('kept-clan', 'Legacy Knights', 'OLD', 'kept-player');
+                """
+            )
+
+        command.upgrade(self.config, "head")
+
+        with closing(sqlite3.connect(self.database_path)) as connection:
+            profile = connection.execute(
+                "SELECT player_id, share_progress FROM community_profiles"
+            ).fetchone()
+            clan = connection.execute(
+                "SELECT name, invite_code, invite_rotated_at FROM community_clans"
+            ).fetchone()
+        self.assertEqual(profile, ("kept-player", 0))
+        self.assertEqual(clan[0:2], ("Legacy Knights", None))
+        self.assertIsNotNone(clan[2])
+
     def test_baseline_rollback_is_non_destructive_and_reapplicable(self) -> None:
         command.upgrade(self.config, "head")
         with closing(sqlite3.connect(self.database_path)) as connection:
@@ -199,6 +238,11 @@ class AlembicMigrationTests(unittest.TestCase):
             / "lib"
             / "nox"
             / "memoryStore.ts",
+            BACKEND_DIRECTORY.parent
+            / "frontend"
+            / "lib"
+            / "community"
+            / "communityStore.ts",
         )
         for source in adopted_sources:
             with self.subTest(source=source.name):

@@ -1,9 +1,8 @@
 import "server-only";
 
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { Pool } from "pg";
 
 import {
   COMMUNITY_AVATARS,
@@ -14,11 +13,15 @@ import {
   buildClanExpedition,
   getParisWeekDateKeys,
 } from "@/lib/community/clanExpedition";
+import { CLAN_MEMBER_LIMIT, normalizeClanInviteCode } from "@/lib/community/clanRules";
 import type {
+  ClanActivityItem,
   CommunityClan,
+  CommunityClanMember,
   CommunityDashboard,
   CommunityMember,
 } from "@/lib/community/types";
+import { ensureDatabaseMigrations, getPostgresPool } from "@/lib/database/postgres";
 import {
   getOnlinePlayerRating,
   getOnlinePlayerSummaries,
@@ -27,10 +30,12 @@ import {
   searchOnlinePlayers,
 } from "@/lib/multiplayer/gameStore";
 import type { AuthenticatedPlayer } from "@/lib/multiplayer/playerSession";
+import { getNoxProgression } from "@/lib/nox/progressionStore";
 import { getBattleRewardCosmetics } from "@/lib/rewards/battleRewardStore";
 
 type StoredProfile = {
   avatarId: CommunityAvatarId;
+  shareProgress: boolean;
 };
 
 type StoredClan = {
@@ -40,6 +45,8 @@ type StoredClan = {
   ownerId: string;
   members: string[];
   createdAt: string;
+  inviteCode?: string;
+  inviteRotatedAt?: string;
 };
 
 type LocalCommunity = {
@@ -51,47 +58,11 @@ type LocalCommunity = {
 const dataDirectory = path.join(process.cwd(), ".data");
 const communityFile = path.join(dataDirectory, "community.json");
 let localQueue: Promise<unknown> = Promise.resolve();
-let pool: Pool | null = null;
 let databaseReady: Promise<void> | null = null;
 
-function getPool(): Pool | null {
-  if (!process.env.DATABASE_URL) return null;
-  pool ??= new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl:
-      process.env.NODE_ENV === "production"
-        ? { rejectUnauthorized: false }
-        : undefined,
-  });
-  databaseReady ??= pool
-    .query(`
-      CREATE TABLE IF NOT EXISTS community_profiles (
-        player_id TEXT PRIMARY KEY,
-        avatar_id VARCHAR(40) NOT NULL DEFAULT 'iron-squire',
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-      CREATE TABLE IF NOT EXISTS community_friendships (
-        player_a TEXT NOT NULL,
-        player_b TEXT NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        PRIMARY KEY (player_a, player_b),
-        CHECK (player_a < player_b)
-      );
-      CREATE TABLE IF NOT EXISTS community_clans (
-        id UUID PRIMARY KEY,
-        name VARCHAR(60) NOT NULL,
-        tag VARCHAR(8) UNIQUE NOT NULL,
-        owner_id TEXT NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-      CREATE TABLE IF NOT EXISTS community_clan_members (
-        clan_id UUID NOT NULL REFERENCES community_clans(id) ON DELETE CASCADE,
-        player_id TEXT UNIQUE NOT NULL,
-        joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        PRIMARY KEY (clan_id, player_id)
-      );
-    `)
-    .then(() => undefined);
+function getPool() {
+  const pool = getPostgresPool();
+  if (pool) databaseReady ??= ensureDatabaseMigrations(pool);
   return pool;
 }
 
@@ -187,6 +158,34 @@ async function getAvatarIds(
   );
 }
 
+async function getProfileVisibility(
+  playerIds: string[],
+): Promise<Record<string, boolean>> {
+  const database = getPool();
+  if (!database) {
+    const community = await readLocalCommunity();
+    return Object.fromEntries(
+      playerIds.map((id) => [id, community.profiles[id]?.shareProgress ?? false]),
+    );
+  }
+  await databaseReady;
+  const result = await database.query<{ player_id: string; share_progress: boolean }>(
+    `SELECT player_id, share_progress FROM community_profiles
+     WHERE player_id = ANY($1::text[])`,
+    [playerIds],
+  );
+  const stored = Object.fromEntries(result.rows.map((row) => [row.player_id, row.share_progress]));
+  return Object.fromEntries(playerIds.map((id) => [id, stored[id] ?? false]));
+}
+
+function publicMemberId(playerId: string): string {
+  return createHash("sha256").update(`knightly-clan:${playerId}`).digest("hex").slice(0, 12);
+}
+
+function createInviteCode(): string {
+  return `KLY-${randomBytes(4).toString("hex").toUpperCase()}`;
+}
+
 async function buildMembers(
   players: Array<{ id: string; name: string; rating: number }>,
 ): Promise<CommunityMember[]> {
@@ -223,9 +222,11 @@ async function listClans(): Promise<StoredClan[]> {
     owner_id: string;
     created_at: Date;
     members: string[];
+    invite_code: string | null;
+    invite_rotated_at: Date | null;
   }>(
-    `SELECT c.id, c.name, c.tag, c.owner_id, c.created_at,
-            COALESCE(array_agg(m.player_id) FILTER (WHERE m.player_id IS NOT NULL), '{}') AS members
+    `SELECT c.id, c.name, c.tag, c.owner_id, c.created_at, c.invite_code, c.invite_rotated_at,
+            COALESCE(array_agg(m.player_id ORDER BY m.joined_at) FILTER (WHERE m.player_id IS NOT NULL), '{}') AS members
      FROM community_clans c
      LEFT JOIN community_clan_members m ON m.clan_id = c.id
      GROUP BY c.id
@@ -238,6 +239,8 @@ async function listClans(): Promise<StoredClan[]> {
     ownerId: row.owner_id,
     members: row.members,
     createdAt: row.created_at.toISOString(),
+    inviteCode: row.invite_code ?? undefined,
+    inviteRotatedAt: (row.invite_rotated_at ?? row.created_at).toISOString(),
   }));
 }
 
@@ -255,6 +258,62 @@ async function buildClan(clan: StoredClan): Promise<CommunityClan> {
   };
 }
 
+async function buildClanMembers(
+  clan: StoredClan,
+  currentPlayerId: string,
+  weekDateKeys: string[],
+): Promise<{ members: CommunityClanMember[]; activity: ClanActivityItem[] }> {
+  const summaries = await getOnlinePlayerSummaries(clan.members);
+  const byId = Object.fromEntries(summaries.map((member) => [member.id, member]));
+  const visibility = await getProfileVisibility(clan.members);
+  const avatars = await getAvatarIds(clan.members);
+  const rows = await Promise.all(
+    clan.members.map(async (id) => {
+      const source = byId[id] ?? { id, name: "Chevalier du clan", rating: 600 };
+      const sharesProgress = id === currentPlayerId || Boolean(visibility[id]);
+      const weekly = await getPlayerMatchStatsForDateKeys(id, weekDateKeys);
+      const progression = sharesProgress
+        ? await getNoxProgression({ id, name: source.name })
+        : null;
+      const games = weekly.wins + weekly.draws + weekly.losses;
+      return {
+        member: {
+          publicId: publicMemberId(id),
+          name: source.name,
+          rating: source.rating,
+          avatarId: avatars[id] ?? "iron-squire",
+          noxRank: progression?.rank ?? null,
+          noxRankLabel: progression?.rankLabel ?? null,
+          activityLabel: sharesProgress
+            ? games > 0
+              ? `${games} partie${games > 1 ? "s" : ""} cette semaine`
+              : "Prêt pour une partie"
+            : "Progression privée",
+          isCurrentPlayer: id === currentPlayerId,
+          isOwner: id === clan.ownerId,
+          sharesProgress,
+        } satisfies CommunityClanMember,
+        games,
+      };
+    }),
+  );
+  const activity: ClanActivityItem[] = rows
+    .filter((row) => row.member.sharesProgress && row.games > 0)
+    .map((row) => ({
+      id: `week-${row.member.publicId}`,
+      kind: "game" as const,
+      message: `${row.member.name} a joué ${row.games} partie${row.games > 1 ? "s" : ""} avec la troupe cette semaine.`,
+      occurredAt: weekDateKeys[0],
+    }));
+  activity.push({
+    id: `welcome-${clan.id}`,
+    kind: "welcome",
+    message: `La bannière ${clan.name} est levée. Bienvenue dans la troupe !`,
+    occurredAt: clan.createdAt,
+  });
+  return { members: rows.map((row) => row.member), activity };
+}
+
 export async function getCommunityDashboard(
   player: AuthenticatedPlayer,
 ): Promise<CommunityDashboard> {
@@ -264,7 +323,7 @@ export async function getCommunityDashboard(
 
   if (!database) {
     const community = await withLocalLock((value) => {
-      value.profiles[player.id] ??= { avatarId: "iron-squire" };
+      value.profiles[player.id] ??= { avatarId: "iron-squire", shareProgress: false };
       return value;
     });
     ownAvatarId = community.profiles[player.id].avatarId;
@@ -323,6 +382,15 @@ export async function getCommunityDashboard(
   const clanExpedition = ownStoredClan
     ? await buildStoredClanExpedition(ownStoredClan, weekDateKeys)
     : null;
+  const clanSocial = ownStoredClan
+    ? await buildClanMembers(ownStoredClan, player.id, weekDateKeys)
+    : { members: [], activity: [] };
+  const ownVisibility = await getProfileVisibility([player.id]);
+  const gamesThisWeek = clanExpedition?.contributions.reduce(
+    (total, contribution) => total + contribution.games,
+    0,
+  ) ?? 0;
+  const weeklyTarget = Math.max(4, (ownStoredClan?.members.length ?? 1) * 2);
 
   return {
     profile,
@@ -335,10 +403,30 @@ export async function getCommunityDashboard(
         leagueMembers.findIndex((member) => member.id === player.id) + 1,
     },
     clan: ownClanId
-      ? clans.find((clan) => clan.id === ownClanId) ?? null
+      ? {
+          ...(clans.find((clan) => clan.id === ownClanId) as CommunityClan),
+          inviteCode: ownStoredClan?.inviteCode ?? ownStoredClan?.tag,
+        }
       : null,
     clanExpedition,
     clanLeaderboard: clans.slice(0, 8),
+    clanMembers: clanSocial.members,
+    clanActivity: clanSocial.activity,
+    clanWeeklyGoal: ownStoredClan
+      ? {
+          label: "Jouer ensemble cette semaine",
+          current: gamesThisWeek,
+          target: weeklyTarget,
+          completed: gamesThisWeek >= weeklyTarget,
+          weekLabel: clanExpedition?.weekLabel ?? "Cette semaine",
+        }
+      : null,
+    clanRole: ownStoredClan
+      ? ownStoredClan.ownerId === player.id
+        ? "owner"
+        : "member"
+      : null,
+    shareProgress: ownVisibility[player.id] ?? false,
   };
 }
 
@@ -371,7 +459,10 @@ export async function selectCommunityAvatar(
 
   if (!database) {
     await withLocalLock((community) => {
-      community.profiles[player.id] = { avatarId };
+      community.profiles[player.id] = {
+        avatarId,
+        shareProgress: community.profiles[player.id]?.shareProgress ?? false,
+      };
     });
     return;
   }
@@ -433,6 +524,7 @@ export async function createCommunityClan(
     throw new Error("INVALID_REQUEST");
   }
   const database = getPool();
+  const inviteCode = createInviteCode();
 
   if (!database) {
     await withLocalLock((community) => {
@@ -451,6 +543,8 @@ export async function createCommunityClan(
         ownerId: player.id,
         members: [player.id],
         createdAt: new Date().toISOString(),
+        inviteCode,
+        inviteRotatedAt: new Date().toISOString(),
       };
     });
     return;
@@ -461,9 +555,9 @@ export async function createCommunityClan(
     await client.query("BEGIN");
     const clanId = randomUUID();
     await client.query(
-      `INSERT INTO community_clans (id, name, tag, owner_id)
-       VALUES ($1, $2, $3, $4)`,
-      [clanId, cleanName, cleanTag, player.id],
+      `INSERT INTO community_clans (id, name, tag, owner_id, invite_code)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [clanId, cleanName, cleanTag, player.id, inviteCode],
     );
     await client.query(
       `INSERT INTO community_clan_members (clan_id, player_id)
@@ -481,9 +575,12 @@ export async function createCommunityClan(
 
 export async function joinCommunityClan(
   player: AuthenticatedPlayer,
-  tag: string,
+  inviteCode: string,
 ): Promise<void> {
-  const cleanTag = tag.trim().toUpperCase();
+  const cleanCode = normalizeClanInviteCode(inviteCode);
+  if (!cleanCode) {
+    throw new Error("CLAN_INVITE_INVALID");
+  }
   const database = getPool();
 
   if (!database) {
@@ -496,27 +593,155 @@ export async function joinCommunityClan(
         throw new Error("CLAN_CONFLICT");
       }
       const clan = Object.values(community.clans).find(
-        (candidate) => candidate.tag === cleanTag,
+        (candidate) =>
+          candidate.inviteCode === cleanCode ||
+          (!candidate.inviteCode && candidate.tag === cleanCode),
       );
-      if (!clan) throw new Error("CLAN_NOT_FOUND");
+      if (!clan) throw new Error("CLAN_INVITE_INVALID");
+      if (clan.members.length >= CLAN_MEMBER_LIMIT) throw new Error("CLAN_FULL");
       clan.members.push(player.id);
     });
     return;
   }
   await databaseReady;
-  const result = await database.query<{ id: string }>(
-    `SELECT id FROM community_clans WHERE tag = $1 LIMIT 1`,
-    [cleanTag],
-  );
-  if (!result.rows[0]) throw new Error("CLAN_NOT_FOUND");
+  const client = await database.connect();
   try {
-    await database.query(
+    await client.query("BEGIN");
+    const result = await client.query<{ id: string }>(
+      `SELECT c.id FROM community_clans c
+       WHERE c.invite_code = $1 OR (c.invite_code IS NULL AND c.tag = $1)
+       LIMIT 1 FOR UPDATE`,
+      [cleanCode],
+    );
+    if (!result.rows[0]) throw new Error("CLAN_INVITE_INVALID");
+    const size = await client.query<{ count: string }>(
+      "SELECT COUNT(*)::text AS count FROM community_clan_members WHERE clan_id = $1",
+      [result.rows[0].id],
+    );
+    if (Number(size.rows[0]?.count ?? 0) >= CLAN_MEMBER_LIMIT) throw new Error("CLAN_FULL");
+    await client.query(
       `INSERT INTO community_clan_members (clan_id, player_id)
        VALUES ($1, $2)`,
       [result.rows[0].id, player.id],
     );
-  } catch {
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    if (error instanceof Error && ["CLAN_INVITE_INVALID", "CLAN_FULL"].includes(error.message)) throw error;
     throw new Error("CLAN_CONFLICT");
+  } finally {
+    client.release();
+  }
+}
+
+export async function setCommunityProgressSharing(
+  player: AuthenticatedPlayer,
+  shareProgress: boolean,
+): Promise<void> {
+  const database = getPool();
+  if (!database) {
+    await withLocalLock((community) => {
+      const current = community.profiles[player.id];
+      community.profiles[player.id] = {
+        avatarId: current?.avatarId ?? "iron-squire",
+        shareProgress,
+      };
+    });
+    return;
+  }
+  await databaseReady;
+  await database.query(
+    `INSERT INTO community_profiles (player_id, share_progress)
+     VALUES ($1, $2)
+     ON CONFLICT (player_id) DO UPDATE
+       SET share_progress = EXCLUDED.share_progress, updated_at = NOW()`,
+    [player.id, shareProgress],
+  );
+}
+
+export async function rotateCommunityClanInvite(
+  player: AuthenticatedPlayer,
+): Promise<string> {
+  const inviteCode = createInviteCode();
+  const database = getPool();
+  if (!database) {
+    return withLocalLock((community) => {
+      const clan = Object.values(community.clans).find((item) => item.ownerId === player.id);
+      if (!clan) throw new Error("CLAN_OWNER_REQUIRED");
+      if (clan.inviteRotatedAt && Date.now() - Date.parse(clan.inviteRotatedAt) < 10_000) {
+        throw new Error("CLAN_RATE_LIMIT");
+      }
+      clan.inviteCode = inviteCode;
+      clan.inviteRotatedAt = new Date().toISOString();
+      return inviteCode;
+    });
+  }
+  await databaseReady;
+  const result = await database.query<{ invite_code: string }>(
+    `UPDATE community_clans SET invite_code = $2, invite_rotated_at = NOW()
+     WHERE owner_id = $1
+       AND COALESCE(invite_rotated_at, created_at) <= NOW() - INTERVAL '10 seconds'
+     RETURNING invite_code`,
+    [player.id, inviteCode],
+  );
+  if (!result.rows[0]) {
+    const ownsClan = await database.query("SELECT 1 FROM community_clans WHERE owner_id = $1", [player.id]);
+    throw new Error(ownsClan.rowCount ? "CLAN_RATE_LIMIT" : "CLAN_OWNER_REQUIRED");
+  }
+  return result.rows[0].invite_code;
+}
+
+export async function leaveCommunityClan(
+  player: AuthenticatedPlayer,
+): Promise<"left" | "transferred" | "dissolved"> {
+  const database = getPool();
+  if (!database) {
+    return withLocalLock((community) => {
+      const clan = Object.values(community.clans).find((item) => item.members.includes(player.id));
+      if (!clan) throw new Error("CLAN_NOT_FOUND");
+      clan.members = clan.members.filter((id) => id !== player.id);
+      if (clan.members.length === 0) {
+        delete community.clans[clan.id];
+        return "dissolved";
+      }
+      if (clan.ownerId === player.id) {
+        clan.ownerId = clan.members[0];
+        return "transferred";
+      }
+      return "left";
+    });
+  }
+  await databaseReady;
+  const client = await database.connect();
+  try {
+    await client.query("BEGIN");
+    const membership = await client.query<{ clan_id: string; owner_id: string }>(
+      `SELECT m.clan_id, c.owner_id FROM community_clan_members m
+       JOIN community_clans c ON c.id = m.clan_id WHERE m.player_id = $1 FOR UPDATE`,
+      [player.id],
+    );
+    const row = membership.rows[0];
+    if (!row) throw new Error("CLAN_NOT_FOUND");
+    await client.query("DELETE FROM community_clan_members WHERE clan_id = $1 AND player_id = $2", [row.clan_id, player.id]);
+    const next = await client.query<{ player_id: string }>(
+      "SELECT player_id FROM community_clan_members WHERE clan_id = $1 ORDER BY joined_at ASC LIMIT 1",
+      [row.clan_id],
+    );
+    let result: "left" | "transferred" | "dissolved" = "left";
+    if (!next.rows[0]) {
+      await client.query("DELETE FROM community_clans WHERE id = $1", [row.clan_id]);
+      result = "dissolved";
+    } else if (row.owner_id === player.id) {
+      await client.query("UPDATE community_clans SET owner_id = $2 WHERE id = $1", [row.clan_id, next.rows[0].player_id]);
+      result = "transferred";
+    }
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
 }
 

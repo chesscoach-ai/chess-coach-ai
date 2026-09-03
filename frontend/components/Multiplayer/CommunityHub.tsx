@@ -2,712 +2,151 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import type { CurrentUser } from "@/components/Layout/ProductWorkspace";
-import BattleRoad from "@/components/Multiplayer/BattleRoad";
-import DailyJourneyHub from "@/components/Progression/DailyJourneyHub";
-import PlayerStatistics from "@/components/Statistics/PlayerStatistics";
-import { COMMUNITY_AVATARS } from "@/lib/community/avatars";
-import type {
-  CommunityClan,
-  CommunityDashboard,
-  CommunityMember,
-} from "@/lib/community/types";
+import { trackBetaEvent } from "@/lib/beta/client";
+import { getCommunityAvatar } from "@/lib/community/avatars";
+import { buildClanPreview, resolveClanPreview } from "@/lib/community/clanPreview";
+import type { CommunityClanMember, CommunityDashboard } from "@/lib/community/types";
 
-export default function CommunityHub({
-  currentUser,
-  onPlay,
-}: {
+type ClanAction =
+  | { action: "create"; name: string; tag: string }
+  | { action: "join"; inviteCode: string }
+  | { action: "rotate-invite" }
+  | { action: "leave" };
+
+export default function CommunityHub({ currentUser, onPlay }: {
   currentUser: CurrentUser | null;
-  onPlay: () => void;
+  onPlay: (kind?: "friend" | "online") => void;
 }) {
-  const [dashboard, setDashboard] = useState<CommunityDashboard | null>(null);
+  const searchParams = useSearchParams();
+  const preview = resolveClanPreview(searchParams.get("clanPreview"), process.env.NODE_ENV);
+  const previewDashboard = useMemo(() => preview ? buildClanPreview(preview) : null, [preview]);
+  const [dashboard, setDashboard] = useState<CommunityDashboard | null>(previewDashboard);
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(Boolean(currentUser));
+  const [notice, setNotice] = useState(preview ? "Aperçu DEV : aucune donnée réelle ne sera modifiée." : "");
+  const [isLoading, setIsLoading] = useState(Boolean(currentUser) && !preview);
+  const viewed = useRef(false);
+  const clanId = dashboard?.clan?.id ?? null;
+  const goalCompleted = dashboard?.clanWeeklyGoal?.completed ?? null;
 
   const loadDashboard = useCallback(async () => {
+    if (previewDashboard) { setDashboard(previewDashboard); setIsLoading(false); return; }
     if (!currentUser) return;
     setIsLoading(true);
     try {
       const response = await fetch("/api/community", { cache: "no-store" });
-      const payload = (await response.json()) as
-        | { dashboard: CommunityDashboard }
-        | { message?: string };
-      if (!response.ok || !("dashboard" in payload)) {
-        throw new Error(
-          "message" in payload && payload.message
-            ? payload.message
-            : "L’espace Clan ne peut pas être chargé.",
-        );
-      }
+      const payload = (await response.json()) as { dashboard?: CommunityDashboard; message?: string };
+      if (!response.ok || !payload.dashboard) throw new Error(payload.message ?? "L’espace Clan ne peut pas être chargé.");
       setDashboard(payload.dashboard);
       setError("");
     } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "L’espace Clan ne peut pas être chargé.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentUser]);
+      setError(requestError instanceof Error ? requestError.message : "L’espace Clan ne peut pas être chargé.");
+    } finally { setIsLoading(false); }
+  }, [currentUser, previewDashboard]);
 
+  useEffect(() => { const timer = window.setTimeout(() => void loadDashboard(), 0); return () => window.clearTimeout(timer); }, [loadDashboard]);
+  useEffect(() => { if (!viewed.current) { viewed.current = true; trackBetaEvent("clan_viewed"); } }, []);
   useEffect(() => {
-    const timer = window.setTimeout(() => void loadDashboard(), 0);
-    return () => window.clearTimeout(timer);
-  }, [loadDashboard]);
+    if (!clanId) return;
+    trackBetaEvent("clan_activity_viewed");
+    if (goalCompleted !== null) {
+      trackBetaEvent("clan_goal_viewed");
+      if (goalCompleted) trackBetaEvent("clan_goal_completed");
+    }
+  }, [clanId, goalCompleted]);
 
-  async function mutate(url: string, init: RequestInit) {
-    setIsLoading(true);
-    setError("");
+  async function mutate(url: string, init: RequestInit, successMessage?: string) {
+    if (preview) { setNotice("Aperçu DEV confirmé : l’action est simulée, aucune donnée réelle n’a changé."); return true; }
+    setIsLoading(true); setError("");
     try {
-      const response = await fetch(url, {
-        ...init,
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await fetch(url, { ...init, headers: { "Content-Type": "application/json" } });
       const payload = (await response.json()) as { message?: string };
-      if (!response.ok) {
-        throw new Error(
-          payload.message ?? "Cette action n’a pas pu être enregistrée.",
-        );
-      }
+      if (!response.ok) throw new Error(payload.message ?? "Cette action n’a pas pu être enregistrée.");
+      if (successMessage) setNotice(successMessage);
       await loadDashboard();
       window.dispatchEvent(new Event("community:updated"));
       return true;
     } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Cette action n’a pas pu être enregistrée.",
-      );
-      setIsLoading(false);
-      return false;
+      setError(requestError instanceof Error ? requestError.message : "Cette action n’a pas pu être enregistrée.");
+      setIsLoading(false); return false;
     }
   }
 
-  if (!currentUser) {
-    return (
-      <section className="rounded-2xl border border-violet-900/60 bg-violet-950/20 p-8 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">
-          Clan
-        </p>
-        <h2 className="mt-2 text-2xl font-black text-white">
-          Ton identité de joueur commence ici
-        </h2>
-        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-400">
-          Crée ton profil pour ajouter des amis, rejoindre une ligue mensuelle
-          et rapporter des points à ton clan.
-        </p>
-        <Link
-          href="/auth"
-          className="mt-5 inline-flex rounded-xl bg-violet-600 px-5 py-3 text-sm font-bold text-white hover:bg-violet-500"
-        >
-          Créer mon compte
-        </Link>
-      </section>
-    );
+  async function clanAction(body: ClanAction): Promise<boolean> {
+    const ok = await mutate("/api/community/clans", { method: "POST", body: JSON.stringify(body) }, body.action === "leave" ? "Tu as quitté la troupe." : undefined);
+    if (ok && body.action === "create") trackBetaEvent("clan_created");
+    if (ok && body.action === "join") { trackBetaEvent("clan_joined"); trackBetaEvent("clan_invite_accepted"); }
+    if (ok && body.action === "rotate-invite") trackBetaEvent("clan_invite_created");
+    return ok;
   }
 
-  if (!dashboard) {
-    return (
-      <section className="rounded-2xl border border-gray-800 bg-gray-900 p-8 text-center">
-        <p className="text-gray-400">
-          {isLoading ? "Ouverture de l’espace Clan…" : error}
-        </p>
-      </section>
-    );
-  }
+  if (!currentUser && !preview) return <GuestClanValue />;
+  if (!dashboard) return <section className="rounded-2xl border border-gray-800 bg-gray-900 p-8 text-center"><p className="text-gray-400">{isLoading ? "Nox rassemble la troupe…" : error || "Le clan est momentanément indisponible."}</p>{!isLoading && <button type="button" onClick={() => void loadDashboard()} className="mt-4 rounded-xl border border-gray-700 px-4 py-2 text-sm font-bold text-white">Réessayer</button>}</section>;
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-2xl border border-blue-900/60 bg-gradient-to-r from-blue-950/35 via-gray-900 to-red-950/25 p-4 sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">
-              Place du clan
-            </p>
-            <h2 className="mt-1 text-xl font-black text-white">
-              Retrouve ta troupe, puis pars au combat
-            </h2>
-            <p className="mt-1 text-sm text-gray-400">
-              Tes amis et ton clan restent à portée de clic. Le reste peut attendre la fin du duel.
-            </p>
-          </div>
-          <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:min-w-[28rem]">
-            <SocialShortcut
-              href="#community-friends"
-              icon="♞"
-              eyebrow="Cercle d’amis"
-              title={`${dashboard.friends.length} ami${dashboard.friends.length > 1 ? "s" : ""}`}
-              description="Ajouter, comparer, défier"
-              color="blue"
-            />
-            <SocialShortcut
-              href="#community-clan"
-              icon="⚔"
-              eyebrow="Mon clan"
-              title={dashboard.clan ? `[${dashboard.clan.tag}] ${dashboard.clan.name}` : "Trouver ma bannière"}
-              description={dashboard.clan ? `${dashboard.clan.monthlyPoints} points ce mois` : "Créer ou rejoindre un clan"}
-              color="red"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section id="community-progress" className="scroll-mt-24 space-y-3">
-        <DailyJourneyHub currentUser={currentUser} />
-        <BattleRoad
-          currentUser={currentUser}
-          refreshKey="community"
-          onPlay={onPlay}
-        />
-      </section>
-
-      <div className="grid items-start gap-5 xl:grid-cols-[0.85fr_1.15fr]">
-        <FriendsPanel
-          friends={dashboard.friends}
-          isLoading={isLoading}
-          onAdd={(query) =>
-            mutate("/api/community/friends", {
-              method: "POST",
-              body: JSON.stringify({ query }),
-            })
-          }
-        />
-        <ClanPanel
-          clan={dashboard.clan}
-          expedition={dashboard.clanExpedition}
-          leaderboard={dashboard.clanLeaderboard}
-          isLoading={isLoading}
-          onAction={(body) =>
-            mutate("/api/community/clans", {
-              method: "POST",
-              body: JSON.stringify(body),
-            })
-          }
-        />
-      </div>
-
-      <LeaguePanel dashboard={dashboard} />
-
-      <PlayerStatistics
-        currentUser={currentUser}
-        variant="multiplayer"
-        refreshKey="community"
-      />
-
-      <AvatarCollection
-        rating={dashboard.profile.rating}
-        selectedAvatarId={dashboard.profile.avatarId}
-        isLoading={isLoading}
-        onSelect={(avatarId) =>
-          mutate("/api/community/avatar", {
-            method: "PATCH",
-            body: JSON.stringify({ avatarId }),
-          })
-        }
-      />
-
-      {error && (
-        <p
-          role="alert"
-          className="rounded-xl border border-red-900/70 bg-red-950/30 p-4 text-sm text-red-200"
-        >
-          {error}
-        </p>
-      )}
+    <div className="mx-auto max-w-6xl space-y-4" data-clan-preview={preview ?? undefined}>
+      <ClanHome dashboard={dashboard} inviteFromUrl={searchParams.get("clanInvite") ?? ""} isLoading={isLoading} onAction={clanAction} onPrivacy={(shareProgress) => mutate("/api/community/privacy", { method: "PATCH", body: JSON.stringify({ shareProgress }) }, shareProgress ? "Ta progression générale est maintenant visible par le clan." : "Ta progression est redevenue privée.")} onNotice={setNotice} />
+      <ClanActivity dashboard={dashboard} />
+      <PlayTogether dashboard={dashboard} isLoading={isLoading} onAddFriend={(query) => mutate("/api/community/friends", { method: "POST", body: JSON.stringify({ query }) }, "Le joueur rejoint ton cercle d’amis.")} onChallenge={() => { trackBetaEvent("clan_challenge_sent"); trackBetaEvent("clan_challenge_started"); onPlay("friend"); }} onQuickPlay={() => onPlay("online")} />
+      {(notice || error) && <p role={error ? "alert" : "status"} className={`rounded-xl border p-3 text-sm ${error ? "border-red-900 bg-red-950/30 text-red-200" : "border-indigo-900 bg-indigo-950/25 text-indigo-200"}`}>{error || notice}</p>}
     </div>
   );
 }
 
-function SocialShortcut({
-  href,
-  icon,
-  eyebrow,
-  title,
-  description,
-  color,
-}: {
-  href: string;
-  icon: string;
-  eyebrow: string;
-  title: string;
-  description: string;
-  color: "blue" | "red";
-}) {
-  const styles =
-    color === "blue"
-      ? "border-blue-800/70 bg-blue-950/35 hover:border-blue-500"
-      : "border-red-800/70 bg-red-950/30 hover:border-red-500";
-
-  return (
-    <a
-      href={href}
-      className={`group flex items-center gap-3 rounded-xl border p-3 transition ${styles}`}
-    >
-      <span
-        aria-hidden="true"
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gray-950/70 text-xl text-white"
-      >
-        {icon}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[10px] font-black uppercase tracking-[0.12em] text-gray-400">
-          {eyebrow}
-        </span>
-        <span className="block truncate text-sm font-black text-white">
-          {title}
-        </span>
-        <span className="block truncate text-[11px] text-gray-500">
-          {description}
-        </span>
-      </span>
-      <span
-        aria-hidden="true"
-        className="text-gray-600 transition group-hover:translate-x-0.5 group-hover:text-white"
-      >
-        →
-      </span>
-    </a>
-  );
+function GuestClanValue() {
+  return <section className="mx-auto max-w-3xl rounded-2xl border border-indigo-800/70 bg-gradient-to-br from-indigo-950/55 to-gray-900 p-6 text-center sm:p-8"><span className="text-4xl" aria-hidden="true">⚔️</span><p className="mt-3 text-xs font-black uppercase tracking-[0.16em] text-indigo-300">Clan Knightly</p><h2 className="mt-2 text-2xl font-black text-white">Progresse avec une petite troupe</h2><p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-300">Jouez ensemble, lancez des défis amicaux et faites avancer un objectif commun. Le Clan reste gratuit pour tous.</p><Link href="/auth" className="mt-5 inline-flex min-h-12 items-center rounded-xl bg-indigo-600 px-5 font-black text-white">Créer mon compte</Link><p className="mt-3 text-xs text-gray-500">Consulter est simple ; rejoindre durablement demande un compte pour protéger la troupe.</p></section>;
 }
 
-function AvatarCollection({
-  rating,
-  selectedAvatarId,
-  isLoading,
-  onSelect,
-}: {
-  rating: number;
-  selectedAvatarId: string;
-  isLoading: boolean;
-  onSelect: (avatarId: string) => Promise<boolean>;
-}) {
-  const unlockedCount = COMMUNITY_AVATARS.filter(
-    (avatar) => rating >= avatar.requiredRating,
-  ).length;
-  const selectedAvatar =
-    COMMUNITY_AVATARS.find((avatar) => avatar.id === selectedAvatarId) ??
-    COMMUNITY_AVATARS[0];
-
-  return (
-    <details className="group overflow-hidden rounded-2xl border border-gray-800 bg-gray-900">
-      <summary className="flex cursor-pointer list-none items-center gap-3 p-4 marker:content-none">
-        <Image
-          src={selectedAvatar.image}
-          alt=""
-          width={48}
-          height={48}
-          className="h-11 w-11 rounded-lg border border-violet-800/60 object-cover"
-        />
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-violet-300">
-            Collection de chevaliers
-          </p>
-          <p className="truncate text-sm font-bold text-white">
-            {selectedAvatar.name} · {unlockedCount}/{COMMUNITY_AVATARS.length} débloqués
-          </p>
-        </div>
-        <span className="rounded-lg border border-gray-700 px-2.5 py-1.5 text-xs font-bold text-gray-400 transition group-open:rotate-180">
-          ↓
-        </span>
-      </summary>
-      <div className="grid grid-cols-2 gap-2 border-t border-gray-800 p-3 sm:grid-cols-3 lg:grid-cols-5">
-        {COMMUNITY_AVATARS.map((avatar) => {
-          const unlocked = rating >= avatar.requiredRating;
-          const selected = selectedAvatarId === avatar.id;
-          return (
-            <button
-              key={avatar.id}
-              type="button"
-              disabled={!unlocked || isLoading}
-              onClick={() => void onSelect(avatar.id)}
-              className={[
-                "flex min-w-0 items-center gap-2 rounded-xl border p-2 text-left transition",
-                selected
-                  ? "border-violet-500 bg-violet-950/35"
-                  : unlocked
-                    ? "border-gray-700 bg-gray-950/60 hover:border-violet-700"
-                    : "border-gray-800 bg-gray-950/30 opacity-55",
-              ].join(" ")}
-            >
-              <Image
-                src={avatar.image}
-                alt=""
-                width={56}
-                height={56}
-                className="h-12 w-12 shrink-0 rounded-lg object-cover"
-              />
-              <span className="min-w-0">
-                <span className="block truncate text-xs font-bold text-white">
-                  {avatar.name}
-                </span>
-                <span className="mt-0.5 block text-[10px] leading-4 text-gray-500">
-                  {unlocked
-                    ? selected
-                      ? "Équipé"
-                      : avatar.rarity
-                    : `${avatar.requiredRating} Elo`}
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </details>
-  );
-}
-
-function ProfileStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl border border-gray-700 bg-gray-950/60 px-3 py-2 text-center">
-      <p className="text-lg font-black text-white">{value}</p>
-      <p className="text-[10px] uppercase tracking-wide text-gray-500">
-        {label}
-      </p>
-    </div>
-  );
-}
-
-function FriendsPanel({
-  friends,
-  isLoading,
-  onAdd,
-}: {
-  friends: CommunityMember[];
-  isLoading: boolean;
-  onAdd: (query: string) => Promise<boolean>;
-}) {
-  const [query, setQuery] = useState("");
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    if (await onAdd(query)) setQuery("");
+function ClanHome({ dashboard, inviteFromUrl, isLoading, onAction, onPrivacy, onNotice }: { dashboard: CommunityDashboard; inviteFromUrl: string; isLoading: boolean; onAction: (body: ClanAction) => Promise<boolean>; onPrivacy: (share: boolean) => Promise<boolean>; onNotice: (message: string) => void; }) {
+  const [name, setName] = useState(""); const [tag, setTag] = useState("");
+  const [inviteCode, setInviteCode] = useState(inviteFromUrl); const [showInvite, setShowInvite] = useState(Boolean(inviteFromUrl));
+  const clan = dashboard.clan;
+  async function shareInvite() {
+    if (!clan?.inviteCode) return;
+    const url = `${window.location.origin}/?mode=multiplayer&kind=community&clanInvite=${encodeURIComponent(clan.inviteCode)}`;
+    const payload = { title: `Rejoins ${clan.name} sur Knightly`, text: `Notre troupe t’attend. Code : ${clan.inviteCode}`, url };
+    trackBetaEvent("clan_invite_created");
+    try {
+      if (navigator.share) await navigator.share(payload);
+      else { await navigator.clipboard.writeText(url); onNotice("Lien d’invitation copié. Aucun e-mail ni identifiant privé n’est inclus."); }
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      await navigator.clipboard.writeText(url); onNotice("Lien d’invitation copié.");
+    }
   }
-
-  return (
-    <section
-      id="community-friends"
-      className="scroll-mt-24 rounded-2xl border border-blue-900/60 bg-gradient-to-br from-blue-950/25 to-gray-900 p-5"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-400">
-            Cercle d’amis
-          </p>
-          <h2 className="mt-1 text-xl font-bold text-white">
-            Ta bande de joueurs
-          </h2>
-        </div>
-        <span className="rounded-full border border-blue-800/70 bg-blue-950/50 px-3 py-1 text-xs font-black text-blue-200">
-          {friends.length} ami{friends.length > 1 ? "s" : ""}
-        </span>
-      </div>
-      <form onSubmit={(event) => void submit(event)} className="mt-4 flex gap-2">
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Pseudo ou e-mail exact"
-          className="min-w-0 flex-1 rounded-xl border border-gray-700 bg-gray-950 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500"
-        />
-        <button
-          type="submit"
-          disabled={isLoading || query.trim().length < 2}
-          className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
-        >
-          Ajouter
-        </button>
-      </form>
-      <div className="mt-4 space-y-2">
-        {friends.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-gray-700 p-4 text-sm text-gray-500">
-            Ajoute ton premier ami pour comparer vos résultats.
-          </p>
-        ) : (
-          friends.map((friend, index) => (
-            <MemberRow key={friend.id} member={friend} rank={index + 1} />
-          ))
-        )}
-      </div>
-    </section>
-  );
+  return <section className="rounded-2xl border border-indigo-800/70 bg-gradient-to-br from-indigo-950/45 via-gray-900 to-gray-900 p-4 sm:p-6" aria-labelledby="clan-home-title">
+    <div className="flex items-start justify-between gap-3"><div><p className="text-[11px] font-black uppercase tracking-[0.16em] text-indigo-300">Mon Clan</p><h2 id="clan-home-title" className="mt-1 text-xl font-black text-white">{clan ? `[${clan.tag}] ${clan.name}` : "Trouve ta troupe"}</h2></div><span className="rounded-full border border-indigo-700 bg-indigo-950/70 px-3 py-1 text-xs font-bold text-indigo-200">Gratuit</span></div>
+    {clan ? <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+      <div><p className="text-sm text-gray-300">{clan.memberCount}/12 chevaliers · une petite troupe, pas une usine à notifications.</p><p className="mt-1 text-xs text-gray-500">Votre Elo reste distinct de l’activité collective.</p></div>
+      <div className="flex flex-wrap gap-2"><button type="button" onClick={() => { setShowInvite((value) => !value); trackBetaEvent("clan_invite_created"); }} className="min-h-11 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">Inviter</button><button type="button" disabled={isLoading} onClick={() => void onAction({ action: "leave" })} className="min-h-11 rounded-xl border border-gray-700 px-4 text-sm font-bold text-gray-300 disabled:opacity-50">Quitter</button></div>
+      {showInvite && <div className="rounded-xl border border-indigo-800/70 bg-gray-950/60 p-3 lg:col-span-2"><p className="text-xs text-gray-400">Code public du clan</p><div className="mt-2 flex flex-wrap items-center gap-2"><strong className="rounded-lg bg-gray-900 px-3 py-2 font-mono text-indigo-200">{clan.inviteCode}</strong><button type="button" onClick={() => void shareInvite()} className="min-h-10 rounded-lg bg-indigo-600 px-3 text-xs font-black text-white">Partager le lien</button>{dashboard.clanRole === "owner" && <button type="button" onClick={() => void onAction({ action: "rotate-invite" })} className="min-h-10 rounded-lg border border-gray-700 px-3 text-xs font-bold text-gray-300">Renouveler</button>}</div><p className="mt-2 text-[11px] text-gray-500">Le renouvellement invalide l’ancien code. Aucune adresse e-mail n’est partagée.</p></div>}
+      <label className="flex items-center justify-between gap-4 rounded-xl border border-gray-800 bg-gray-950/45 p-3 lg:col-span-2"><span><span className="block text-sm font-bold text-white">Partager ma progression générale</span><span className="mt-1 block text-xs text-gray-500">Rang de Nox et activité générale seulement. Jamais tes erreurs, PGN ou conversations.</span></span><input type="checkbox" checked={dashboard.shareProgress} onChange={(event) => void onPrivacy(event.target.checked)} className="h-5 w-5 accent-indigo-500" /></label>
+    </div> : <div className="mt-5 grid gap-4 md:grid-cols-2">
+      <div className="rounded-xl border border-gray-800 bg-gray-950/50 p-4"><h3 className="font-black text-white">Créer un clan</h3><p className="mt-1 text-xs text-gray-500">Nom et emblème court suffisent.</p><input value={name} onChange={(event) => setName(event.target.value)} placeholder="Nom du clan" className="mt-3 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2.5 text-sm text-white" /><input value={tag} onChange={(event) => setTag(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8))} placeholder="Emblème (2 à 8 caractères)" className="mt-2 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2.5 text-sm text-white" /><button type="button" disabled={isLoading || name.trim().length < 3 || tag.length < 2} onClick={() => void onAction({ action: "create", name, tag })} className="mt-3 min-h-11 w-full rounded-xl bg-indigo-600 text-sm font-black text-white disabled:opacity-50">Lever ma bannière</button></div>
+      <div className="rounded-xl border border-gray-800 bg-gray-950/50 p-4"><h3 className="font-black text-white">Rejoindre une troupe</h3><p className="mt-1 text-xs text-gray-500">Colle le code public reçu d’un ami.</p><input value={inviteCode} onChange={(event) => setInviteCode(event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 16))} placeholder="KLY-XXXXXXXX" className="mt-3 w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2.5 font-mono text-sm text-white" /><button type="button" disabled={isLoading || inviteCode.length < 2} onClick={() => void onAction({ action: "join", inviteCode })} className="mt-3 min-h-11 w-full rounded-xl border border-indigo-700 text-sm font-black text-indigo-200 disabled:opacity-50">Rejoindre avec ce code</button><p className="mt-3 text-[11px] text-gray-600">Invitation invalide ou expirée ? Demande un nouveau lien au chef du clan.</p></div>
+    </div>}
+  </section>;
 }
 
-function MemberRow({
-  member,
-  rank,
-}: {
-  member: CommunityMember;
-  rank: number;
-}) {
-  const avatar =
-    COMMUNITY_AVATARS.find((item) => item.id === member.avatarId) ??
-    COMMUNITY_AVATARS[0];
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-950/55 p-3">
-      <span className="w-5 text-center text-xs font-bold text-gray-500">
-        {rank}
-      </span>
-      <Image
-        src={avatar.image}
-        alt=""
-        width={44}
-        height={44}
-        className="h-11 w-11 rounded-lg object-cover"
-      />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-white">{member.name}</p>
-        <p className="text-xs text-gray-500">
-          {member.wins} V · {member.losses} D · {member.draws} N
-        </p>
-      </div>
-      <span className="font-black text-blue-300">{member.rating}</span>
-    </div>
-  );
+function ClanActivity({ dashboard }: { dashboard: CommunityDashboard }) {
+  const goal = dashboard.clanWeeklyGoal; const percent = goal ? Math.min(100, Math.round((goal.current / goal.target) * 100)) : 0;
+  return <section className="rounded-2xl border border-gray-800 bg-gray-900 p-4 sm:p-5" aria-labelledby="clan-activity-title"><div className="flex items-center justify-between gap-3"><div><p className="text-[11px] font-black uppercase tracking-[0.16em] text-emerald-300">Activité</p><h2 id="clan-activity-title" className="mt-1 text-lg font-black text-white">La troupe cette semaine</h2></div>{goal?.completed && <span className="rounded-full bg-emerald-950 px-3 py-1 text-xs font-black text-emerald-300">Objectif atteint 🎉</span>}</div>
+    {!dashboard.clan || !goal ? <p className="mt-4 rounded-xl border border-dashed border-gray-700 p-4 text-sm text-gray-500">Crée ou rejoins un clan : l’activité positive de la troupe apparaîtra ici.</p> : <div className="mt-4 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]"><div className="rounded-xl border border-emerald-900/50 bg-emerald-950/15 p-4"><div className="flex items-end justify-between gap-3"><div><p className="text-sm font-black text-white">{goal.label}</p><p className="mt-1 text-xs text-gray-500">{goal.weekLabel} · aucun XP artificiel</p></div><strong className="text-emerald-300">{goal.current}/{goal.target}</strong></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-800"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${percent}%` }} /></div><p className="mt-3 text-xs leading-5 text-gray-400">Chaque partie terminée compte. Pas de punition si la semaine est calme.</p></div><div className="space-y-2">{dashboard.clanActivity.length === 0 ? <p className="rounded-xl border border-dashed border-gray-700 p-4 text-sm text-gray-500">La troupe s’échauffe encore. Lancez une partie pour écrire la première ligne.</p> : dashboard.clanActivity.slice(0, 4).map((item) => <div key={item.id} className="flex gap-3 rounded-xl border border-gray-800 bg-gray-950/40 p-3"><span aria-hidden="true">{item.kind === "game" ? "♟️" : "⚑"}</span><p className="text-sm leading-5 text-gray-300">{item.message}</p></div>)}</div></div>}
+  </section>;
 }
 
-function LeaguePanel({ dashboard }: { dashboard: CommunityDashboard }) {
-  return (
-    <section className="rounded-2xl border border-amber-900/50 bg-gradient-to-br from-amber-950/25 to-gray-900 p-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-amber-400">
-        Saison de {dashboard.league.monthLabel}
-      </p>
-      <h2 className="mt-1 text-xl font-bold text-white">
-        {dashboard.league.tier}
-      </h2>
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <ProfileStat label="Points de ligue" value={dashboard.league.points} />
-        <ProfileStat label="Rang entre amis" value={dashboard.league.rank} />
-      </div>
-      <p className="mt-4 text-sm leading-6 text-gray-400">
-        Une victoire rapporte 3 points, une nulle 1 point. Le classement est
-        remis à zéro au début de chaque mois.
-      </p>
-    </section>
-  );
+function PlayTogether({ dashboard, isLoading, onAddFriend, onChallenge, onQuickPlay }: { dashboard: CommunityDashboard; isLoading: boolean; onAddFriend: (query: string) => Promise<boolean>; onChallenge: () => void; onQuickPlay: () => void; }) {
+  const [query, setQuery] = useState(""); async function submit(event: FormEvent) { event.preventDefault(); if (await onAddFriend(query)) setQuery(""); }
+  return <section className="rounded-2xl border border-blue-900/60 bg-gradient-to-br from-blue-950/25 to-gray-900 p-4 sm:p-5" aria-labelledby="play-together-title"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[11px] font-black uppercase tracking-[0.16em] text-blue-300">Défis & parties</p><h2 id="play-together-title" className="mt-1 text-lg font-black text-white">Jouer ensemble</h2></div><button type="button" onClick={onQuickPlay} className="min-h-11 rounded-xl bg-blue-600 px-4 text-sm font-black text-white">Trouver un adversaire</button></div>
+    {dashboard.clanMembers.length === 0 ? <p className="mt-4 rounded-xl border border-dashed border-gray-700 p-4 text-sm text-gray-500">Les membres de ton futur clan apparaîtront ici avec un bouton pour lancer un vrai défi amical.</p> : <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{dashboard.clanMembers.map((member) => <ClanMemberCard key={member.publicId} member={member} onChallenge={onChallenge} />)}</div>}
+    <details className="mt-4 rounded-xl border border-gray-800 bg-gray-950/40"><summary className="cursor-pointer list-none p-3 text-sm font-bold text-gray-300">Ajouter à mon cercle d’amis</summary><form onSubmit={(event) => void submit(event)} className="flex gap-2 border-t border-gray-800 p-3"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Pseudo exact" className="min-w-0 flex-1 rounded-xl border border-gray-700 bg-gray-950 px-3 py-2.5 text-sm text-white" /><button type="submit" disabled={isLoading || query.trim().length < 2} className="rounded-xl border border-blue-700 px-4 text-sm font-black text-blue-200 disabled:opacity-50">Ajouter</button></form></details>
+  </section>;
 }
 
-function ClanPanel({
-  clan,
-  expedition,
-  leaderboard,
-  isLoading,
-  onAction,
-}: {
-  clan: CommunityClan | null;
-  expedition: CommunityDashboard["clanExpedition"];
-  leaderboard: CommunityClan[];
-  isLoading: boolean;
-  onAction: (
-    body:
-      | { action: "create"; name: string; tag: string }
-      | { action: "join"; tag: string },
-  ) => Promise<boolean>;
-}) {
-  const [name, setName] = useState("");
-  const [tag, setTag] = useState("");
-
-  return (
-    <section
-      id="community-clan"
-      className="scroll-mt-24 rounded-2xl border border-red-900/60 bg-gradient-to-br from-red-950/25 to-gray-900 p-5"
-    >
-      <div className="space-y-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-red-400">
-            Guerre des clans
-          </p>
-          <h2 className="mt-1 text-xl font-bold text-white">
-            {clan ? `[${clan.tag}] ${clan.name}` : "Rejoins une bannière"}
-          </h2>
-          {clan ? (
-            <>
-              <div className="mt-4 rounded-xl border border-red-900/50 bg-red-950/20 p-4">
-                <p className="text-3xl font-black text-white">
-                  {clan.monthlyPoints}
-                </p>
-                <p className="text-xs uppercase tracking-wide text-red-300">
-                  points rapportés ce mois
-                </p>
-                <p className="mt-2 text-sm text-gray-400">
-                  {clan.memberCount} chevalier
-                  {clan.memberCount > 1 ? "s" : ""} dans le clan
-                </p>
-              </div>
-              {expedition && <ClanExpeditionPanel expedition={expedition} />}
-            </>
-          ) : (
-            <div className="mt-4 space-y-3">
-              <input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Nom du nouveau clan"
-                className="w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2.5 text-sm text-white"
-              />
-              <input
-                value={tag}
-                onChange={(event) =>
-                  setTag(
-                    event.target.value
-                      .toUpperCase()
-                      .replace(/[^A-Z0-9]/g, "")
-                      .slice(0, 8),
-                  )
-                }
-                placeholder="TAG"
-                className="w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2.5 text-sm uppercase text-white"
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  disabled={isLoading || name.trim().length < 3 || tag.length < 2}
-                  onClick={() =>
-                    void onAction({ action: "create", name, tag })
-                  }
-                  className="rounded-xl bg-red-700 px-3 py-2.5 text-sm font-bold text-white disabled:opacity-50"
-                >
-                  Créer
-                </button>
-                <button
-                  type="button"
-                  disabled={isLoading || tag.length < 2}
-                  onClick={() => void onAction({ action: "join", tag })}
-                  className="rounded-xl border border-red-800 px-3 py-2.5 text-sm font-bold text-red-200 disabled:opacity-50"
-                >
-                  Rejoindre par tag
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-        <details className="group overflow-hidden rounded-xl border border-gray-800 bg-gray-950/40">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-3 marker:content-none">
-            <p className="text-sm font-bold text-white">
-              Classement des clans · {new Date().toLocaleDateString("fr-FR", {
-                month: "long",
-              })}
-            </p>
-            <span className="text-xs text-gray-500 transition group-open:rotate-180">
-              ↓
-            </span>
-          </summary>
-          <div className="space-y-2 border-t border-gray-800 p-3">
-            {leaderboard.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-gray-700 p-4 text-sm text-gray-500">
-                Le premier clan de la saison peut encore être le tien.
-              </p>
-            ) : (
-              leaderboard.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-950/55 p-3"
-                >
-                  <span className="w-6 text-center font-black text-gray-500">
-                    {index + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-white">
-                      [{item.tag}] {item.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {item.memberCount} membres
-                    </p>
-                  </div>
-                  <span className="font-black text-red-300">
-                    {item.monthlyPoints} pts
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </details>
-      </div>
-    </section>
-  );
-}
-
-function ClanExpeditionPanel({
-  expedition,
-}: {
-  expedition: NonNullable<CommunityDashboard["clanExpedition"]>;
-}) {
-  const progress = Math.min(
-    100,
-    (expedition.medals / expedition.goal) * 100,
-  );
-
-  return (
-    <details
-      open
-      className="mt-3 overflow-hidden rounded-xl border border-orange-900/60 bg-gray-950/45"
-    >
-      <summary className="cursor-pointer list-none p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-300">
-              Expédition hebdomadaire
-            </p>
-            <p className="mt-1 text-sm font-black text-white">
-              {expedition.stage}
-            </p>
-            <p className="mt-0.5 text-[11px] text-gray-500">
-              Semaine du {expedition.weekLabel}
-            </p>
-          </div>
-          <span className="text-2xl" aria-hidden="true">
-            ⚔️
-          </span>
-        </div>
-        <div className="mt-3 flex items-center justify-between text-[11px]">
-          <span className="font-bold text-gray-400">
-            {expedition.nextStageAt
-              ? `Prochaine étape à ${expedition.nextStageAt}`
-              : "Citadelle conquise !"}
-          </span>
-          <span className="font-black text-orange-300">
-            {expedition.medals}/{expedition.goal} médailles
-          </span>
-        </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-800">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-orange-600 via-amber-400 to-yellow-200"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </summary>
-
-      <div className="border-t border-gray-800 px-4 py-3">
-        <p className="text-[11px] leading-5 text-gray-500">
-          4 médailles par victoire, 2 par nulle et 1 par défaite. Oui, même une
-          partie où tu es maté sauvagement fait avancer la troupe.
-        </p>
-        <div className="mt-3 space-y-2">
-          {expedition.contributions.map((member, index) => (
-            <div
-              key={member.id}
-              className="flex items-center gap-3 rounded-lg bg-gray-900/80 px-3 py-2"
-            >
-              <span className="w-5 text-center text-xs font-black text-gray-600">
-                {index + 1}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-bold text-white">
-                  {member.name}
-                </p>
-                <p className="text-[10px] text-gray-500">
-                  {member.games} partie{member.games > 1 ? "s" : ""} ·{" "}
-                  {member.wins} V · {member.draws} N · {member.losses} D
-                </p>
-              </div>
-              <span className="text-xs font-black text-orange-300">
-                {member.medals} ⚔
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </details>
-  );
+function ClanMemberCard({ member, onChallenge }: { member: CommunityClanMember; onChallenge: () => void }) {
+  const avatar = getCommunityAvatar(member.avatarId);
+  return <article className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-950/55 p-3"><Image src={avatar.image} alt="" width={48} height={48} className="h-11 w-11 rounded-lg object-cover" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-white">{member.name}{member.isOwner ? " ♛" : ""}</p><p className="text-xs text-blue-300">{member.rating} Elo{member.noxRankLabel ? ` · Nox ${member.noxRankLabel}` : ""}</p><p className="mt-0.5 truncate text-[11px] text-gray-500">{member.activityLabel}</p></div>{!member.isCurrentPlayer && <button type="button" onClick={onChallenge} className="min-h-10 rounded-lg border border-blue-700 px-3 text-xs font-black text-blue-200">Défier</button>}</article>;
 }

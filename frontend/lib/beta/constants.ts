@@ -21,6 +21,16 @@ export const BETA_EVENT_NAMES = [
   "plus_dismissed",
   "account_created",
   "frontend_error",
+  "clan_viewed",
+  "clan_created",
+  "clan_joined",
+  "clan_invite_created",
+  "clan_invite_accepted",
+  "clan_challenge_sent",
+  "clan_challenge_started",
+  "clan_activity_viewed",
+  "clan_goal_viewed",
+  "clan_goal_completed",
 ] as const;
 
 export type BetaEventName = (typeof BETA_EVENT_NAMES)[number];

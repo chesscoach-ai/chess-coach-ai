@@ -71,7 +71,7 @@ export default function MultiplayerWorkspace({
       ) : kind === "community" ? (
         <CommunityHub
           currentUser={currentUser}
-          onPlay={() => selectKind("launcher")}
+          onPlay={(nextKind) => selectKind(nextKind ?? "launcher")}
         />
       ) : kind === "online" || kind === "friend" ? (
         <div className="space-y-4">
