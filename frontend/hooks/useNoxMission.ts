@@ -11,9 +11,13 @@ export function useNoxMission() {
   const [mission, setMission] = useState<NoxMission | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const refresh = useCallback(async () => { setLoading(true); setError(""); try { const response = await fetch(`/api/nox/missions?timeZone=${encodeURIComponent(resolvedTimeZone())}`, { cache: "no-store" }); if (!response.ok) throw new Error("SESSION_BACKEND_UNAVAILABLE"); const loaded = applyDevelopmentPreview(await response.json() as NoxMission); window.localStorage.setItem(MISSION_CACHE_KEY, JSON.stringify(loaded)); setMission(loaded); } catch { setError("Connexion momentanément indisponible. Ta progression locale est conservée."); const cached = readCachedMission(); setMission(cached ?? buildNoxMission({ profile: createNoxMemoryProfile(), events: [], timeZone: resolvedTimeZone() })); } finally { setLoading(false); } }, []);
+  const refresh = useCallback(async () => { setLoading(true); setError(""); if (isRitualPreview()) { setMission({ ...buildNoxMission({ profile: createNoxMemoryProfile(), events: [], timeZone: resolvedTimeZone() }), preview: true, persistent: false }); setLoading(false); return; } try { const response = await fetch(`/api/nox/missions?timeZone=${encodeURIComponent(resolvedTimeZone())}`, { cache: "no-store" }); if (!response.ok) throw new Error("SESSION_BACKEND_UNAVAILABLE"); const loaded = applyDevelopmentPreview(await response.json() as NoxMission); window.localStorage.setItem(MISSION_CACHE_KEY, JSON.stringify(loaded)); setMission(loaded); } catch { setError("Connexion momentanément indisponible. Ta progression locale est conservée."); const cached = readCachedMission(); setMission(cached ?? buildNoxMission({ profile: createNoxMemoryProfile(), events: [], timeZone: resolvedTimeZone() })); } finally { setLoading(false); } }, []);
   useEffect(() => { const timer = window.setTimeout(() => void refresh(), 0); return () => window.clearTimeout(timer); }, [refresh]);
   return { mission, loading, error, refresh, setMission };
+}
+
+function isRitualPreview(): boolean {
+  return process.env.NODE_ENV !== "production" && typeof window !== "undefined" && new URLSearchParams(window.location.search).has("ritualPreview");
 }
 
 function readCachedMission(): NoxMission | null {

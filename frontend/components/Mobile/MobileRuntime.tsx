@@ -17,6 +17,7 @@ export default function MobileRuntime() {
   const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
+    if (process.env.NODE_ENV !== "production" && new URLSearchParams(window.location.search).has("ritualPreview")) return;
     if (!isNativeApp()) return;
 
     document.documentElement.dataset.nativeApp = "true";

@@ -20,6 +20,7 @@ export function getBetaPlatform(): string {
 }
 
 export function trackBetaEvent(eventName: BetaEventName): void {
+  if (process.env.NODE_ENV !== "production" && new URLSearchParams(window.location.search).has("ritualPreview")) return;
   if (eventName.startsWith("first_")) {
     const key = `${FIRST_EVENT_PREFIX}${eventName}`;
     if (window.localStorage.getItem(key)) return;

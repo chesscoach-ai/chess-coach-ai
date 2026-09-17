@@ -7,8 +7,16 @@ import BetaOnboarding from "@/components/Beta/BetaOnboarding";
 import BetaRuntime from "@/components/Beta/BetaRuntime";
 import { auth } from "@/auth";
 import { getAnalysisEntitlement } from "@/lib/billing/subscriptionStore";
+import RitualPreview from "@/components/Diagnostics/RitualPreview";
+import { resolveRitualPreview } from "@/lib/nox/ritualRules";
+import { notFound } from "next/navigation";
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ ritualPreview?: string }> }) {
+  const { ritualPreview } = await searchParams;
+  if (ritualPreview) {
+    if (!resolveRitualPreview(ritualPreview, process.env.NODE_ENV)) notFound();
+    return <RitualPreview />;
+  }
   const session = await auth();
   const currentUser = session?.user?.email
     ? {

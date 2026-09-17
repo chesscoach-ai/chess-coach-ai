@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useRef } from "react";
 import { Chess } from "chess.js";
 
@@ -15,11 +14,11 @@ import { useChessGame } from "@/hooks/useChessGame";
 import { useOnlineGame } from "@/hooks/useOnlineGame";
 import { useAiOpponent } from "@/hooks/useAiOpponent";
 import { getAiLevel, getAiPersona } from "@/lib/ai/opponents";
-import { NOX_RANK_ASSETS } from "@/lib/nox/rankAssets";
 import { trackBetaEvent } from "@/lib/beta/client";
 import { useNoxMission } from "@/hooks/useNoxMission";
 import { buildNoxDailySession, resolvedTimeZone } from "@/lib/nox/dailySessionRules";
 import { readStoredNoxDailySession } from "@/lib/nox/dailySessionStorage";
+import KnightlyRitualCard from "@/components/Nox/KnightlyRitualCard";
 
 export type MultiplayerKind =
   | "launcher"
@@ -67,7 +66,7 @@ export default function MultiplayerWorkspace({
       />
 
       {kind === "launcher" ? (
-        <PlayLauncher onSelect={selectKind} onAnalyze={onAnalyze} onHistory={onHistory} onOpenProgress={onOpenProgress} />
+        <PlayLauncher currentUser={currentUser} onSelect={selectKind} onAnalyze={onAnalyze} onHistory={onHistory} onOpenProgress={onOpenProgress} />
       ) : kind === "community" ? (
         <CommunityHub
           currentUser={currentUser}
@@ -222,28 +221,26 @@ function AiMatch({ onAnalyze }: { onAnalyze: (pgn: string) => void }) {
   );
 }
 
-function PlayLauncher({
+export function PlayLauncher({
+  currentUser,
   onSelect,
   onAnalyze,
   onHistory,
   onOpenProgress,
 }: {
+  currentUser: CurrentUser | null;
   onSelect: (kind: MultiplayerKind) => void;
   onAnalyze: () => void;
   onHistory: () => void;
   onOpenProgress: () => void;
 }) {
   const previewGame = useChessGame();
-  const noxAvatar = NOX_RANK_ASSETS.squire.avatar;
   const { mission } = useNoxMission();
-  const dailySession = useMemo(() => mission ? buildNoxDailySession({ mission, stored: readStoredNoxDailySession(), timeZone: resolvedTimeZone() }) : null, [mission]);
+  const dailySession = useMemo(() => mission ? buildNoxDailySession({ mission, stored: mission.preview ? null : readStoredNoxDailySession(), timeZone: resolvedTimeZone() }) : null, [mission]);
 
   return (
     <section className="-mx-3 w-auto overflow-hidden border-y border-gray-800 bg-gray-900 shadow-2xl sm:mx-auto sm:w-full sm:max-w-7xl sm:rounded-3xl sm:border">
-      <div className="flex items-center gap-3 border-b border-gray-800 bg-gradient-to-r from-blue-950/70 via-gray-900 to-violet-950/50 px-4 py-4 sm:px-7 sm:py-5">
-        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl border border-indigo-700 bg-slate-950"><Image src={noxAvatar} alt="Nox, ton compagnon d’échecs" fill sizes="48px" className="object-cover" /></div>
-        <div><p className="text-xs font-black uppercase tracking-[0.16em] text-blue-300">Jouer</p><h1 className="mt-0.5 text-xl font-black text-white sm:text-3xl">Prêt pour une partie ?</h1><p className="mt-1 text-sm text-gray-400">Nox sera là après le duel pour t’aider à comprendre.</p></div>
-      </div>
+      <KnightlyRitualCard currentUser={currentUser} mission={mission} dailySession={dailySession} onPlay={() => onSelect("online")} onProgress={onOpenProgress} onDiscover={onAnalyze} />
 
       <div className="grid items-start gap-4 p-1.5 sm:gap-5 sm:p-6 xl:grid-cols-[minmax(560px,720px)_minmax(320px,390px)] xl:justify-center">
         <div className="min-w-0">

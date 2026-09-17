@@ -17,7 +17,9 @@ export default function BetaOnboarding() {
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
   useEffect(() => {
-    const forcedInDev = process.env.NODE_ENV !== "production" && new URLSearchParams(window.location.search).get("onboarding") === "1";
+    const params = new URLSearchParams(window.location.search);
+    if (process.env.NODE_ENV !== "production" && params.has("ritualPreview")) return;
+    const forcedInDev = process.env.NODE_ENV !== "production" && params.get("onboarding") === "1";
     const timer = window.setTimeout(() => setVisible(forcedInDev || !window.localStorage.getItem(STORAGE_KEY)), 250);
     return () => window.clearTimeout(timer);
   }, []);

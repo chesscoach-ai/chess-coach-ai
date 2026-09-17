@@ -356,6 +356,10 @@ export default function DevRuntimeDiagnostics({
         </div>
       </div>
 
+      <section className="mt-5 rounded-2xl border border-indigo-900 p-4">
+        <h2 className="text-sm font-bold text-indigo-200">Rituel Nox · scénarios DEV isolés</h2>
+        <div className="mt-3 flex flex-wrap gap-2">{["first_visit", "same_day", "return_1_day", "return_3_days", "return_14_days", "active_game", "active_session", "recent_improvement", "near_evolution", "no_context"].map(scenario => <a key={scenario} href={`/?ritualPreview=${scenario}`} className="rounded-lg border border-indigo-700 px-3 py-2 text-xs text-indigo-100">{scenario}</a>)}</div>
+      </section>
       <BetaDiagnosticsPanel />
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

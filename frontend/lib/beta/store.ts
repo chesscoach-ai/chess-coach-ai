@@ -7,6 +7,7 @@ import { Pool } from "pg";
 
 import type { BetaEventName } from "@/lib/beta/constants";
 import type { BetaDiagnostics } from "@/lib/beta/types";
+import { retentionCohorts } from "@/lib/beta/retention";
 
 type BetaEvent = { id: string; visitorId: string; eventName: BetaEventName; page: string; platform: string; version: string; createdAt: string };
 export type BetaFeedbackInput = { visitorId: string; liked: string; friction: string; noxHelped: boolean | null; rating: number; comment: string; page: string; platform: string; version: string };
@@ -94,5 +95,5 @@ export async function getBetaDiagnostics(): Promise<BetaDiagnostics> {
     }
     return eligible ? Math.round((returned / eligible) * 100) : null;
   };
-  return { storage: db ? "postgresql" : "local-json", events: counts, visitors: opened.size, feedback, bugs, retentionJ1: retention(1), retentionJ7: retention(7) };
+  return { storage: db ? "postgresql" : "local-json", events: counts, visitors: opened.size, feedback, bugs, retentionJ1: retention(1), retentionJ3: retention(3), retentionJ7: retention(7), cohorts: retentionCohorts(events) };
 }

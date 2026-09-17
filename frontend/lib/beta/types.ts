@@ -5,5 +5,7 @@ export type BetaDiagnostics = {
   feedback: number;
   bugs: number;
   retentionJ1: number | null;
+  retentionJ3: number | null;
   retentionJ7: number | null;
+  cohorts: Array<{ label: string; visitors: number; d1: number | null; d3: number | null; d7: number | null }>;
 };

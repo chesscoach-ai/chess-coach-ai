@@ -17,7 +17,8 @@ export default function BetaDiagnosticsPanel() {
     {error ? <p role="alert" className="mt-3 text-sm text-red-300">{error}</p> : !data ? <p className="mt-3 text-sm text-gray-500">Lecture des indicateurs…</p> : <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
       <Metric label="Stockage" value={data.storage} /><Metric label="Visiteurs" value={data.visitors} /><Metric label="Avis" value={data.feedback} /><Metric label="Bugs signalés" value={data.bugs} />
       {BETA_EVENT_NAMES.filter((name) => name !== "frontend_error").map((name) => <Metric key={name} label={name} value={data.events[name] ?? 0} />)}
-      <Metric label="Rétention J1" value={data.retentionJ1 === null ? "à mesurer" : `${data.retentionJ1}%`} /><Metric label="Rétention J7" value={data.retentionJ7 === null ? "à mesurer" : `${data.retentionJ7}%`} /><Metric label="Erreurs frontend" value={data.events.frontend_error ?? 0} />
+      {data.cohorts?.map(cohort => <Metric key={cohort.label} label={`${cohort.label} · ${cohort.visitors} visiteurs`} value={`J1 ${cohort.d1 ?? "—"} / J3 ${cohort.d3 ?? "—"} / J7 ${cohort.d7 ?? "—"} %`} />)}
+      <Metric label="Rétention J1" value={data.retentionJ1 === null ? "à mesurer" : `${data.retentionJ1}%`} /><Metric label="Rétention J3" value={data.retentionJ3 === null ? "à mesurer" : `${data.retentionJ3}%`} /><Metric label="Rétention J7" value={data.retentionJ7 === null ? "à mesurer" : `${data.retentionJ7}%`} /><Metric label="Erreurs frontend" value={data.events.frontend_error ?? 0} />
     </div>}
   </section>;
 }
