@@ -244,7 +244,6 @@ export default function ProductWorkspace({
 
           {analysisEntitlement.hasAccess || openedReview || !currentUser ? (
             <>
-            {!currentUser && <section className="rounded-xl border border-blue-900/70 bg-blue-950/20 p-4 text-sm leading-6 text-blue-100"><p className="font-black">Aperçu invité de l’analyse avec Nox</p><p className="mt-1 text-blue-100/75">Tu peux essayer l’échiquier et les explications. Connecte-toi pour que Nox mémorise tes apprentissages et retrouve tes missions.</p></section>}
             <GameWorkspace
               key={
                 openedReview?.game.id ?? directAnalysisPgn ?? "free-analysis"
@@ -265,6 +264,7 @@ export default function ProductWorkspace({
                 );
               }}
             />
+            {!currentUser && <p className="rounded-xl border border-gray-800 bg-gray-900/55 px-4 py-3 text-sm leading-6 text-gray-400"><strong className="text-gray-200">Mode découverte.</strong> Tu peux jouer et lire les explications de Nox. La connexion sert seulement à retrouver ce qu’il apprend de tes parties.</p>}
             </>
           ) : (
             <AnalysisPaywall
@@ -359,19 +359,6 @@ export function MobileDock({
       <div className="mx-auto flex max-w-md gap-1">
         <button
           type="button"
-          aria-current={pillar === "coach" ? "page" : undefined}
-          onClick={onCoach}
-          className={`${itemClass} ${
-            pillar === "coach"
-              ? "bg-violet-600/20 text-violet-300"
-              : "text-gray-500"
-          }`}
-        >
-          <DockIcon path="M9 18h6M10 22h4M8 2h8l2 7-6 7-6-7 2-7Z" />
-          Coach
-        </button>
-        <button
-          type="button"
           aria-current={pillar === "play" ? "page" : undefined}
           onClick={onPlay}
           className={`${itemClass} ${
@@ -410,6 +397,7 @@ export function MobileDock({
           Clan
         </button>
       </div>
+      <button type="button" aria-label="Analyser avec Nox" aria-current={pillar === "coach" ? "page" : undefined} onClick={onCoach} className={`absolute -top-12 right-3 flex min-h-10 items-center gap-2 rounded-full border px-3 text-xs font-black shadow-lg backdrop-blur-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-300 ${pillar === "coach" ? "border-violet-400 bg-violet-700 text-white" : "border-violet-800 bg-gray-950/95 text-violet-300"}`}><DockIcon path="M9 18h6M10 22h4M8 2h8l2 7-6 7-6-7 2-7Z" />Nox</button>
     </nav>
   );
 }

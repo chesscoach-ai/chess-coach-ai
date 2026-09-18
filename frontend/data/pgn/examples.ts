@@ -38,7 +38,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "débutant",
     themes: ["développement", "centre", "roque"],
     pgn: `[Event "Exemple d'ouverture"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -57,7 +57,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "intermédiaire",
     themes: ["pression", "développement", "structure"],
     pgn: `[Event "Exemple d'ouverture"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -76,7 +76,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "intermédiaire",
     themes: ["initiative", "rupture", "développement"],
     pgn: `[Event "Exemple d'ouverture"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -95,7 +95,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "débutant",
     themes: ["solidité", "structure", "développement"],
     pgn: `[Event "Exemple d'ouverture"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -114,7 +114,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "intermédiaire",
     themes: ["centre", "tension", "développement"],
     pgn: `[Event "Exemple d'ouverture"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -133,7 +133,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "débutant",
     themes: ["plan", "développement", "sécurité du roi"],
     pgn: `[Event "Exemple d'ouverture"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -153,7 +153,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "intermédiaire",
     themes: ["attaque du roi", "initiative", "tempo"],
     pgn: `[Event "Exemple de milieu de partie"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -172,7 +172,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "intermédiaire",
     themes: ["pion isolé", "activité", "cases fortes"],
     pgn: `[Event "Exemple de milieu de partie"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -191,7 +191,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "avancé",
     themes: ["attaque", "sacrifice", "coordination"],
     pgn: `[Event "Exemple de milieu de partie"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -210,7 +210,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "intermédiaire",
     themes: ["colonne ouverte", "tours", "invasion"],
     pgn: `[Event "Exemple de milieu de partie"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -229,7 +229,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "avancé",
     themes: ["attaque de minorité", "faiblesse", "plan"],
     pgn: `[Event "Exemple de milieu de partie"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -248,7 +248,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "avancé",
     themes: ["rupture", "centre", "calcul"],
     pgn: `[Event "Exemple de milieu de partie"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -268,7 +268,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "débutant",
     themes: ["opposition", "roi actif", "promotion"],
     pgn: `[Event "Exemple de finale"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -289,7 +289,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "avancé",
     themes: ["finale de tours", "pont", "promotion"],
     pgn: `[Event "Exemple de finale"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -310,7 +310,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "avancé",
     themes: ["défense", "finale de tours", "activité"],
     pgn: `[Event "Exemple de finale"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -331,7 +331,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "intermédiaire",
     themes: ["tour active", "pion passé", "activité"],
     pgn: `[Event "Exemple de finale"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -352,7 +352,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "intermédiaire",
     themes: ["fou", "pions passés", "blocage"],
     pgn: `[Event "Exemple de finale"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]
@@ -373,7 +373,7 @@ const BASE_PGN_EXAMPLES: PGNExample[] = [
     difficulty: "avancé",
     themes: ["dame", "pion avancé", "technique"],
     pgn: `[Event "Exemple de finale"]
-[Site "Chess Coach"]
+[Site "Knightly"]
 [Date "2026.01.01"]
 [Round "-"]
 [White "Blancs"]

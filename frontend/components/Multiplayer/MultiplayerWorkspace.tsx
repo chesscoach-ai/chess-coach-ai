@@ -60,10 +60,10 @@ export default function MultiplayerWorkspace({
 
   return (
     <div id="multiplayer-workspace" className="scroll-mt-20 space-y-4 sm:space-y-6">
-      <MultiplayerProfileBar
+      {(currentUser || kind !== "launcher") && <MultiplayerProfileBar
         currentUser={currentUser}
         onOpenCommunity={() => selectKind("community")}
-      />
+      />}
 
       {kind === "launcher" ? (
         <PlayLauncher currentUser={currentUser} onSelect={selectKind} onAnalyze={onAnalyze} onHistory={onHistory} onOpenProgress={onOpenProgress} />
@@ -253,7 +253,6 @@ export function PlayLauncher({
           <p className="mt-2 px-2 text-center text-xs text-gray-500 sm:mt-3">
             L’échiquier devient interactif dès que ton mode est lancé.
           </p>
-          {dailySession && dailySession.status !== "completed" && <button type="button" onClick={onOpenProgress} className="mx-auto mt-3 flex min-h-11 items-center gap-2 rounded-xl border border-indigo-800/70 bg-indigo-950/25 px-4 text-left text-xs text-indigo-100 hover:bg-indigo-950/45"><span aria-hidden="true">✦</span><span><strong>Nox a préparé {dailySession.persistent ? "ta session du jour" : "une session découverte"}</strong> · ≈ {dailySession.estimatedMinutes} min</span></button>}
         </div>
 
         <div className="grid gap-3 px-2 pb-3 sm:px-0 sm:pb-0">
@@ -473,7 +472,7 @@ function LocalMatch({ onAnalyze }: { onAnalyze: (pgn: string) => void }) {
 }
 
 function FinishedLocalGame({ onAnalyze, onRematch }: { onAnalyze: () => void; onRematch: () => void }) {
-  return <section className="mt-4 rounded-xl border border-violet-800/70 bg-violet-950/30 p-3"><p className="text-xs font-black uppercase tracking-[0.14em] text-violet-300">Partie terminée</p><p className="mt-1 text-sm text-gray-300">Nox peut maintenant t’aider à comprendre les moments importants.</p><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={onAnalyze} className="rounded-lg bg-violet-600 px-3 py-2 text-xs font-black text-white hover:bg-violet-500">Analyser avec Nox</button><button type="button" onClick={onRematch} className="rounded-lg border border-gray-700 px-3 py-2 text-xs font-bold text-gray-300 hover:bg-gray-800">Rejouer</button></div></section>;
+  return <section className="mt-4 rounded-xl border border-violet-700/80 bg-violet-950/35 p-4"><p className="text-xs font-black uppercase tracking-[0.14em] text-violet-300">Partie terminée</p><p className="mt-1 text-sm leading-6 text-gray-200">Nox peut t’expliquer le tournant de la partie et ce qu’il faut retenir.</p><button type="button" onClick={onAnalyze} className="mt-3 min-h-11 w-full rounded-xl bg-violet-600 px-4 text-sm font-black text-white hover:bg-violet-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-300">Analyser avec Nox</button><button type="button" onClick={onRematch} className="mt-2 min-h-10 w-full rounded-lg px-3 text-xs font-bold text-gray-400 hover:bg-gray-800 hover:text-white">Rejouer sans analyser</button></section>;
 }
 
 function useBetaGameEvents(moveCount: number, result: string | null) {

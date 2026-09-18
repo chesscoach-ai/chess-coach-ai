@@ -396,18 +396,17 @@ function PanelHeader({
     <div className="mb-4 flex items-start justify-between gap-4">
       <div>
         <h2 className="text-lg font-semibold text-white">
-          Analyse détaillée de la position
+          Ce que Nox voit dans la position
         </h2>
 
         <p className="mt-1 text-sm leading-6 text-gray-400">
-          Un verdict, une explication et un plan concret. Le moteur reste
-          discrètement en coulisses.
+          Ce qui s’est passé, pourquoi, puis l’idée simple à retenir.
         </p>
         <p className="mt-1 text-xs text-gray-500">
           {requestState === "queued"
             ? "Position reçue, analyse imminente…"
             : requestState === "calculating"
-              ? "Le moteur vérifie la position…"
+              ? "Nox vérifie la position…"
               : requestState === "unavailable"
                 ? "Service d’analyse injoignable — la partie reste disponible"
                 : requestState === "ready"
