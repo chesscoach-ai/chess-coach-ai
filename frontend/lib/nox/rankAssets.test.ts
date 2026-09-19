@@ -8,7 +8,8 @@ describe("identité visuelle vivante de Nox", () => {
     expect(Object.keys(NOX_RANK_ASSETS)).toEqual([...NOX_RANK_IDS]);
     for (const rank of NOX_RANK_IDS) {
       expect(NOX_RANK_ASSETS[rank]).toMatchObject({
-        avatar: expect.stringMatching(/^\//),
+        avatar: expect.stringMatching(new RegExp(`/nox-${rank}-512\\.webp$`)),
+        compactAvatar: expect.stringMatching(new RegExp(`/nox-${rank}-256\\.webp$`)),
         fallbackAvatar: expect.stringMatching(/^\//),
         description: expect.any(String),
         milestone: expect.any(String),
@@ -31,9 +32,9 @@ describe("identité visuelle vivante de Nox", () => {
     }
   });
 
-  it("laisse les illustrations provisoires remplaçables rang par rang", () => {
+  it("utilise les six illustrations finales avec le fallback provisoire", () => {
     expect(new Set(Object.values(NOX_RANK_ASSETS).map((asset) => asset.fallbackAvatar)))
       .toEqual(new Set(["/brand/nox-squire.svg"]));
-    expect(Object.values(NOX_RANK_ASSETS).every((asset) => asset.assetStatus === "provisional")).toBe(true);
+    expect(Object.values(NOX_RANK_ASSETS).every((asset) => asset.assetStatus === "final")).toBe(true);
   });
 });

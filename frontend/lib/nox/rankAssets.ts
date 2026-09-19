@@ -3,6 +3,7 @@ import type { NoxState } from "@/lib/nox/types";
 
 export type NoxRankVisual = {
   avatar: string;
+  compactAvatar: string;
   fallbackAvatar: string;
   accent: string;
   aura: string;
@@ -23,44 +24,46 @@ export type NoxStateVisual = {
 };
 
 const PROVISIONAL_AVATAR = "/brand/nox-squire.svg";
+const finalAvatar = (rank: NoxRankId, size: 256 | 512) =>
+  `/brand/nox-final/nox-${rank}-${size}.webp`;
 
 /** Source unique de l'identité visuelle de Nox, indépendante des règles de progression. */
 export const NOX_RANK_ASSETS: Record<NoxRankId, NoxRankVisual> = {
   squire: {
-    avatar: PROVISIONAL_AVATAR, fallbackAvatar: PROVISIONAL_AVATAR,
-    accent: "border-indigo-500/60", aura: "from-indigo-500/20 via-blue-500/5 to-transparent", silhouette: "scale-[0.88]", emblem: "◇",
+    avatar: finalAvatar("squire", 512), compactAvatar: finalAvatar("squire", 256), fallbackAvatar: PROVISIONAL_AVATAR,
+    accent: "border-indigo-500/60", aura: "from-indigo-500/20 via-blue-500/5 to-transparent", silhouette: "scale-100", emblem: "◇",
     badge: "Écu de novice", description: "Nox découvre ton jeu et apprend à observer sans juger.",
-    milestone: "Découvrir plusieurs notions et commencer à en améliorer une.", assetStatus: "provisional",
+    milestone: "Découvrir plusieurs notions et commencer à en améliorer une.", assetStatus: "final",
   },
   "young-knight": {
-    avatar: PROVISIONAL_AVATAR, fallbackAvatar: PROVISIONAL_AVATAR,
-    accent: "border-sky-400/70", aura: "from-sky-400/30 via-indigo-500/10 to-transparent", silhouette: "scale-[0.92]", emblem: "✦",
+    avatar: finalAvatar("young-knight", 512), compactAvatar: finalAvatar("young-knight", 256), fallbackAvatar: PROVISIONAL_AVATAR,
+    accent: "border-sky-400/70", aura: "from-sky-400/30 via-indigo-500/10 to-transparent", silhouette: "scale-100", emblem: "✦",
     badge: "Étoile d’apprentissage", description: "Nox reconnaît tes premiers progrès et t’aide à les répéter.",
-    milestone: "Transformer les premières observations en habitudes utiles.", assetStatus: "provisional",
+    milestone: "Transformer les premières observations en habitudes utiles.", assetStatus: "final",
   },
   knight: {
-    avatar: PROVISIONAL_AVATAR, fallbackAvatar: PROVISIONAL_AVATAR,
-    accent: "border-blue-300/80", aura: "from-blue-300/35 via-cyan-500/10 to-transparent", silhouette: "scale-[0.96]", emblem: "♞",
+    avatar: finalAvatar("knight", 512), compactAvatar: finalAvatar("knight", 256), fallbackAvatar: PROVISIONAL_AVATAR,
+    accent: "border-blue-300/80", aura: "from-blue-300/35 via-cyan-500/10 to-transparent", silhouette: "scale-100", emblem: "♞",
     badge: "Heaume de chevalier", description: "Nox relie tes parties, tes exercices et tes acquis confirmés.",
-    milestone: "Maîtriser plusieurs notions et corriger une faiblesse observée.", assetStatus: "provisional",
+    milestone: "Maîtriser plusieurs notions et corriger une faiblesse observée.", assetStatus: "final",
   },
   captain: {
-    avatar: PROVISIONAL_AVATAR, fallbackAvatar: PROVISIONAL_AVATAR,
+    avatar: finalAvatar("captain", 512), compactAvatar: finalAvatar("captain", 256), fallbackAvatar: PROVISIONAL_AVATAR,
     accent: "border-amber-400/80", aura: "from-amber-400/35 via-orange-500/10 to-transparent", silhouette: "scale-100", emblem: "⚔",
     badge: "Lames du capitaine", description: "Nox sait prioriser tes besoins et bâtir des missions plus précises.",
-    milestone: "Consolider quatre maîtrises et corriger deux faiblesses réelles.", assetStatus: "provisional",
+    milestone: "Consolider quatre maîtrises et corriger deux faiblesses réelles.", assetStatus: "final",
   },
   commander: {
-    avatar: PROVISIONAL_AVATAR, fallbackAvatar: PROVISIONAL_AVATAR,
-    accent: "border-violet-300/80", aura: "from-violet-300/40 via-fuchsia-500/10 to-transparent", silhouette: "scale-[1.04]", emblem: "♜",
+    avatar: finalAvatar("commander", 512), compactAvatar: finalAvatar("commander", 256), fallbackAvatar: PROVISIONAL_AVATAR,
+    accent: "border-violet-300/80", aura: "from-violet-300/40 via-fuchsia-500/10 to-transparent", silhouette: "scale-100", emblem: "♜",
     badge: "Insigne de commandement", description: "Nox distingue les tendances durables des erreurs isolées.",
-    milestone: "Confirmer six maîtrises sur plusieurs journées d’apprentissage.", assetStatus: "provisional",
+    milestone: "Confirmer six maîtrises sur plusieurs journées d’apprentissage.", assetStatus: "final",
   },
   grandmaster: {
-    avatar: PROVISIONAL_AVATAR, fallbackAvatar: PROVISIONAL_AVATAR,
-    accent: "border-yellow-300/90", aura: "from-yellow-300/45 via-amber-400/15 to-transparent", silhouette: "scale-[1.08]", emblem: "♛",
+    avatar: finalAvatar("grandmaster", 512), compactAvatar: finalAvatar("grandmaster", 256), fallbackAvatar: PROVISIONAL_AVATAR,
+    accent: "border-yellow-300/90", aura: "from-yellow-300/45 via-amber-400/15 to-transparent", silhouette: "scale-100", emblem: "♛",
     badge: "Couronne de Nox", description: "Nox est devenu le témoin expérimenté de tout ton parcours.",
-    milestone: "Maîtriser les huit familles pédagogiques et corriger durablement quatre faiblesses.", assetStatus: "provisional",
+    milestone: "Maîtriser les huit familles pédagogiques et corriger durablement quatre faiblesses.", assetStatus: "final",
   },
 };
 

@@ -31,7 +31,8 @@ export default function NoxAvatar({
   const visual = getNoxRankVisual(rank);
   const stateVisual = NOX_STATE_VISUALS[state];
   const [failedAvatar, setFailedAvatar] = useState<string | null>(null);
-  const source = failedAvatar === visual.avatar ? visual.fallbackAvatar : visual.avatar;
+  const requestedSource = size === "compact" ? visual.compactAvatar : visual.avatar;
+  const source = failedAvatar === requestedSource ? visual.fallbackAvatar : requestedSource;
 
   return (
     <div
@@ -50,8 +51,8 @@ export default function NoxAvatar({
           alt=""
           fill
           sizes={size === "hero" ? "112px" : size === "regular" ? "64px" : "48px"}
-          className={`object-cover transition-transform duration-500 motion-reduce:transition-none ${visual.silhouette}`}
-          onError={() => setFailedAvatar(visual.avatar)}
+          className={`object-contain object-bottom transition-transform duration-500 motion-reduce:transition-none ${visual.silhouette}`}
+          onError={() => setFailedAvatar(requestedSource)}
           priority={priority}
         />
         <span className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-slate-950/80 to-transparent" aria-hidden="true" />

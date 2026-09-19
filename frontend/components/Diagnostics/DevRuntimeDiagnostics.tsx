@@ -303,16 +303,27 @@ export default function DevRuntimeDiagnostics({
             </button>
           ))}
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 overflow-x-auto pb-2" data-testid="nox-family-portrait">
+          <div className="grid min-w-[920px] gap-3" style={{ gridTemplateColumns: "repeat(6, minmax(0, 1fr))" }}>
           {NOX_RANK_IDS.map((rank) => {
             const visual = getNoxRankVisual(rank);
             return (
-              <article key={rank} data-testid={`nox-preview-${rank}`} className="flex items-center gap-3 rounded-xl border border-violet-900/55 bg-gray-950/55 p-3">
-                <NoxAvatar rank={rank} rankLabel={NOX_RANKS[rank].label} state={noxPreviewState} size="regular" />
-                <div className="min-w-0"><p className="font-black text-white">{NOX_RANKS[rank].label} <span aria-hidden="true">{visual.emblem}</span></p><p className="mt-1 text-[11px] leading-4 text-gray-400">{visual.description}</p><p className="mt-1 text-[10px] text-violet-300">{visual.badge} · asset {visual.assetStatus === "final" ? "final" : "provisoire"}</p></div>
+              <article key={rank} data-testid={`nox-preview-${rank}`} className="rounded-xl border border-violet-900/55 bg-gray-950/55 p-3 text-center">
+                <div className="flex min-h-32 flex-col items-center justify-end gap-2">
+                  <div><NoxAvatar rank={rank} rankLabel={NOX_RANKS[rank].label} state={noxPreviewState} size="hero" /><span className="mt-1 block text-[10px] font-bold text-gray-500">112 px</span></div>
+                  <div className="flex items-end justify-center gap-3"><div><NoxAvatar rank={rank} rankLabel={NOX_RANKS[rank].label} state={noxPreviewState} size="compact" /><span className="mt-1 block text-[10px] font-bold text-gray-500">48</span></div><div><NoxAvatar rank={rank} rankLabel={NOX_RANKS[rank].label} state={noxPreviewState} size="regular" /><span className="mt-1 block text-[10px] font-bold text-gray-500">64</span></div></div>
+                </div>
+                <p className="mt-3 text-sm font-black text-white">{NOX_RANKS[rank].label} <span aria-hidden="true">{visual.emblem}</span></p><p className="mt-1 text-[10px] text-violet-300">{visual.badge} · asset {visual.assetStatus === "final" ? "final" : "provisoire"}</p>
               </article>
             );
           })}
+          </div>
+        </div>
+        <div className="mt-3 rounded-xl border border-violet-900/55 bg-gray-950/55 p-3" data-testid="nox-family-portrait-48">
+          <p className="text-center text-[10px] font-black uppercase tracking-[0.14em] text-gray-500">Contrôle miniature réel · 48 px</p>
+          <div className="mt-3 grid grid-cols-6 gap-2">
+            {NOX_RANK_IDS.map((rank) => <div key={rank} className="flex min-w-0 flex-col items-center gap-2 text-center"><NoxAvatar rank={rank} rankLabel={NOX_RANKS[rank].label} state={noxPreviewState} size="compact" /><span className="text-[10px] font-bold leading-3 text-gray-400">{NOX_RANKS[rank].label}</span></div>)}
+          </div>
         </div>
         <p className="mt-4 text-xs font-bold text-violet-200">Simuler l’évolution dans l’interface (localStorage DEV uniquement)</p>
         <div className="mt-3 flex flex-wrap gap-2">
