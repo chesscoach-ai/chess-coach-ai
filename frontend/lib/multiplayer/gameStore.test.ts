@@ -38,6 +38,9 @@ describe("local multiplayer store", () => {
     const joined = await store.joinOnlineGame(invitation.inviteCode, black);
     expect(joined.status).toBe("active");
     expect(joined.youAre).toBe("black");
+    expect(await store.hasActiveCompetitiveGame(white.id)).toBe(true);
+    expect(await store.hasActiveCompetitiveGame(black.id)).toBe(true);
+    expect(await store.hasActiveCompetitiveGame(outsider.id)).toBe(false);
 
     await expect(
       store.playOnlineMove(joined.id, black, { from: "e7", to: "e5" }),
@@ -62,6 +65,8 @@ describe("local multiplayer store", () => {
     expect(finished.black?.ratingAfter).toBe(584);
     expect(finished.timeControl.speed).toBe("rapid");
     expect(finished.endedAt).not.toBeNull();
+    expect(await store.hasActiveCompetitiveGame(white.id)).toBe(false);
+    expect(await store.hasActiveCompetitiveGame(black.id)).toBe(false);
 
     const history =
       await store.listFinishedOnlineGames(

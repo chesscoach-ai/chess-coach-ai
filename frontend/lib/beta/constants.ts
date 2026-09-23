@@ -1,4 +1,4 @@
-export const KNIGHTLY_BETA_VERSION = "0.1.0-beta.1";
+export const KNIGHTLY_BETA_VERSION = "0.1.0-beta.2";
 
 export const BETA_EVENT_NAMES = [
   "app_opened",

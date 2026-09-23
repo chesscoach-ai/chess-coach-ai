@@ -1061,6 +1061,32 @@ export async function getOnlinePlayerRating(playerId: string): Promise<number> {
   return result.rows[0]?.rating ?? INITIAL_RATING;
 }
 
+export async function hasActiveCompetitiveGame(
+  playerId: string,
+): Promise<boolean> {
+  const database = getPool();
+  if (!database) {
+    const local = await readLocalDatabase();
+    return Object.values(local.games).some(
+      (game) =>
+        game.status === "active" &&
+        (game.whiteId === playerId || game.blackId === playerId),
+    );
+  }
+
+  await databaseReady;
+  const result = await database.query<{ active: boolean }>(
+    `SELECT EXISTS (
+       SELECT 1
+       FROM multiplayer_games
+       WHERE data->>'status' = 'active'
+         AND (data->>'whiteId' = $1 OR data->>'blackId' = $1)
+     ) AS active`,
+    [playerId],
+  );
+  return result.rows[0]?.active ?? false;
+}
+
 function buildGamePgn(
   game: StoredGame,
 ): string {

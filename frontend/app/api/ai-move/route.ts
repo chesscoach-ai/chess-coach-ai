@@ -12,6 +12,8 @@ import {
 import { selectAiMove } from "@/lib/ai/selectMove";
 import type { PositionAnalysisResponse } from "@/services/api/ApiService";
 import { fetchBackend } from "@/lib/api/backendServer";
+import { getAuthenticatedPlayer } from "@/lib/multiplayer/playerSession";
+import { hasActiveCompetitiveGame } from "@/lib/multiplayer/gameStore";
 
 export const runtime = "nodejs";
 
@@ -33,6 +35,17 @@ const requestSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const player = await getAuthenticatedPlayer();
+    if (player && await hasActiveCompetitiveGame(player.id)) {
+      return Response.json(
+        {
+          error: "FAIR_PLAY_RESTRICTED",
+          message:
+            "L’adversaire IA est indisponible pendant ta partie en ligne.",
+        },
+        { status: 409 },
+      );
+    }
     const parsed = requestSchema.safeParse(await request.json());
     if (!parsed.success) {
       return Response.json(

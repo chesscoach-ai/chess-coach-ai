@@ -2,6 +2,7 @@ import { fetchBackend } from "@/lib/api/backendServer";
 import { billingErrorResponse } from "@/lib/billing/apiResponse";
 import { getAnalysisEntitlement } from "@/lib/billing/subscriptionStore";
 import { getAuthenticatedPlayer } from "@/lib/multiplayer/playerSession";
+import { hasActiveCompetitiveGame } from "@/lib/multiplayer/gameStore";
 
 export const runtime = "nodejs";
 
@@ -9,6 +10,9 @@ export async function POST(request: Request) {
   try {
     const player = await getAuthenticatedPlayer();
     if (!player) throw new Error("AUTH_REQUIRED");
+    if (await hasActiveCompetitiveGame(player.id)) {
+      throw new Error("FAIR_PLAY_RESTRICTED");
+    }
     const entitlement = await getAnalysisEntitlement(player.id);
     if (!entitlement.hasAccess) throw new Error("SUBSCRIPTION_REQUIRED");
   } catch (error) {

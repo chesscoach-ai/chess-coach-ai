@@ -18,6 +18,8 @@ const messages: Record<string, string> = {
     "La formule d’abonnement sélectionnée est invalide.",
   SUBSCRIPTION_REQUIRED:
     "Un abonnement Knightly+ est nécessaire pour utiliser cette fonction.",
+  FAIR_PLAY_RESTRICTED:
+    "L’analyse et les conseils sont mis en pause pendant ta partie en ligne.",
   CUSTOMER_NOT_FOUND:
     "Aucun abonnement à gérer n’a été trouvé pour ce compte.",
   INVALID_WEBHOOK: "La signature du paiement est invalide.",
@@ -29,6 +31,7 @@ const statuses: Record<string, number> = {
   SUBSCRIPTION_ALREADY_ACTIVE: 409,
   AUTH_REQUIRED: 401,
   SUBSCRIPTION_REQUIRED: 403,
+  FAIR_PLAY_RESTRICTED: 409,
   CUSTOMER_NOT_FOUND: 404,
   BILLING_NOT_CONFIGURED: 503,
   BILLING_PRICE_INVALID: 503,

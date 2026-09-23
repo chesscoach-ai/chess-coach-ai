@@ -1,5 +1,5 @@
 param(
-  [string]$ServerUrl = "https://chess-coach-web-x6vz.onrender.com"
+  [string]$ServerUrl = "http://10.0.2.2:3000"
 )
 
 $ErrorActionPreference = "Stop"

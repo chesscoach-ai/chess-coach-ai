@@ -1,6 +1,7 @@
 import { billingErrorResponse } from "@/lib/billing/apiResponse";
 import { getAnalysisEntitlement } from "@/lib/billing/subscriptionStore";
 import { getAuthenticatedPlayer } from "@/lib/multiplayer/playerSession";
+import { hasActiveCompetitiveGame } from "@/lib/multiplayer/gameStore";
 import { canAccessGameReview } from "@/lib/billing/gameReviewStore";
 import {
   fetchBackend,
@@ -21,6 +22,9 @@ export async function POST(
 ) {
   try {
     const player = await getAuthenticatedPlayer();
+    if (player && await hasActiveCompetitiveGame(player.id)) {
+      throw new Error("FAIR_PLAY_RESTRICTED");
+    }
     const entitlement = await getAnalysisEntitlement(player?.id ?? null);
     const gameReviewId =
       request.headers.get(

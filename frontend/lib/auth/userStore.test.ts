@@ -37,12 +37,22 @@ describe("local credentials account store", () => {
     expect(await compare("local-test-password", created.passwordHash)).toBe(
       true,
     );
+    expect(await compare("wrong-password", created.passwordHash)).toBe(false);
+
+    const second = await firstStore.createUser({
+      name: "Blaise",
+      email: "blaise@example.test",
+      password: "second-local-password",
+    });
+    expect(second.id).not.toBe(created.id);
+    expect(second.email).not.toBe(created.email);
 
     const rawFile = await readFile(
       path.join(temporaryDirectory, ".data", "users.json"),
       "utf8",
     );
     expect(rawFile).not.toContain('"password":"local-test-password"');
+    expect(rawFile).not.toContain("second-local-password");
 
     vi.resetModules();
     const reloadedStore = await import("@/lib/auth/userStore");
@@ -54,6 +64,9 @@ describe("local credentials account store", () => {
       name: "Ada",
       email: "ada@example.test",
     });
+    await expect(
+      reloadedStore.findUserByEmail("blaise@example.test"),
+    ).resolves.toMatchObject({ id: second.id, email: second.email });
     await expect(
       reloadedStore.createUser({
         name: "Ada bis",

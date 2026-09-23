@@ -112,11 +112,17 @@ def health() -> dict[str, str]:
 @app.get("/ready")
 def ready() -> JSONResponse:
     engine_state = default_engine_pool.readiness
+    database_state = read_migration_status()
+    database_ready = database_state.status in {"not_required", "up_to_date"}
+    is_ready = engine_state == "ready" and database_ready
     return JSONResponse(
-        status_code=200 if engine_state == "ready" else 503,
+        status_code=200 if is_ready else 503,
         content={
-            "status": "ready" if engine_state == "ready" else engine_state,
+            "status": "ready" if is_ready else "not_ready",
             "engine": engine_state,
+            "database": database_state.status,
+            "schema_version": database_state.current_version,
+            "expected_schema_version": database_state.head_version,
             "pool_size": default_engine_pool.pool_size,
             "threads_per_engine": default_engine_pool.config.threads,
             "hash_mb_per_engine": default_engine_pool.config.hash_mb,
